@@ -59,11 +59,11 @@
     blank:   { name: "Blank",                  hint: "Empty canvas" }
   };
   var THEMES = [
-    { id: "studio",   name: "Studio",   bg: "#FFFFFF", bg2: "#EDF1F7", ink: "#111827", accent: "#2563EB" },
+    { id: "studio",   name: "Studio",   bg: "#FFFFFF", bg2: "#EDF1F7", ink: "#111827", accent: "#FF2E93" },
     { id: "obsidian", name: "Obsidian", bg: "#181A24", bg2: "#090A0F", ink: "#F9FAFB", accent: "#3B82F6" },
     { id: "carbon",   name: "Carbon",   bg: "#2D2D30", bg2: "#1E1E1E", ink: "#F3F4F6", accent: "#FF9A00" },
     { id: "paper",    name: "Paper",    bg: "#F4EFE6", bg2: "#EAE4D7", ink: "#2C251E", accent: "#9A6B2F" },
-    { id: "sunset",   name: "Sunset",   bg: "#FFF1E6", bg2: "#FBD3A8", ink: "#431407", accent: "#F97316" },
+    { id: "sunset",   name: "Sunset",   bg: "#FFF1E6", bg2: "#FBD3A8", ink: "#431407", accent: "#FF2E93" },
     { id: "ocean",    name: "Ocean",    bg: "#E0F2FE", bg2: "#B7E0FB", ink: "#0C4A6E", accent: "#0284C7" }
   ];
   var GRADIENTS = [
@@ -72,7 +72,7 @@
     { id: "g2",     name: "Midnight", css: "linear-gradient(135deg,#181A24,#090A0F)" },
     { id: "g3",     name: "Ember",    css: "linear-gradient(135deg,#2D2D30,#1E1E1E)" },
     { id: "g4",     name: "Lagoon",   css: "linear-gradient(135deg,#E0F2FE,#B7E0FB)" },
-    { id: "g5",     name: "Brand",    css: "linear-gradient(135deg,#F97316,#C2410C)" }
+    { id: "g5",     name: "Brand",    css: "linear-gradient(135deg,#FF2E93,#C2410C)" }
   ];
   var TRANSITIONS = [
     { id: "none",       name: "None" },
@@ -195,7 +195,7 @@
   }
   /* default blocks per layout (geometry in % of the 16:9 stage) */
   function layoutBlocks(layout, theme) {
-    var acc = (theme && theme.accent) || "#F97316";
+    var acc = (theme && theme.accent) || "#FF2E93";
     var ink = (theme && theme.ink) || "#111827";
     switch (layout) {
       case "cover":
@@ -291,6 +291,29 @@
     if (d) putDeck(d);
   }
 
+  /* Mutate-then-persist on the SAME deck object. T.store.get() deserializes
+     a fresh copy on every read, so mutating a previously-read block/slide and
+     then saving a fresh re-read silently drops the edit. These helpers re-read,
+     locate the target by id, apply fn, and write that same object back. */
+  function withCurrentSlide(fn) {
+    var d = currentDeck();
+    if (!d || !d.slides.length) return false;
+    curSlideIdx = clamp(curSlideIdx, 0, d.slides.length - 1);
+    fn(d.slides[curSlideIdx], d);
+    putDeck(d);
+    return true;
+  }
+  function withBlock(blockId, fn) {
+    var applied = false;
+    withCurrentSlide(function (s) {
+      var list = s.blocks || [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === blockId) { fn(list[i], s); applied = true; break; }
+      }
+    });
+    return applied;
+  }
+
   /* ============================================================
      slide ops (exposed for tests)
      ============================================================ */
@@ -364,8 +387,13 @@
     return true;
   }
   function insertBlock(type, data) {
-    var d = currentDeck(), s = currentSlide();
-    if (!d || !s) return null;
+    /* NOTE: derive the slide from the SAME deck object that gets persisted.
+       currentDeck() and currentSlide() each deserialize fresh copies, so mixing
+       them silently dropped mutations. */
+    var d = currentDeck();
+    if (!d || !d.slides.length) return null;
+    curSlideIdx = clamp(curSlideIdx, 0, d.slides.length - 1);
+    var s = d.slides[curSlideIdx];
     var theme = themeOf(d);
     var geo = { x: 30, y: 35, w: 40, h: 30 };
     if (type === "text") { geo = { x: 10, y: 40, w: 80, h: 20 }; }
@@ -386,8 +414,11 @@
     return b;
   }
   function deleteBlock() {
-    var d = currentDeck(), s = currentSlide();
-    if (!d || !s || !selBlockId) return false;
+    var d = currentDeck();
+    if (!d || !d.slides.length) return false;
+    curSlideIdx = clamp(curSlideIdx, 0, d.slides.length - 1);
+    var s = d.slides[curSlideIdx];
+    if (!selBlockId) return false;
     s.blocks = s.blocks.filter(function (b) { return b.id !== selBlockId; });
     selBlockId = null;
     putDeck(d);
@@ -395,8 +426,10 @@
     return true;
   }
   function shiftBlockZ(dir) {
-    var d = currentDeck(), s = currentSlide();
-    if (!d || !s || !selBlockId) return;
+    var d = currentDeck();
+    if (!d || !d.slides.length || !selBlockId) return;
+    curSlideIdx = clamp(curSlideIdx, 0, d.slides.length - 1);
+    var s = d.slides[curSlideIdx];
     var b = null;
     s.blocks.forEach(function (x) { if (x.id === selBlockId) b = x; });
     if (!b) return;
@@ -462,10 +495,13 @@
         n.addEventListener("input", function () {
           if (isMyText(n.textContent)) n.setAttribute("lang", "my");
           else n.removeAttribute("lang");
-          b.html = n.innerHTML;
-          saveSoon();
+          var html = n.innerHTML, bid = b.id;
+          withBlock(bid, function (bb) { bb.html = html; });
         });
-        n.addEventListener("blur", function () { b.html = n.innerHTML; saveCurrent(); });
+        n.addEventListener("blur", function () {
+          var html = n.innerHTML, bid = b.id;
+          withBlock(bid, function (bb) { bb.html = html; });
+        });
       }
     } else if (b.type === "bullets") {
       n.classList.add(b.cls || "dck-b-body");
@@ -482,12 +518,14 @@
       n.appendChild(ul);
       if (mode === "stage") {
         ul.addEventListener("input", function () {
-          b.items = Array.prototype.map.call(ul.querySelectorAll("li"), function (li) { return li.textContent; });
-          saveSoon();
+          var items = Array.prototype.map.call(ul.querySelectorAll("li"), function (li) { return li.textContent; });
+          var bid = b.id;
+          withBlock(bid, function (bb) { bb.items = items; });
         });
         ul.addEventListener("blur", function () {
-          b.items = Array.prototype.map.call(ul.querySelectorAll("li"), function (li) { return li.textContent; });
-          saveCurrent();
+          var items = Array.prototype.map.call(ul.querySelectorAll("li"), function (li) { return li.textContent; });
+          var bid = b.id;
+          withBlock(bid, function (bb) { bb.items = items; });
         }, true);
       }
     } else if (b.type === "shape") {
@@ -654,7 +692,11 @@
     if (!ds) return;
     ds.node.removeEventListener("pointermove", onDragMove);
     hideGuides($("dck-stage"));
-    saveCurrent();
+    var bid = ds.b.id;
+    var geom = { x: ds.b.x, y: ds.b.y, w: ds.b.w, h: ds.b.h };
+    withBlock(bid, function (bb) {
+      bb.x = geom.x; bb.y = geom.y; bb.w = geom.w; bb.h = geom.h;
+    });
   }
   function selectBlock(id, rerender) {
     selBlockId = id;
@@ -679,7 +721,7 @@
     var head = el("div", "eco-home-head");
     var badge = el("span", "app-badge", "DCK");
     badge.id = "dck-badge";
-    badge.style.background = "#F97316";
+    badge.style.background = "#FF2E93";
     head.appendChild(badge);
     var htxt = el("div");
     htxt.appendChild(el("h1", null, "DCK"));
@@ -748,7 +790,7 @@
     secR.appendChild(empty);
     home.appendChild(secR);
 
-    var foot = el("div", "dck-home-foot", "Part of NXT Ecosystem");
+    var foot = el("div", "dck-home-foot", "Part of NXT OS");
     foot.id = "dck-home-footer";
     home.appendChild(foot);
 
@@ -955,13 +997,20 @@
     ta.placeholder = "Notes for this slide (visible in presenter mode)";
     ta.setAttribute("aria-label", "Speaker notes for current slide");
     ta.addEventListener("input", function () {
-      var s = currentSlide();
-      if (s) { s.notes = ta.value; saveSoon(); }
+      var v = ta.value;
+      withCurrentSlide(function (s) { s.notes = v; });
     });
     ta.addEventListener("blur", saveCurrent);
     nbody.appendChild(ta);
     notes.appendChild(nbody);
     ed.appendChild(notes);
+
+    /* NXT OS status bar credit (Phase 1 Identity): right-aligned brand credit
+       rendered in the app's H3NZ signature palette accent. */
+    var dckStatus = el("div", "nxt-statusbar");
+    var dckBrand = el("span", "nxt-sb-brand", "NXT DCK • Developed by H3NZ");
+    dckStatus.appendChild(dckBrand);
+    ed.appendChild(dckStatus);
 
     root.appendChild(ed);
   }
@@ -977,6 +1026,11 @@
       item.id = "dck-thumb-" + s.id;
       item.draggable = true;
       item.setAttribute("data-idx", String(i));
+      item.addEventListener("click", function () {
+        curSlideIdx = i;
+        selBlockId = null;
+        renderEditor();
+      });
       var mini = el("div", "dck-mini");
       mini.style.aspectRatio = settingsAspectRatio(d);
       s.blocks.forEach(function (b) { mini.appendChild(blockEl(b, d, "thumb")); });
@@ -1458,7 +1512,10 @@
       toast("Live GRD block refreshed.");
       return;
     }
-    var deck = currentDeck(), slide = currentSlide();
+    var deck = currentDeck();
+    var slide = (deck && deck.slides.length)
+      ? deck.slides[curSlideIdx = clamp(curSlideIdx, 0, deck.slides.length - 1)]
+      : null;
     if (view === "editor" && deck && slide) {
       insertGrdBlock(d, slide);
       putDeck(deck);
@@ -1657,7 +1714,7 @@
     bar.setAttribute("aria-label", "DCK app bar");
     var badge = el("span", "app-badge", "DCK");
     badge.id = "dck-topbar-badge";
-    badge.style.background = "#F97316";
+    badge.style.background = "#FF2E93";
     badge.setAttribute("aria-hidden", "true");
     bar.appendChild(badge);
     bar.appendChild(el("span", "dck-topbar-name", "DCK"));
@@ -1795,7 +1852,7 @@
     about.id = "dck-settings-about";
     about.appendChild(el("div", "dck-set-about-t", "About"));
     about.appendChild(el("p", null,
-      "DCK is part of the NXT Ecosystem. Build slide decks from your TXT documents, drop in live GRD charts, and present anywhere."));
+      "DCK is part of the NXT OS. Build slide decks from your TXT documents, drop in live GRD charts, and present anywhere."));
     body.appendChild(about);
 
     panel.appendChild(body);
