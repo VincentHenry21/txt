@@ -4,7 +4,7 @@
 
 #view-pdf {
   --surface2: var(--surface-2); /* alias: design tokens name it --surface-2 */
-  --pdf-brand: #E11D48; /* PDF Studio brand red */
+  --pdf-brand: #F59E0B; /* PDF Studio brand amber */
   --pdf-ghost: rgba(59, 130, 246, 0.14); /* annotation drag ghost tint */
   height: 100%;
   display: flex;
