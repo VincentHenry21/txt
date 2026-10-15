@@ -490,7 +490,9 @@
     var bar = el("div", "pdf-topbar");
     bar.id = "pdf-topbar";
     var badge = el("span", "pdf-app-badge");
-    badge.textContent = "PDF";
+    var pdfTopLogo = (T.appLogoImg ? T.appLogoImg("pdf") : null);
+    if (pdfTopLogo) { badge.className += " app-logo-badge"; badge.appendChild(pdfTopLogo); }
+    else { badge.textContent = "PDF"; }
     var name = el("span", "pdf-topbar-name");
     name.textContent = "PDF Studio";
     var spacer = el("span", "pdf-topbar-spacer");
@@ -542,8 +544,9 @@
 
     var head = el("div", "eco-home-head");
     var badge = el("span", "app-badge");
-    badge.style.background = "var(--pdf-brand)";
-    badge.textContent = "PDF";
+    var pdfLogo = (T.appLogoImg ? T.appLogoImg("pdf") : null);
+    if (pdfLogo) { badge.className += " app-logo-badge"; badge.appendChild(pdfLogo); }
+    else { badge.style.background = "var(--pdf-brand)"; badge.textContent = "PDF"; }
     var titles = el("div");
     var h1 = el("h1"); h1.textContent = "PDF Studio";
     var p = el("p"); p.textContent = "Convert, annotate, redact, sign and print documents.";
