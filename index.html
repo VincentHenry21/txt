@@ -1,364 +1,335 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="studio">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TXT, Word Processor</title>
-<meta name="description" content="TXT is a fast word processor that exports to DOC, DOCX, PDF, ODT, RTF, TXT, Markdown and HTML.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%234f46e5'/%3E%3Ctext x='32' y='44' font-family='Arial' font-weight='bold' font-size='30' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
+<meta name="description" content="TXT is a flagship word processor: paginated canvas, track changes, AI copilot, and exports everywhere.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563EB'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-weight='bold' font-size='32' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Nunito:wght@400;700&family=Source+Sans+3:wght@400;700&family=Raleway:wght@400;700&family=Ubuntu:wght@400;700&family=Work+Sans:wght@400;700&family=DM+Sans:wght@400;700&family=Manrope:wght@400;700&family=Outfit:wght@400;700&family=Rubik:wght@400;700&family=Karla:wght@400;700&family=Heebo:wght@400;700&family=Figtree:wght@400;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=Lora:wght@400;700&family=PT+Serif:wght@400;700&family=Source+Serif+4:wght@400;700&family=Noto+Serif:wght@400;700&family=Crimson+Pro:wght@400;700&family=Libre+Baskerville:wght@400;700&family=EB+Garamond:wght@400;700&family=Roboto+Mono:wght@400;700&family=Source+Code+Pro:wght@400;700&family=JetBrains+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=Oswald:wght@400;700&family=Bebas+Neue&family=Anton&family=Archivo+Black&family=Lobster&family=Pacifico&family=Noto+Sans+Myanmar:wght@400;700&family=Noto+Serif+Myanmar:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lexend:wght@400;600;700&family=OpenDyslexic:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/ribbon.css">
+<link rel="stylesheet" href="css/canvas.css">
+<link rel="stylesheet" href="css/mobile.css">
+<link rel="stylesheet" href="css/modules.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
 <defs>
-<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+<symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></symbol>
 <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></symbol>
-<symbol id="i-paste" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
 <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-export" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></symbol>
+<symbol id="i-chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-chev-u" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-paste" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+<symbol id="i-cut" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.5 15.5M14.5 14.5 20 20M8.5 8.5 12 12"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-painter" viewBox="0 0 24 24"><path d="m14 5 5 5L8 21H3v-5z"/><path d="m13 6 5 5"/></symbol>
+<symbol id="i-bold" viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 0 8H6zM6 12h9a4 4 0 0 1 0 8H6z"/></symbol>
+<symbol id="i-italic" viewBox="0 0 24 24"><path d="M19 4h-9M14 20H5M15 4 9 20"/></symbol>
+<symbol id="i-underline" viewBox="0 0 24 24"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><path d="M4 21h16"/></symbol>
+<symbol id="i-strike" viewBox="0 0 24 24"><path d="M16 4H8a4 4 0 0 0 0 8h8a4 4 0 0 1 0 8H8"/><path d="M4 12h16"/></symbol>
+<symbol id="i-case" viewBox="0 0 24 24"><path d="M4 20V9l3 11"/><path d="M11 20V9l-3 11"/><path d="M17 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M17 16v4"/></symbol>
+<symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4-4 10-10 4 4z"/><path d="m13 7 4 4"/><path d="M7 21h13"/></symbol>
+<symbol id="i-shadow" viewBox="0 0 24 24"><path d="M4 20V10l2.5 7.5"/><path d="M10 20V10l-2.5 7.5"/><path d="M7 21h11" opacity=".45"/></symbol>
+<symbol id="i-bullets" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="5" cy="6" r="1.2"/><circle cx="5" cy="12" r="1.2"/><circle cx="5" cy="18" r="1.2"/></symbol>
+<symbol id="i-numbering" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 5v3h2M4 8l2-3M4 14h2v4M4 18l2-2"/></symbol>
+<symbol id="i-checklist" viewBox="0 0 24 24"><rect x="3" y="4" width="6" height="6" rx="1.5"/><path d="m4.5 7 1 1 2-2"/><rect x="3" y="14" width="6" height="6" rx="1.5"/><path d="M12 7h9M12 17h9"/></symbol>
+<symbol id="i-outdent" viewBox="0 0 24 24"><path d="M11 6h10M11 12h10M11 18h10"/><path d="m7 9-4 3 4 3"/></symbol>
+<symbol id="i-indent" viewBox="0 0 24 24"><path d="M3 6h10M3 12h10M3 18h10"/><path d="m13 9 4 3-4 3"/></symbol>
+<symbol id="i-align-l" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/></symbol>
+<symbol id="i-align-c" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M4 18h16"/></symbol>
+<symbol id="i-align-r" viewBox="0 0 24 24"><path d="M4 6h16M10 12h10M4 18h16"/></symbol>
+<symbol id="i-align-j" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="i-spacing" viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><path d="m12 4-2 3M12 4l2 3M12 20l-2-3M12 20l2-3"/></symbol>
+<symbol id="i-shading" viewBox="0 0 24 24"><path d="m5 11 8-8 8 8-8 8z"/><path d="M5 11h14"/></symbol>
+<symbol id="i-border" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 9h16M4 15h16M9 4v16M15 4v16"/></symbol>
+<symbol id="i-cover" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+<symbol id="i-page" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></symbol>
+<symbol id="i-pagebreak" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><path d="M8 4v3M16 4v3M8 17v3M16 17v3"/></symbol>
 <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/></symbol>
-<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></symbol>
 <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></symbol>
+<symbol id="i-shapes" viewBox="0 0 24 24"><circle cx="8" cy="8" r="5"/><rect x="12" y="12" width="9" height="9" rx="1"/></symbol>
+<symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/></symbol>
+<symbol id="i-callout" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/><path d="M12 8v4M12 15h.01"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 8-4 4 4 4M16 8l4 4-4 4"/></symbol>
+<symbol id="i-hr" viewBox="0 0 24 24"><path d="M4 12h16"/></symbol>
 <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></symbol>
+<symbol id="i-header" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 8h16"/></symbol>
+<symbol id="i-footer" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 16h16"/></symbol>
+<symbol id="i-pagenum" viewBox="0 0 24 24"><path d="M5 4v16M19 4v16"/><path d="M5 9h14M5 15h14"/></symbol>
 <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
-<symbol id="i-comment" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></symbol>
+<symbol id="i-symbol" viewBox="0 0 24 24"><path d="M18 4H6l6 8-6 8h12"/></symbol>
+<symbol id="i-swatch" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1.5"/><circle cx="14" cy="9" r="1.5"/><circle cx="15" cy="14" r="1.5"/><circle cx="10" cy="15" r="1.5"/></symbol>
+<symbol id="i-margins" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 3v18M15 3v18" stroke-dasharray="2 2"/></symbol>
+<symbol id="i-orient" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="1"/><path d="m17 17 4 4m0-4-4 4"/></symbol>
+<symbol id="i-papersize" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="1"/><path d="M9 6h6M9 10h6"/></symbol>
+<symbol id="i-watermark" viewBox="0 0 24 24"><path d="M4 20 20 4"/><path d="M7 17h10" opacity=".6"/></symbol>
+<symbol id="i-pagecolor" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 3h16v6H4z" opacity=".45"/></symbol>
+<symbol id="i-toc" viewBox="0 0 24 24"><path d="M4 6h9M4 12h9M4 18h7"/><circle cx="18" cy="6" r="1.5"/><circle cx="18" cy="12" r="1.5"/><circle cx="18" cy="18" r="1.5"/></symbol>
+<symbol id="i-footnote" viewBox="0 0 24 24"><path d="M6 4v9a6 6 0 0 0 12 0V4"/><path d="M4 20h16"/></symbol>
+<symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 17c-1.5 0-2.5-1-2.5-2.5V9H8v5.5H5.5C5.5 16 6.5 17 8 17"/><path d="M15 17c-1.5 0-2.5-1-2.5-2.5V9H18v5.5h-2.5c0 1.5 1 2.5 2.5 2.5"/></symbol>
 <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
-<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+<symbol id="i-track" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></symbol>
+<symbol id="i-comment" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></symbol>
+<symbol id="i-ai" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="m6 6 8 8M18 6l-8 8" opacity=".6"/><circle cx="12" cy="12" r="2.5"/></symbol>
+<symbol id="i-aloud" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+<symbol id="i-focus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></symbol>
+<symbol id="i-ruler" viewBox="0 0 24 24"><rect x="2" y="9" width="20" height="6" rx="1"/><path d="M6 9v3M10 9v2M14 9v3M18 9v2"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16"/></symbol>
+<symbol id="i-marks" viewBox="0 0 24 24"><path d="M6 3v18M6 3h9a5 5 0 0 1 0 10H6"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-split" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></symbol>
 <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></symbol>
+<symbol id="i-zebra" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18" opacity=".5"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+<symbol id="i-pos" viewBox="0 0 24 24"><path d="M4 19V5M4 5h13l-2.5 3.5L17 12H4"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-tablet" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="m17 3 4 4L8 20l-5 1 1-5z"/><path d="m14 6 4 4"/></symbol>
+<symbol id="i-fountain" viewBox="0 0 24 24"><path d="M12 2c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"/><path d="M12 22v-4"/></symbol>
+<symbol id="i-highlighter" viewBox="0 0 24 24"><path d="m9 11-5 5v4h4l5-5"/><path d="m13 7 4 4"/><path d="M14 5l3-3 4 4-3 3"/></symbol>
+<symbol id="i-laser" viewBox="0 0 24 24"><path d="M4 20 16 8"/><circle cx="18" cy="6" r="2.5"/><path d="M12 4h8v8"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+<symbol id="i-reading" viewBox="0 0 24 24"><path d="M2 5c3-1.5 6-1.5 9 0v14c-3-1.5-6-1.5-9 0zM22 5c-3-1.5-6-1.5-9 0v14c3-1.5 6-1.5 9 0z"/></symbol>
 </defs>
 </svg>
-<script>
-(function(){
-  var t = "light";
-  try { t = localStorage.getItem("txt-theme") || "light"; } catch(e){}
-  if (t !== "dark") t = "light";
-  document.documentElement.setAttribute("data-theme", t);
-  function paint(){
-    var u = document.getElementById("themeUse");
-    if (u) u.setAttribute("href", t === "dark" ? "#i-sun" : "#i-moon");
-    var b = document.getElementById("btnTheme");
-    if (b) b.title = t === "dark" ? "Light mode" : "Dark mode";
-  }
-  window.__toggleTxtTheme = function(){
-    t = t === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", t);
-    try { localStorage.setItem("txt-theme", t); } catch(e){}
-    paint();
-  };
-  var b = document.getElementById("btnTheme");
-  function wire(){ var bb = document.getElementById("btnTheme"); if (bb) bb.addEventListener("click", window.__toggleTxtTheme); }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire); else wire();
-  paint();
-})();
-</script>
 
-
-<header class="topbar">
-  <button type="button" class="brand" id="btnHome" data-i18n-title="home" title="Home">
-    <span class="brand-mark">T</span><span class="brand-name">TXT</span>
-  </button>
-  <input id="docName" class="doc-name" value="Untitled document" spellcheck="false" aria-label="Document name">
-  <span id="saveState" class="save-state">Saved</span>
-  <div class="topbar-actions">
-    <button type="button" id="btnNew" class="tbtn" data-i18n="new" title="New document">New</button>
-    <button type="button" id="btnImport" class="tbtn" data-i18n="open" title="Open a .txt, .md or .html file">Open</button>
-    <div class="menu-wrap">
-      <button type="button" id="btnExport" class="tbtn primary" title="Export this document"><span data-i18n="export">Export</span> &#9662;</button>
-      <div id="exportMenu" class="menu hidden" role="menu">
-        <button type="button" data-export="docx" role="menuitem"><span class="ext">DOCX</span><span class="desc" data-i18n="fmtDocx">Word document</span></button>
-        <button type="button" data-export="doc" role="menuitem"><span class="ext">DOC</span><span class="desc" data-i18n="fmtDoc">Word 97 to 2003</span></button>
-        <button type="button" data-export="pdf" role="menuitem"><span class="ext">PDF</span><span class="desc" data-i18n="fmtPdf">Print to PDF</span></button>
-        <button type="button" data-export="odt" role="menuitem"><span class="ext">ODT</span><span class="desc" data-i18n="fmtOdt">OpenDocument text</span></button>
-        <button type="button" data-export="rtf" role="menuitem"><span class="ext">RTF</span><span class="desc" data-i18n="fmtRtf">Rich text format</span></button>
-        <button type="button" data-export="html" role="menuitem"><span class="ext">HTML</span><span class="desc" data-i18n="fmtHtml">Web page</span></button>
-        <button type="button" data-export="md" role="menuitem"><span class="ext">MD</span><span class="desc" data-i18n="fmtMd">Markdown</span></button>
-        <button type="button" data-export="txt" role="menuitem"><span class="ext">TXT</span><span class="desc" data-i18n="fmtTxt">Plain text</span></button>
-        <div class="menu-sep"></div>
-        <button type="button" data-export="fonts" role="menuitem"><span class="ext">Aa</span><span class="desc" data-i18n="fmtFonts">Download fonts used</span></button>
+<div id="app">
+  <!-- ZONE A: top application bar -->
+  <header id="topbar" class="glass">
+    <div class="tb-left">
+      <button type="button" id="logoBadge" class="logo-badge" title="TXT - File menu" aria-label="Open file menu"><span class="logo-t">T</span></button>
+      <input id="docTitle" class="doc-title" value="Q4 Product Architecture &amp; Executive Strategy.txtdoc" spellcheck="false" aria-label="Document title">
+      <span id="savePill" class="save-pill"><span class="dot"></span><span id="savePillText">Saved to LocalStorage - Just now</span></span>
+      <div class="qa-group" role="toolbar" aria-label="Quick access">
+        <button type="button" id="qaUndo" class="icon-btn" title="Undo (Ctrl+Z)"><svg><use href="#i-undo"/></svg></button>
+        <button type="button" id="qaRedo" class="icon-btn" title="Redo (Ctrl+Y)"><svg><use href="#i-redo"/></svg></button>
+        <button type="button" id="qaPrint" class="icon-btn" title="Print (Ctrl+P)"><svg><use href="#i-print"/></svg></button>
       </div>
     </div>
-    <button type="button" id="btnTheme" class="tbtn theme-btn" title="Dark mode" aria-label="Toggle light and dark mode"><svg class="tic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-moon" id="themeUse"/></svg></button>
-    <button type="button" id="btnLang" class="tbtn" title="Switch language">မြန်မာ</button>
-    <button type="button" id="btnAccount" class="avatar-btn" data-i18n-title="account" title="Account">G</button>
+    <div class="tb-center">
+      <button type="button" id="cmdkBtn" class="cmdk-btn" title="Command palette (Ctrl+K)">
+        <svg><use href="#i-search"/></svg><span>Search or command...</span><kbd>Ctrl K</kbd>
+      </button>
+    </div>
+    <div class="tb-right">
+      <button type="button" id="goalRing" class="goal-ring" title="Word goal">
+        <svg viewBox="0 0 40 40"><circle class="ring-bg" cx="20" cy="20" r="16"/><circle class="ring-fg" id="goalArc" cx="20" cy="20" r="16"/><text x="20" y="24" id="goalPct">0%</text></svg>
+      </button>
+      <div id="deviceMode" class="segmented" role="tablist" aria-label="Device preview">
+        <button type="button" data-device="desktop" class="active" title="Desktop preview"><svg><use href="#i-monitor"/></svg></button>
+        <button type="button" data-device="ipad" title="iPad Pro 12.9 preview"><svg><use href="#i-tablet"/></svg></button>
+        <button type="button" data-device="mobile" title="iPhone preview"><svg><use href="#i-phone"/></svg></button>
+      </div>
+      <div id="ribbonMode" class="segmented" role="tablist" aria-label="Ribbon mode">
+        <button type="button" data-mode="full" class="active" title="Full classic ribbon">Full</button>
+        <button type="button" data-mode="compact" title="Compact single-line bar">Compact</button>
+        <button type="button" data-mode="zen" title="Zen distraction-free mode">Zen</button>
+      </div>
+      <select id="themePicker" class="sel slim" title="Theme" aria-label="Theme">
+        <option value="studio">Studio Light</option>
+        <option value="obsidian">Obsidian Pro</option>
+        <option value="sepia">Editorial Sepia</option>
+        <option value="contrast">High Contrast</option>
+      </select>
+      <button type="button" id="paperToggle" class="icon-btn hidden" title="Toggle white paper in dark mode"><svg><use href="#i-pagecolor"/></svg></button>
+      <button type="button" id="btnExportTop" class="btn-primary"><svg><use href="#i-export"/></svg><span>Export</span></button>
+    </div>
+  </header>
+
+  <!-- ZONE B: smart ribbon -->
+  <div id="ribbon" class="glass">
+    <div id="ribbonTabs" role="tablist" aria-label="Ribbon tabs"></div>
+    <div id="ribbonPanels"></div>
+    <button type="button" id="ribbonCollapse" class="collapse-btn" title="Collapse ribbon"><svg><use href="#i-chev-u"/></svg></button>
   </div>
-</header>
+  <div id="pillBar" class="pill-bar glass hidden" role="toolbar" aria-label="Minimal toolbar"></div>
 
-<div class="app-main mode-home" id="appMain">
-  <aside class="sidebar" id="sidebar">
-    <div class="side-head">
-      <input id="sideSearch" class="side-search" data-i18n-ph="searchDocs" placeholder="Search documents" aria-label="Search documents">
-      <button type="button" id="btnNewSide" class="mini-btn" data-i18n-title="newDoc" title="New document">+</button>
-    </div>
-    <div id="docList" class="doc-list"></div>
-  </aside>
-
-  <div class="editor-wrap hidden" id="viewEditor">
-    <div class="ribbon">
-      <div class="ribbon-tabs" id="ribbonTabs" role="tablist">
-        <button type="button" data-tab="file" data-i18n="tabFile" role="tab">File</button>
-        <button type="button" data-tab="home" class="active" data-i18n="tabHome" role="tab">Home</button>
-        <button type="button" data-tab="insert" data-i18n="tabInsert" role="tab">Insert</button>
-        <button type="button" data-tab="layout" data-i18n="tabLayout" role="tab">Layout</button>
-        <button type="button" data-tab="references" data-i18n="tabRefs" role="tab">References</button>
-        <button type="button" data-tab="review" data-i18n="tabReview" role="tab">Review</button>
-        <button type="button" data-tab="view" data-i18n="tabView" role="tab">View</button>
+  <!-- zones C/D/E -->
+  <div id="workarea">
+    <aside id="sidebar">
+      <div class="side-tabs" role="tablist">
+        <button type="button" data-spane="outline" class="active" title="Outline"><svg><use href="#i-toc"/></svg></button>
+        <button type="button" data-spane="pages" title="Page thumbnails"><svg><use href="#i-page"/></svg></button>
+        <button type="button" data-spane="find" title="Find and replace"><svg><use href="#i-search"/></svg></button>
       </div>
-      <div class="ribbon-panels">
-        <div class="rpanel hidden" data-panel="file">
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnFileNew"><span class="ric">+</span><span class="rlab" data-i18n="blankDoc">Blank</span></button>
-            <button type="button" class="rbtn" id="btnFileOpen"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-folder"/></svg></span><span class="rlab" data-i18n="open">Open</span></button>
-          </div><div class="rglabel" data-i18n="grpNew">New</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnFilePrint"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-print"/></svg></span><span class="rlab" data-i18n="print">Print</span></button>
-          </div><div class="rglabel" data-i18n="grpPrint">Print</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnFileFonts"><span class="ric">Aa</span><span class="rlab" data-i18n="grpFonts">Fonts</span></button>
-          </div><div class="rglabel" data-i18n="fmtFonts">Download fonts used</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnFileCount"><span class="ric">123</span><span class="rlab" data-i18n="wordCount">Word count</span></button>
-          </div><div class="rglabel" data-i18n="grpInfo">Info</div></div>
+      <div class="side-body">
+        <div id="paneOutline" class="side-pane">
+          <input id="outlineSearch" class="side-input" placeholder="Filter headings" aria-label="Filter headings">
+          <div id="outlineTree" class="outline-tree"></div>
         </div>
-
-        <div class="rpanel" data-panel="home">
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn sm" id="btnUndo" data-i18n-title="undo" title="Undo"><span class="ric">&#8630;</span></button>
-            <button type="button" class="rbtn sm" id="btnRedo" data-i18n-title="redo" title="Redo"><span class="ric">&#8631;</span></button>
-            <button type="button" class="rbtn sm" id="btnPastePlain" data-i18n-title="pastePlain" title="Paste plain text"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-paste"/></svg></span></button>
-            <button type="button" class="rbtn sm" id="btnSelectAll" data-i18n-title="selectAll" title="Select all"><span class="ric">&#10697;</span></button>
-          </div><div class="rglabel" data-i18n="grpClipboard">Clipboard</div></div>
-          <div class="rgroup"><div class="rbtns col">
-            <div class="rrow">
-              <select id="fontFamily" class="sel" data-i18n-title="font" title="Font" style="width:150px"></select>
-              <select id="fontSize" class="sel" data-i18n-title="fontSize" title="Font size" style="width:60px"></select>
-              <button type="button" class="rbtn sm" id="btnGrow" data-i18n-title="growFont" title="Grow font"><span class="ric">A&#8593;</span></button>
-              <button type="button" class="rbtn sm" id="btnShrink" data-i18n-title="shrinkFont" title="Shrink font"><span class="ric">A&#8595;</span></button>
-              <button type="button" class="rbtn sm" data-cmd="removeFormat" data-i18n-title="clearFmt" title="Clear formatting"><span class="ric">A&#10005;</span></button>
-            </div>
-            <div class="rrow">
-              <button type="button" class="rbtn sm" data-cmd="bold" data-i18n-title="bold" title="Bold"><b>B</b></button>
-              <button type="button" class="rbtn sm" data-cmd="italic" data-i18n-title="italic" title="Italic"><i>I</i></button>
-              <button type="button" class="rbtn sm" data-cmd="underline" data-i18n-title="underline" title="Underline"><u>U</u></button>
-              <button type="button" class="rbtn sm" data-cmd="strikeThrough" data-i18n-title="strike" title="Strikethrough"><s>S</s></button>
-              <button type="button" class="rbtn sm" data-cmd="subscript" data-i18n-title="sub" title="Subscript"><span>X<sub>2</sub></span></button>
-              <button type="button" class="rbtn sm" data-cmd="superscript" data-i18n-title="sup" title="Superscript"><span>X<sup>2</sup></span></button>
-              <button type="button" class="rbtn sm color-rbtn" id="btnTextColor" data-i18n-title="textColor" title="Text color"><span class="ric">A<span class="color-bar" id="fgBar"></span></span></button>
-              <button type="button" class="rbtn sm color-rbtn" id="btnHlColor" data-i18n-title="hlColor" title="Highlight color"><span class="ric"><span class="hl-mark">A</span></span></button>
-            </div>
-          </div><div class="rglabel" data-i18n="grpFont">Font</div></div>
-          <div class="rgroup"><div class="rbtns col">
-            <div class="rrow">
-              <button type="button" class="rbtn sm" data-cmd="insertUnorderedList" data-i18n-title="bulletList" title="Bullet list"><span class="ric">&#8226;&#9776;</span></button>
-              <button type="button" class="rbtn sm" data-cmd="insertOrderedList" data-i18n-title="numList" title="Numbered list"><span class="ric">1&#9776;</span></button>
-              <button type="button" class="rbtn sm" id="btnMultiLevel" data-i18n-title="multiLevel" title="Multilevel list"><span class="ric">1.1</span></button>
-              <button type="button" class="rbtn sm" data-cmd="outdent" data-i18n-title="indentDec" title="Decrease indent"><span class="ric">&#8678;</span></button>
-              <button type="button" class="rbtn sm" data-cmd="indent" data-i18n-title="indentInc" title="Increase indent"><span class="ric">&#8680;</span></button>
-            </div>
-            <div class="rrow">
-              <button type="button" class="rbtn sm" data-cmd="justifyLeft" data-i18n-title="alignLeft" title="Align left"><span class="ric">&#9776;</span></button>
-              <button type="button" class="rbtn sm" data-cmd="justifyCenter" data-i18n-title="alignCenter" title="Center"><span class="ric">&#9776;</span></button>
-              <button type="button" class="rbtn sm" data-cmd="justifyRight" data-i18n-title="alignRight" title="Align right"><span class="ric">&#9776;</span></button>
-              <button type="button" class="rbtn sm" data-cmd="justifyFull" data-i18n-title="justify" title="Justify"><span class="ric">&#9776;</span></button>
-            </div>
-          </div><div class="rglabel" data-i18n="grpParagraph">Paragraph</div></div>
-          <div class="rgroup"><div class="rbtns col">
-            <div class="rrow">
-              <select id="lineSpacing" class="sel" data-i18n-title="lineSpacing" title="Line spacing" style="width:62px">
-                <option value="1">1.0</option><option value="1.15" selected>1.15</option>
-                <option value="1.5">1.5</option><option value="2">2.0</option>
-              </select>
-              <button type="button" class="rbtn sm wide" id="btnParaSpacing" data-i18n-title="paraSpacing" title="Paragraph spacing"><span class="ric">&#8597;</span><span class="rlab2" data-i18n="spacing">Spacing</span></button>
-            </div>
-            <div class="rrow">
-              <button type="button" class="rbtn sm wide" id="btnShading" data-i18n-title="shading" title="Paragraph shading"><span class="ric">&#9724;</span><span class="rlab2" data-i18n="shading">Shading</span></button>
-              <button type="button" class="rbtn sm wide" id="btnBorders" data-i18n-title="borders" title="Paragraph borders"><span class="ric">&#9723;</span><span class="rlab2" data-i18n="borders">Borders</span></button>
-            </div>
-          </div><div class="rglabel" data-i18n="grpSpacing">Spacing</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <select id="blockStyle" class="sel" data-i18n-title="paraStyle" title="Paragraph style" style="width:118px">
-              <option value="p" data-i18n="normal">Normal</option>
-              <option value="h1" data-i18n="h1">Heading 1</option>
-              <option value="h2" data-i18n="h2">Heading 2</option>
-              <option value="h3" data-i18n="h3">Heading 3</option>
-              <option value="blockquote" data-i18n="quote">Quote</option>
-            </select>
-          </div><div class="rglabel" data-i18n="grpStyles">Styles</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnFind"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-search"/></svg></span><span class="rlab" data-i18n="find">Find</span></button>
-          </div><div class="rglabel" data-i18n="grpEditing">Editing</div></div>
-        </div>
-
-        <div class="rpanel hidden" data-panel="insert">
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnPageBreak"><span class="ric">&#9145;</span><span class="rlab" data-i18n="pageBreak">Page break</span></button>
-          </div><div class="rglabel" data-i18n="grpPages">Pages</div></div>
-          <div class="rgroup"><div class="rbtns col">
-            <div class="rrow">
-              <button type="button" class="rbtn sm wide" id="btnTable"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-table"/></svg></span><span class="rlab2" data-i18n="insertTable">Table</span></button>
-              <button type="button" class="rbtn sm" id="btnRowAbove" data-i18n-title="rowAbove" title="Insert row above"><span class="ric">R&#8593;</span></button>
-              <button type="button" class="rbtn sm" id="btnRowBelow" data-i18n-title="rowBelow" title="Insert row below"><span class="ric">R&#8595;</span></button>
-              <button type="button" class="rbtn sm" id="btnDelRow" data-i18n-title="delRow" title="Delete row"><span class="ric">R&#10005;</span></button>
-            </div>
-            <div class="rrow">
-              <button type="button" class="rbtn sm wide" id="btnDelTable" data-i18n-title="delTable" title="Delete table"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-trash"/></svg></span></button>
-              <button type="button" class="rbtn sm" id="btnColLeft" data-i18n-title="colLeft" title="Insert column left"><span class="ric">C&#8592;</span></button>
-              <button type="button" class="rbtn sm" id="btnColRight" data-i18n-title="colRight" title="Insert column right"><span class="ric">C&#8594;</span></button>
-              <button type="button" class="rbtn sm" id="btnDelCol" data-i18n-title="delCol" title="Delete column"><span class="ric">C&#10005;</span></button>
-            </div>
-          </div><div class="rglabel" data-i18n="grpTables">Tables</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnImage"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-image"/></svg></span><span class="rlab" data-i18n="insertImage">Image</span></button>
-            <button type="button" class="rbtn" id="btnHr" data-cmd="insertHorizontalRule"><span class="ric">&#8213;</span><span class="rlab" data-i18n="hr">Line</span></button>
-            <button type="button" class="rbtn" id="btnDropCap"><span class="ric">Aa</span><span class="rlab" data-i18n="dropCap">Drop cap</span></button>
-          </div><div class="rglabel" data-i18n="grpMedia">Media</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnLink"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-link"/></svg></span><span class="rlab" data-i18n="insertLink">Link</span></button>
-          </div><div class="rglabel" data-i18n="grpLinks">Links</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnHeader"><span class="ric">&#9135;</span><span class="rlab" data-i18n="header">Header</span></button>
-            <button type="button" class="rbtn" id="btnFooter"><span class="ric">&#9136;</span><span class="rlab" data-i18n="footer">Footer</span></button>
-            <button type="button" class="rbtn" id="btnPageNum"><span class="ric">#</span><span class="rlab" data-i18n="pageNumber">Page no.</span></button>
-          </div><div class="rglabel" data-i18n="grpHeaderFooter">Header and Footer</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnDate"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-calendar"/></svg></span><span class="rlab" data-i18n="dateTime">Date</span></button>
-            <button type="button" class="rbtn" id="btnSymbol"><span class="ric">&Omega;</span><span class="rlab" data-i18n="symbol">Symbol</span></button>
-            <button type="button" class="rbtn" id="btnComment"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-comment"/></svg></span><span class="rlab" data-i18n="comment">Comment</span></button>
-            <button type="button" class="rbtn" id="btnWatermark"><span class="ric">W</span><span class="rlab" data-i18n="watermark">Watermark</span></button>
-          </div><div class="rglabel" data-i18n="grpText">Text</div></div>
-        </div>
-
-        <div class="rpanel hidden" data-panel="layout">
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnPageSetup"><span class="ric">&#8862;</span><span class="rlab" data-i18n="pageSetup">Page setup</span></button>
-            <button type="button" class="rbtn" id="btnOrient"><span class="ric">&#10226;</span><span class="rlab" data-i18n="orientation">Orientation</span></button>
-          </div><div class="rglabel" data-i18n="grpPageSetup">Page Setup</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn sm wide" id="btnCols1"><span class="rlab2">1</span></button>
-            <button type="button" class="rbtn sm wide" id="btnCols2"><span class="rlab2">2</span></button>
-            <button type="button" class="rbtn sm wide" id="btnCols3"><span class="rlab2">3</span></button>
-          </div><div class="rglabel" data-i18n="grpColumns">Columns</div></div>
-        </div>
-
-        <div class="rpanel hidden" data-panel="references">
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnToc"><span class="ric">&#9776;</span><span class="rlab" data-i18n="insertToc">Contents</span></button>
-            <button type="button" class="rbtn" id="btnTocUpdate"><span class="ric">&#10227;</span><span class="rlab" data-i18n="updateToc">Update</span></button>
-          </div><div class="rglabel" data-i18n="grpToc">Table of Contents</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnCite"><span class="ric">&#10078;</span><span class="rlab" data-i18n="citeTitle">Cite</span></button>
-            <button type="button" class="rbtn" id="btnBiblio"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-book"/></svg></span><span class="rlab" data-i18n="biblioTitle">Bibliography</span></button>
-          </div><div class="rglabel" data-i18n="grpCitations">Citations</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnFootnote"><span class="ric">n<sup>1</sup></span><span class="rlab" data-i18n="footnoteTitle">Footnote</span></button>
-          </div><div class="rglabel" data-i18n="grpFootnotes">Footnotes</div></div>
-        </div>
-
-        <div class="rpanel hidden" data-panel="review">
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnCommentsPane"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-comment"/></svg></span><span class="rlab" data-i18n="comments">Comments</span></button>
-          </div><div class="rglabel" data-i18n="grpComments">Comments</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnWordCount"><span class="ric">123</span><span class="rlab" data-i18n="wordCount">Word count</span></button>
-          </div><div class="rglabel" data-i18n="grpProofing">Proofing</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnLang2"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-globe"/></svg></span><span class="rlab" data-i18n="language">Language</span></button>
-          </div><div class="rglabel" data-i18n="grpLanguage">Language</div></div>
-        </div>
-
-        <div class="rpanel hidden" data-panel="view">
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn sm" id="zoomOut" data-i18n-title="zoomOut" title="Zoom out"><span class="ric">-</span></button>
-            <select id="zoomSel" class="sel" title="Zoom" style="width:70px">
-              <option value="0.5">50%</option><option value="0.75">75%</option>
-              <option value="1" selected>100%</option><option value="1.25">125%</option>
-              <option value="1.5">150%</option><option value="2">200%</option>
-            </select>
-            <button type="button" class="rbtn sm" id="zoomIn" data-i18n-title="zoomIn" title="Zoom in"><span class="ric">+</span></button>
-          </div><div class="rglabel" data-i18n="grpZoom">Zoom</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnOutline"><span class="ric">&#9776;</span><span class="rlab" data-i18n="outline">Outline</span></button>
-            <button type="button" class="rbtn" id="btnMarks"><span class="ric">&para;</span><span class="rlab" data-i18n="showMarks">Marks</span></button>
-          </div><div class="rglabel" data-i18n="grpShow">Show</div></div>
-          <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnViewHome"><span class="ric">&#8962;</span><span class="rlab" data-i18n="home">Home</span></button>
-          </div><div class="rglabel" data-i18n="grpWindow">Window</div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="workarea">
-      <div class="outline-pane hidden" id="outlinePane">
-        <h3 data-i18n="outline">Outline</h3>
-        <div id="outlineList"></div>
-      </div>
-      <div class="canvas" id="canvas">
-        <div class="zoom-wrap" id="zoomWrap">
-          <div class="page" id="page">
-            <div class="watermark-layer hidden" id="watermarkLayer" aria-hidden="true"></div>
-            <div class="doc-header hidden" id="docHeader" contenteditable="true" spellcheck="true" data-ph="Header"></div>
-            <article id="sheet" class="sheet" contenteditable="true" spellcheck="true" aria-label="Document editor"></article>
-            <div class="doc-footer hidden" id="docFooter" contenteditable="true" spellcheck="true" data-ph="Footer"></div>
+        <div id="panePages" class="side-pane hidden"><div id="thumbList" class="thumb-list"></div></div>
+        <div id="paneFind" class="side-pane hidden">
+          <input id="findText" class="side-input" placeholder="Find" aria-label="Find">
+          <input id="replaceText" class="side-input" placeholder="Replace with" aria-label="Replace with">
+          <div class="find-meta"><span id="findCount">No matches</span>
+            <button type="button" id="findPrev" class="mini-btn" title="Previous match"><svg><use href="#i-chev-u"/></svg></button>
+            <button type="button" id="findNext" class="mini-btn" title="Next match"><svg><use href="#i-chev-d"/></svg></button>
+          </div>
+          <label class="check"><input type="checkbox" id="matchCase"> Match case</label>
+          <label class="check"><input type="checkbox" id="wholeWord"> Whole word</label>
+          <div class="find-actions">
+            <button type="button" id="replaceOne" class="btn">Replace</button>
+            <button type="button" id="replaceAll" class="btn">Replace all</button>
           </div>
         </div>
       </div>
-      <div class="comments-pane hidden" id="commentsPane">
-        <h3 data-i18n="comments">Comments</h3>
-        <div id="commentsList"></div>
+      <button type="button" id="sideCollapse" class="collapse-btn side" title="Collapse sidebar"><svg><use href="#i-chev-r"/></svg></button>
+    </aside>
+
+    <main id="stage">
+      <div id="rulerH" class="ruler-h"><div id="rulerHTicks" class="ticks"></div>
+        <div id="mLeft" class="marker ml" title="Left margin"></div>
+        <div id="mFirst" class="marker mf" title="First line indent"></div>
+        <div id="mRight" class="marker mr" title="Right margin"></div>
       </div>
-    </div>
+      <div class="stage-row">
+        <div id="rulerV" class="ruler-v"><div id="rulerVTicks" class="ticks"></div></div>
+        <div id="pageScroll">
+          <div id="zoomWrap"><div id="pages"></div></div>
+        </div>
+      </div>
+      <div id="floatBar" class="float-bar glass hidden" role="toolbar"></div>
+      <div id="slashMenu" class="slash-menu hidden" role="menu"></div>
+      <div id="keytips" class="keytips hidden"></div>
+      <div id="lineMask" class="line-mask hidden"><div class="slit"></div></div>
+      <canvas id="inkLayer" class="ink-layer hidden"></canvas>
+      <div id="inkDock" class="ink-dock glass hidden" role="toolbar" aria-label="Ink tools"></div>
+    </main>
+
+    <aside id="inspector" class="hidden">
+      <div id="inspHead"><span id="inspTitle">Inspector</span>
+        <button type="button" id="inspClose" class="icon-btn" title="Close panel"><svg><use href="#i-x"/></svg></button>
+      </div>
+      <div id="inspBody"></div>
+    </aside>
   </div>
 
-  <section class="home" id="viewHome">
-    <div class="home-hero">
-      <div class="home-logo">T</div>
-      <h1>TXT</h1>
-      <p data-i18n="homeTag">A fast word processor that saves automatically and exports everywhere.</p>
-      <div class="home-search">
-        <input id="homeSearch" data-i18n-ph="searchDocs" placeholder="Search documents" aria-label="Search documents">
+  <!-- ZONE F: status bar -->
+  <footer id="statusbar">
+    <div class="sb-left">
+      <button type="button" id="pgInfo" class="sb-btn" title="Page indicator">Page 1 of 1</button>
+      <button type="button" id="wcBtn" class="sb-btn" title="Word count details"><span id="wcWords">0 words</span><span class="sep">·</span><span id="wcChars">0 characters</span></button>
+      <span id="cursorPos" class="sb-text" title="Cursor position">Ln 1, Col 1</span>
+      <button type="button" id="tcBadge" class="sb-badge" title="Toggle track changes">Track Changes: OFF</button>
+      <span id="a11yBadge" class="sb-badge ok" title="Accessibility status">Accessibility: Good</span>
+    </div>
+    <div class="sb-right">
+      <div class="seg" role="toolbar" aria-label="View mode">
+        <button type="button" id="vwPrint" class="active" title="Print layout"><svg><use href="#i-page"/></svg></button>
+        <button type="button" id="vwWeb" title="Web continuous layout"><svg><use href="#i-globe"/></svg></button>
+        <button type="button" id="vwImmersive" title="Immersive reader"><svg><use href="#i-eye"/></svg></button>
       </div>
-      <div class="home-actions">
-        <button type="button" id="btnHomeNew" class="big-btn">+ <span data-i18n="newBlankDoc">New blank document</span></button>
-        <button type="button" id="btnHomeTpl" class="big-btn ghost"><span data-i18n="browseTemplates">Browse templates</span></button>
+      <button type="button" id="focusBtn" class="sb-btn" title="Focus mode"><svg><use href="#i-focus"/></svg></button>
+      <div class="zoom-ctl">
+        <button type="button" id="zoomOut" class="icon-btn sm" title="Zoom out"><svg><use href="#i-minus"/></svg></button>
+        <input type="range" id="zoomSlider" min="50" max="200" value="100" aria-label="Zoom">
+        <button type="button" id="zoomPct" class="sb-btn" title="Reset zoom to 100%">100%</button>
+        <button type="button" id="zoomIn" class="icon-btn sm" title="Zoom in"><svg><use href="#i-plus"/></svg></button>
       </div>
     </div>
-    <h2 id="tplHeading" data-i18n="templates">Templates</h2>
-    <div class="tpl-grid" id="tplGrid"></div>
-    <h2 data-i18n="recentDocs">Recent documents</h2>
-    <div class="doc-grid" id="recentGrid"></div>
-  </section>
+  </footer>
 </div>
 
-<div id="findbar" class="findbar hidden">
-  <input id="findInput" data-i18n-ph="find" placeholder="Find" aria-label="Find">
-  <input id="replaceInput" data-i18n-ph="replaceWith" placeholder="Replace with" aria-label="Replace with">
-  <button type="button" id="findPrev" class="tool" data-i18n-title="prev" title="Previous">&#8593;</button>
-  <button type="button" id="findNext" class="tool" data-i18n-title="next" title="Next">&#8595;</button>
-  <button type="button" id="replaceOne" class="fbtn" data-i18n="replace" title="Replace current">Replace</button>
-  <button type="button" id="replaceAll" class="fbtn" data-i18n="replaceAll" title="Replace all">All</button>
-  <span id="findCount" class="find-count"></span>
-  <button type="button" id="findClose" class="tool" data-i18n-title="close" title="Close">&#10005;</button>
+<!-- mobile chrome -->
+<div id="mTopbar" class="m-topbar glass hidden">
+  <button type="button" id="mBack" class="icon-btn" title="File menu"><svg><use href="#i-back"/></svg></button>
+  <span id="mTitle" class="m-title">Document</span>
+  <button type="button" id="mReflow" class="icon-btn" title="Toggle reflow / print view"><svg><use href="#i-reading"/></svg></button>
+  <button type="button" id="mUndo" class="icon-btn" title="Undo"><svg><use href="#i-undo"/></svg></button>
+  <button type="button" id="mRedo" class="icon-btn" title="Redo"><svg><use href="#i-redo"/></svg></button>
+  <button type="button" id="mMore" class="icon-btn" title="More"><svg><use href="#i-more"/></svg></button>
+</div>
+<div id="accBar" class="acc-bar glass hidden" role="toolbar" aria-label="Formatting"></div>
+<button type="button" id="editFab" class="edit-fab hidden"><svg><use href="#i-pen"/></svg><span>Reading</span></button>
+<div id="sheetModal" class="sheet-modal hidden">
+  <div class="sheet-scrim" id="sheetScrim"></div>
+  <div class="sheet-card glass" role="dialog">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head"><span id="sheetTitle">Format</span>
+      <button type="button" id="sheetClose" class="icon-btn" title="Close"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div id="sheetBody" class="sheet-body"></div>
+  </div>
 </div>
 
-<footer class="statusbar">
-  <span id="wordCount">0 words</span>
-  <span class="sdot">.</span>
-  <span id="charCount">0 characters</span>
-  <span class="spacer"></span>
-  <span id="pageInfo" class="page-info"></span>
-</footer>
+<!-- overlays -->
+<div id="backstage" class="backstage hidden" role="dialog" aria-label="File menu">
+  <div class="bs-side">
+    <div class="bs-logo"><span class="logo-t">T</span><span>TXT</span></div>
+    <nav id="bsNav" class="bs-nav"></nav>
+    <button type="button" id="bsClose" class="btn ghost">Close</button>
+  </div>
+  <div id="bsMain" class="bs-main"></div>
+</div>
 
-<div id="popover" class="popover hidden"></div>
-<input type="file" id="importFile" accept=".txt,.md,.markdown,.html,.htm" class="hidden-file">
-<input type="file" id="imageFile" accept="image/*" class="hidden-file">
+<div id="cmdPalette" class="palette-wrap hidden" role="dialog" aria-label="Command palette">
+  <div class="palette glass">
+    <div class="pal-input-row"><svg><use href="#i-search"/></svg><input id="cmdInput" placeholder="Type a command or search text..." aria-label="Command input"></div>
+    <div id="cmdList" class="pal-list" role="listbox"></div>
+  </div>
+</div>
+
+<div id="speechDock" class="speech-dock glass hidden"></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<div id="modalRoot"></div>
 
 <script src="vendor/docx.iife.js"></script>
+<script src="js/core.js"></script>
+<script src="js/fonts.js"></script>
+<script src="js/templates.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/themes.js"></script>
 <script src="js/convert.js"></script>
 <script src="js/docx-export.js"></script>
-<script src="js/templates.js"></script>
-<script src="js/word.js"></script>
+<script src="js/export.js"></script>
+<script src="js/topbar.js"></script>
+<script src="js/ribbon.js"></script>
+<script src="js/tabs/home.js"></script>
+<script src="js/tabs/insert.js"></script>
+<script src="js/tabs/draw.js"></script>
+<script src="js/tabs/design.js"></script>
+<script src="js/tabs/layout.js"></script>
+<script src="js/tabs/refs.js"></script>
+<script src="js/tabs/review.js"></script>
+<script src="js/tabs/view.js"></script>
+<script src="js/tabs/access.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/inspector.js"></script>
+<script src="js/statusbar.js"></script>
+<script src="js/backstage.js"></script>
+<script src="js/palette.js"></script>
+<script src="js/floating.js"></script>
+<script src="js/rulers.js"></script>
+<script src="js/changes.js"></script>
+<script src="js/comments.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/a11y.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/ink.js"></script>
+<script src="js/mobile.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
