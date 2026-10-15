@@ -32,12 +32,12 @@
   var T = window.TXT;
 
   var APPS = [
-    { id: "txt", code: "TXT", color: "#2563EB", label: "Word documents" },
-    { id: "grd", code: "GRD", color: "#10B981", label: "Sheets" },
-    { id: "dck", code: "DCK", color: "#F97316", label: "Decks" },
-    { id: "mem", code: "MEM", color: "#8B5CF6", label: "Notes" },
-    { id: "pdf", code: "PDF", color: "#E11D48", label: "PDF docs" },
-    { id: "vector", code: "VCT", color: "#F59E0B", label: "Vector drawings" },
+    { id: "txt", code: "TXT", color: "#7C3AED", label: "Word documents" },
+    { id: "grd", code: "GRD", color: "#06B6D4", label: "Sheets" },
+    { id: "dck", code: "DCK", color: "#FF2E93", label: "Decks" },
+    { id: "mem", code: "MEM", color: "#10B981", label: "Notes" },
+    { id: "pdf", code: "PDF", color: "#F59E0B", label: "PDF docs" },
+    { id: "vector", code: "VCT", color: "#84CC16", label: "Vector drawings" },
     { id: "pixel", code: "PXL", color: "#EC4899", label: "Pixel images" }
   ];
   var APP_BY_ID = {};
@@ -719,13 +719,13 @@
   function buildTopbar(view) {
     var bar = el("div", "hub-topbar", "hub-topbar");
     var hb = el("span", "hub-badge");
-    hb.style.background = "#4F46E5";
+    hb.style.background = "#3B82F6";
     hb.textContent = "HUB";
     var title = el("div", "hub-topbar-title");
     var nm = el("span", "hub-topbar-name");
     nm.textContent = "HUB";
     var eco = el("span", "hub-topbar-eco");
-    eco.textContent = "NXT Ecosystem";
+    eco.textContent = "NXT OS";
     title.appendChild(nm);
     title.appendChild(eco);
     var spacer = el("div", "hub-spacer");
@@ -849,7 +849,7 @@
     var at = el("div", "hub-settext");
     var at1 = el("div", "hub-title"); at1.textContent = "About";
     var at2 = el("div", "hub-meta");
-    at2.textContent = "HUB, part of the NXT Ecosystem. One dashboard for TXT, GRD, DCK, MEM, PDF, Vector and Pixel.";
+    at2.textContent = "HUB, part of the NXT OS. One dashboard for TXT, GRD, DCK, MEM, PDF, Vector and Pixel.";
     at.appendChild(at1); at.appendChild(at2);
     about.appendChild(at);
     body.appendChild(about);
@@ -959,14 +959,14 @@
 
     var root = el("div", "eco-home hub-root", "hub-root");
 
-    /* header: NXT Ecosystem brand, HUB as the app name */
+    /* header: NXT OS brand, HUB as the app name */
     var head = el("div", "eco-home-head");
     var hb = el("span", "app-badge");
-    hb.style.background = "#4F46E5";
+    hb.style.background = "#3B82F6";
     hb.textContent = "HUB";
     var htxt = el("div");
     var h1 = el("h1"); h1.textContent = "Hub";
-    var hp = el("p"); hp.textContent = "NXT Ecosystem · every file, every app, one dashboard.";
+    var hp = el("p"); hp.textContent = "NXT OS · every file, every app, one dashboard.";
     htxt.appendChild(h1); htxt.appendChild(hp);
     var spacer = el("div", "spacer");
     var shelfBtn = el("button", "hub-btn hub-btn-ghost", "hub-shelfToggle");
@@ -1052,9 +1052,25 @@
     root.appendChild(stSec);
     els.storage = stList;
 
-    /* NXT Ecosystem footer */
+    /* NXT OS footer */
     var foot = el("div", "hub-footer", "hub-footer");
-    foot.textContent = "Part of NXT Ecosystem";
+    var fBrand = el("span", "hub-foot-brand");
+    fBrand.textContent = "Part of NXT OS";
+    foot.appendChild(fBrand);
+    var fLinks = el("div", "hub-foot-links");
+    [["Terms", "showTerms"], ["Privacy", "showPrivacy"], ["FAQ", "showFaq"], ["Settings", "showSettings"]].forEach(function (pair) {
+      var b = el("button", "hub-foot-link");
+      b.type = "button";
+      b.textContent = pair[0];
+      b.addEventListener("click", function () { if (T.nxtLegal) T.nxtLegal[pair[1]](); });
+      fLinks.appendChild(b);
+    });
+    foot.appendChild(fLinks);
+    /* NXT OS status bar credit (Phase 1 Identity): right-aligned brand credit
+       rendered in the app's H3NZ signature palette accent. */
+    var fCredit = el("span", "hub-foot-credit nxt-sb-brand");
+    fCredit.textContent = "NXT HUB • Developed by H3NZ";
+    foot.appendChild(fCredit);
     root.appendChild(foot);
 
     view.appendChild(root);
