@@ -3,8 +3,8 @@
 :root {
   --ink-dim: var(--muted, #6B7280);
   --surface2: var(--surface-2, #F3F4F6);
-  --accent2: var(--accent, #2563EB);
-  --dck-brand: #F97316;
+  --accent2: var(--accent, #FF2E93);
+  --dck-brand: #FF2E93;
 }
 
 /* ---------- homescreen extras (shared .eco-home classes live in ecosystem.css) ---------- */
@@ -170,6 +170,7 @@
 }
 .dck-stage {
   position: relative;
+  container-type: inline-size;
   width: 100%;
   max-width: 960px;
   aspect-ratio: 16 / 9;
@@ -188,13 +189,13 @@
 .dck-stage .dck-block { cursor: default; }
 .dck-stage .dck-block.sel { outline: 2px solid var(--dck-brand); outline-offset: 0; }
 .dck-b-text { padding: 0.6%; }
-.dck-b-title { font-size: clamp(18px, 4.2vw, 44px); font-weight: 800; line-height: 1.15; }
-.dck-b-subtitle { font-size: clamp(12px, 2vw, 20px); line-height: 1.5; opacity: 0.85; }
-.dck-b-h2 { font-size: clamp(14px, 2.6vw, 28px); font-weight: 750; line-height: 1.25; }
-.dck-b-body { font-size: clamp(11px, 1.7vw, 17px); line-height: 1.55; }
-.dck-b-kpi { font-size: clamp(28px, 8vw, 88px); font-weight: 800; line-height: 1.1; }
+.dck-b-title { font-size: clamp(14px, 4.2cqw, 44px); font-weight: 800; line-height: 1.15; }
+.dck-b-subtitle { font-size: clamp(11px, 2cqw, 20px); line-height: 1.5; opacity: 0.85; }
+.dck-b-h2 { font-size: clamp(11px, 2.6cqw, 28px); font-weight: 750; line-height: 1.25; }
+.dck-b-body { font-size: clamp(11px, 1.7cqw, 17px); line-height: 1.55; }
+.dck-b-kpi { font-size: clamp(20px, 8cqw, 88px); font-weight: 800; line-height: 1.1; }
 .dck-b-mile {
-  font-size: clamp(11px, 1.6vw, 16px);
+  font-size: clamp(11px, 1.6cqw, 16px);
   font-weight: 700;
   border-top: 3px solid var(--dck-accent, var(--dck-brand));
   padding-top: 8px;
@@ -209,7 +210,7 @@
 }
 .dck-shape { border-radius: 6px; min-height: 20px; }
 .dck-b-image img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.dck-table { width: 100%; border-collapse: collapse; font-size: clamp(11px, 1.3vw, 14px); }
+.dck-table { width: 100%; border-collapse: collapse; font-size: clamp(11px, 1.3cqw, 14px); }
 .dck-table th, .dck-table td {
   border: 1px solid var(--line, #ccc);
   padding: 4px 8px;
