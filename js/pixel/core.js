@@ -70,9 +70,10 @@
       '<button type="button" id="pxSettingsBtn" class="icon-btn px-tbtn" title="Pixel settings" aria-label="Pixel settings">' + GEAR_SVG + "</button>" +
       '<button type="button" id="pxFilesBtn" class="icon-btn px-tbtn" title="Image files" aria-label="Image files">' + fileIco() + "</button>";
     top.appendChild(left);
-    left.querySelector("#pxLauncher").addEventListener("click", function () {
+    left.querySelector("#pxLauncher").addEventListener("click", function (e) {
+      e.stopPropagation();
       if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") {
-        try { T.ecosystem.toggleLauncher(); } catch (e) { /* ignore */ }
+        try { T.ecosystem.toggleLauncher(); } catch (err) { /* ignore */ }
       }
     });
     left.querySelector("#pxSettingsBtn").addEventListener("click", function () { togglePxDrawer("settings"); });
