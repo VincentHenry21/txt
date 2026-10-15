@@ -1,0 +1,119 @@
+/* GRD spreadsheet app styles. Theme-aware via CSS variables so all 5 themes
+   (including Carbon) render correctly. No emojis, no CSS zoom. Scoped to
+   #view-grd; every id is grd- prefixed. */
+
+/* ---------- app shell ---------- */
+#grd-root { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--ws-bg); color: var(--ink); }
+#view-grd [lang="my"] { line-height: 1.85; }
+#grd-root .hidden { display: none !important; }
+
+/* ---------- topbar ---------- */
+.grd-app { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.grd-topbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.grd-title { flex: 1 1 160px; min-width: 120px; font-size: 15px; font-weight: 700; background: transparent; border: 1px solid transparent; border-radius: 6px; color: var(--ink); padding: 6px 8px; }
+.grd-title:hover { border-color: var(--line); }
+.grd-title:focus { border-color: var(--accent); outline: none; background: var(--surface2); }
+.grd-tabs { display: flex; gap: 2px; background: var(--surface2); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
+.grd-tab { border: 0; background: transparent; color: var(--ink-dim); font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 6px; cursor: pointer; }
+.grd-tab.active { background: var(--accent-soft); color: var(--accent); }
+.grd-btn { border: 1px solid var(--line); background: var(--surface2); color: var(--ink); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+.grd-btn:hover { border-color: var(--accent); }
+.grd-btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+.grd-btn-small { padding: 5px 10px; font-size: 12px; }
+.grd-btn-danger { color: #ef4444; }
+
+/* ---------- formula bar + format toolbar ---------- */
+.grd-fxbar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.grd-namebox { width: 92px; flex: 0 0 auto; font-size: 13px; font-weight: 600; background: var(--surface2); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); padding: 6px 8px; }
+.grd-fxlab { font-style: italic; color: var(--ink-dim); font-size: 13px; }
+.grd-fxinput { flex: 1; font-size: 13px; font-family: ui-monospace, monospace; background: var(--ws-bg); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); padding: 7px 10px; min-width: 0; }
+.grd-fxinput:focus { border-color: var(--accent); outline: none; }
+.grd-formatbar { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.grd-tbtn { border: 1px solid var(--line); background: var(--surface2); color: var(--ink); font-size: 13px; font-weight: 600; min-width: 34px; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+.grd-tbtn:hover { border-color: var(--accent); }
+.grd-tbtn.on, .grd-tbtn-bold.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.grd-tbtn-bold { font-weight: 800; }
+.grd-formatbar select { font-size: 13px; background: var(--surface2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.grd-formatbar input[type="color"] { width: 34px; height: 30px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface2); padding: 2px; cursor: pointer; }
+
+/* ---------- grid ---------- */
+.grd-view { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#grd-view-grid { flex: 1; min-height: 0; }
+.grd-gridwrap { flex: 1; overflow: auto; position: relative; background: var(--ws-bg); min-height: 0; outline: none; }
+.grd-grid { display: grid; position: relative; min-width: max-content; font-size: 13px; }
+.grd-corner { position: sticky; left: 0; top: 0; z-index: 4; background: var(--surface2); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.grd-ch { position: sticky; top: 0; z-index: 3; background: var(--surface2); color: var(--ink-dim); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); height: 30px; cursor: pointer; user-select: none; }
+.grd-ch:hover { color: var(--accent); }
+.grd-resize { position: absolute; right: 0; top: 0; bottom: 0; width: 8px; cursor: col-resize; }
+.grd-resize:hover { background: var(--accent-soft); }
+.grd-rh { position: sticky; left: 0; z-index: 2; background: var(--surface2); color: var(--ink-dim); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); height: 30px; cursor: pointer; user-select: none; }
+.grd-rh:hover { color: var(--accent); }
+.grd-cell { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); height: 30px; padding: 0 8px; display: flex; align-items: center; overflow: hidden; white-space: nowrap; background: var(--surface); cursor: cell; user-select: none; }
+.grd-cell.grd-bold { font-weight: 700; }
+.grd-cell.grd-inrange { background: var(--accent-soft); }
+.grd-cell.grd-active { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--surface); z-index: 1; }
+.grd-check { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.grd-pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+.grd-pill-todo { background: #e5e7eb; color: #374151; }
+.grd-pill-doing { background: #fef3c7; color: #92400e; }
+.grd-pill-done { background: #d1fae5; color: #065f46; }
+.grd-pill-other { background: var(--surface2); color: var(--ink-dim); border: 1px solid var(--line); }
+.grd-progress { display: inline-block; width: 64px; height: 8px; background: var(--surface2); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; margin-right: 6px; flex: 0 0 auto; }
+.grd-progress-fill { display: block; height: 100%; background: var(--accent); }
+.grd-progress-lab { font-size: 11px; color: var(--ink-dim); }
+.grd-editor { position: absolute; z-index: 10; font-size: 13px; padding: 0 8px; border: 2px solid var(--accent); border-radius: 0; background: var(--surface); color: var(--ink); outline: none; box-sizing: border-box; }
+.grd-status { padding: 5px 12px; font-size: 12px; color: var(--ink-dim); background: var(--surface); border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- kanban ---------- */
+#grd-view-kanban { flex: 1; min-height: 0; overflow: auto; padding: 12px; }
+.grd-kb-config { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; font-size: 13px; }
+.grd-kb-config select { font-size: 13px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.grd-kb-hint { color: var(--ink-dim); font-size: 12px; }
+.grd-kb-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; align-items: start; }
+.grd-kb-col { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px; min-height: 120px; }
+.grd-kb-col.grd-drop { border-color: var(--accent); background: var(--accent-soft); }
+.grd-kb-colhead { font-weight: 700; font-size: 13px; margin-bottom: 8px; color: var(--ink); }
+.grd-kb-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.grd-kb-card { background: var(--surface2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; cursor: grab; }
+.grd-kb-card:active { cursor: grabbing; }
+.grd-kb-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.grd-kb-meta { font-size: 11px; color: var(--ink-dim); margin-bottom: 6px; }
+.grd-kb-actions { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+.grd-kb-move { font-size: 12px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; }
+.grd-kb-del { font-size: 12px; border: 1px solid var(--line); background: transparent; color: #ef4444; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.grd-kb-add { width: 100%; border: 1px dashed var(--line); background: transparent; color: var(--ink-dim); border-radius: 8px; padding: 8px; font-size: 13px; cursor: pointer; }
+.grd-kb-add:hover { color: var(--accent); border-color: var(--accent); }
+.grd-kb-edit { width: 100%; font-size: 13px; padding: 5px 8px; border: 1px solid var(--accent); border-radius: 6px; background: var(--surface); color: var(--ink); }
+
+/* ---------- charts ---------- */
+#grd-view-charts { flex: 1; min-height: 0; overflow: auto; padding: 12px; }
+.grd-ch-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; font-size: 13px; }
+.grd-ch-controls input, .grd-ch-controls select { font-size: 13px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
+.grd-ch-hint { color: var(--ink-dim); font-size: 12px; }
+.grd-ch-list { display: flex; flex-direction: column; gap: 14px; }
+.grd-ch-item { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.grd-ch-itemhead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.grd-ch-itemtitle { font-weight: 700; font-size: 13px; flex: 1; min-width: 140px; }
+.grd-ch-svg { overflow-x: auto; }
+.grd-ch-svg svg { max-width: 100%; height: auto; display: block; color: var(--ink); }
+.grd-ch-none { color: var(--ink-dim); font-size: 13px; }
+
+/* ---------- home (uses shared eco-home classes; GRD-specific bits) ---------- */
+#grd-home { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
+#grd-badge { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 13px; padding: 6px 12px; border-radius: 8px; letter-spacing: 1px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .grd-topbar { gap: 6px; }
+  .grd-tabs { order: 3; width: 100%; }
+  .grd-tab { flex: 1; text-align: center; }
+}
+@media (max-width: 720px) {
+  .grd-btn, .grd-tbtn, .grd-tab { min-height: 44px; }
+  .grd-formatbar input[type="color"] { width: 44px; height: 44px; }
+  .grd-formatbar select { min-height: 44px; }
+  .grd-kb-move, .grd-kb-del, .grd-kb-add { min-height: 44px; }
+  .grd-ch-controls input, .grd-ch-controls select, .grd-ch-controls .grd-btn { min-height: 44px; }
+  #grd-home { padding: 12px; }
+  .grd-cell { font-size: 12px; }
+}

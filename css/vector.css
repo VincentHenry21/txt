@@ -1,0 +1,216 @@
+/* TXT Vector Studio styles (Illustrator persona, v5).
+   Dark carbon-first UI scoped to #view-vector. No emojis, no CSS zoom. */
+
+#view-vector {
+  --v-bg: #1E1E1E;
+  --v-surface: #252526;
+  --v-surface2: #2D2D30;
+  --v-ink: #F3F4F6;
+  --v-dim: #9CA3AF;
+  --v-line: #3E3E42;
+  --v-accent: #FF9A00;
+  --v-blue: #31A8FF;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--v-bg);
+  color: var(--v-ink);
+  font: 13px/1.45 "Inter", system-ui, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html[data-theme="carbon"] #view-vector {
+  --v-bg: var(--ws-bg);
+  --v-surface: var(--surface);
+  --v-surface2: var(--surface2);
+  --v-ink: var(--ink);
+  --v-dim: var(--ink-dim);
+  --v-line: var(--line);
+  --v-accent: var(--accent);
+  --v-blue: var(--accent2);
+}
+#view-vector.hidden { display: none !important; }
+
+/* ---------- topbar ---------- */
+#vTopbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  flex: 0 0 48px;
+  padding: 0 12px;
+  background: var(--v-surface);
+  border-bottom: 1px solid var(--v-line);
+  z-index: 20;
+}
+#vTopbar .vt-left, #vTopbar .vt-right { display: flex; align-items: center; gap: 6px; }
+#vTopbar .vt-center { flex: 1; display: flex; align-items: center; gap: 10px; justify-content: center; min-width: 0; overflow-x: auto; }
+.v-docname {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--v-ink);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 8px;
+  width: 150px;
+}
+.v-docname:hover { border-color: var(--v-line); }
+.v-docname:focus { outline: none; border-color: var(--v-blue); background: var(--v-surface2); }
+.v-dims { display: flex; align-items: center; gap: 4px; color: var(--v-dim); font-size: 11px; font-weight: 600; }
+.v-dims input {
+  width: 58px;
+  background: var(--v-surface2);
+  border: 1px solid var(--v-line);
+  border-radius: 6px;
+  color: var(--v-ink);
+  font-size: 12px;
+  padding: 4px 6px;
+}
+.v-dims input:focus { outline: none; border-color: var(--v-blue); }
+.v-sep { width: 1px; height: 22px; background: var(--v-line); margin: 0 4px; }
+.vbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--v-dim);
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.vbtn:hover { background: var(--v-surface2); color: var(--v-ink); }
+.vbtn:disabled { opacity: 0.35; cursor: default; background: transparent; }
+.vbtn.active { background: var(--v-accent); border-color: var(--v-accent); color: #1a1a1a; }
+.vbtn.sm { height: 26px; font-size: 11px; }
+.vico { width: 18px; height: 18px; flex: 0 0 auto; }
+.v-status { color: var(--v-dim); font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#vZoomPct { min-width: 44px; text-align: center; color: var(--v-ink); font-weight: 600; }
+
+/* tool options */
+#vToolOptions .v-opt-row { display: flex; align-items: center; gap: 8px; }
+#vToolOptions label { display: flex; align-items: center; gap: 5px; color: var(--v-dim); font-size: 11.5px; white-space: nowrap; }
+#vToolOptions input[type="number"] {
+  width: 56px;
+  background: var(--v-surface2);
+  border: 1px solid var(--v-line);
+  border-radius: 6px;
+  color: var(--v-ink);
+  font-size: 12px;
+  padding: 3px 6px;
+}
+#vToolOptions input[type="number"]:focus { outline: none; border-color: var(--v-blue); }
+#vToolOptions select {
+  background: var(--v-surface2);
+  border: 1px solid var(--v-line);
+  border-radius: 6px;
+  color: var(--v-ink);
+  font-size: 12px;
+  padding: 4px 6px;
+  max-width: 150px;
+}
+#vToolOptions input[type="color"] {
+  width: 30px; height: 24px;
+  padding: 1px 2px;
+  background: var(--v-surface2);
+  border: 1px solid var(--v-line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.v-paint-opts { display: flex; align-items: center; gap: 10px; padding-left: 10px; border-left: 1px solid var(--v-line); }
+.v-hint { color: var(--v-dim); font-size: 11.5px; white-space: nowrap; }
+
+/* ---------- main row ---------- */
+#vMain { flex: 1; display: flex; min-height: 0; }
+
+/* ---------- tool dock ---------- */
+#vTools {
+  flex: 0 0 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 0;
+  background: var(--v-surface);
+  border-right: 1px solid var(--v-line);
+  overflow-y: auto;
+  z-index: 15;
+}
+.vtool {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--v-dim);
+  cursor: pointer;
+}
+.vtool .vico { width: 20px; height: 20px; }
+.vtool:hover { background: var(--v-surface2); color: var(--v-ink); }
+.vtool.active { background: var(--v-accent); color: #1a1a1a; border-color: var(--v-accent); }
+
+/* fill/stroke stack */
+#vPaintStack { position: relative; width: 38px; height: 38px; margin-top: 8px; cursor: pointer; }
+.v-paint-stroke, .v-paint-fill {
+  position: absolute;
+  width: 24px; height: 24px;
+  border-radius: 5px;
+  box-sizing: border-box;
+  transition: box-shadow 0.12s;
+}
+.v-paint-stroke { right: 2px; top: 2px; border: 5px solid #888; background: transparent; }
+.v-paint-fill { left: 2px; bottom: 2px; background: #fff; border: 1px solid #666; }
+.v-paint-stroke.active, .v-paint-fill.active { box-shadow: 0 0 0 2px var(--v-blue); }
+.v-paint-stroke:hover, .v-paint-fill:hover { box-shadow: 0 0 0 2px var(--v-dim); }
+.v-paint-stroke.active:hover, .v-paint-fill.active:hover { box-shadow: 0 0 0 2px var(--v-blue); }
+
+/* ---------- canvas ---------- */
+#vCanvasWrap { flex: 1; position: relative; min-width: 0; overflow: hidden; background: var(--v-bg); }
+#vCanvas { width: 100%; height: 100%; display: block; touch-action: none; }
+#vTextEdit {
+  position: absolute;
+  z-index: 60;
+  min-width: 120px;
+  background: rgba(20, 20, 20, 0.92);
+  border: 1px solid var(--v-blue);
+  border-radius: 6px;
+  color: #fff;
+  padding: 4px 8px;
+  outline: none;
+}
+#vTextEdit.hidden { display: none; }
+
+/* ---------- panels column (filled by panels worker) ---------- */
+#vPanels {
+  flex: 0 0 280px;
+  background: var(--v-surface);
+  border-left: 1px solid var(--v-line);
+  overflow-y: auto;
+  z-index: 15;
+}
+#vPanels:empty { display: none; }
+
+/* overlay handles get pointer events via inline style; keep overlay itself passive */
+#vOverlay { pointer-events: none; }
+
+/* scrollbars */
+#vTools::-webkit-scrollbar, #vPanels::-webkit-scrollbar { width: 8px; }
+#vTools::-webkit-scrollbar-thumb, #vPanels::-webkit-scrollbar-thumb { background: var(--v-line); border-radius: 4px; }
+
+/* small screens: collapse panels under canvas */
+@media (max-width: 900px) {
+  #vPanels { flex-basis: 220px; }
+  .v-docname { width: 100px; }
+  .v-hint { display: none; }
+}

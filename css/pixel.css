@@ -1,0 +1,307 @@
+/* TXT Pixel Studio styles. Theme-aware via shared tokens. No CSS zoom. */
+
+#view-pixel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ws-bg);
+  color: var(--ink);
+  overflow: hidden;
+  z-index: 5;
+}
+
+.px-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ---------- top options bar ---------- */
+.px-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  min-height: 46px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.px-toolopts {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.px-toolname {
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.px-opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.px-opt-lb {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.px-opt-v {
+  font-size: 11px;
+  min-width: 26px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.px-hint {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.px-range {
+  width: 90px;
+  accent-color: var(--accent);
+}
+
+.px-seg {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.px-seg.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.px-topright {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.px-docinfo {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.px-zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.px-btn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 8px;
+  font-size: 13px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.px-btn:hover {
+  border-color: var(--accent);
+}
+
+.px-zoom-pct {
+  min-width: 52px;
+  font-variant-numeric: tabular-nums;
+}
+
+.px-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ---------- main row ---------- */
+.px-main {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* left tool dock */
+.px-tools {
+  flex: 0 0 auto;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+.px-tool {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.px-tool svg {
+  width: 22px;
+  height: 22px;
+}
+
+.px-tool:hover {
+  background: var(--accent-soft);
+}
+
+.px-tool.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.px-key {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  font-size: 8px;
+  opacity: 0.55;
+  font-weight: 700;
+}
+
+/* fg/bg swatches */
+.px-swatches {
+  position: relative;
+  width: 40px;
+  height: 44px;
+  margin-top: auto;
+  flex: 0 0 auto;
+}
+
+.px-swbg, .px-swfg {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.px-swbg { right: 2px; bottom: 2px; }
+.px-swfg { left: 2px; top: 2px; }
+
+.px-swswap {
+  position: absolute;
+  right: -2px;
+  top: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 2px;
+}
+
+.px-swswap svg { width: 100%; height: 100%; }
+
+.px-hiddenpick {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- canvas ---------- */
+.px-canvaswrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 28px;
+  background:
+    conic-gradient(#80808022 25%, transparent 0 50%, #80808022 0 75%, transparent 0);
+  background-size: 22px 22px;
+  background-color: var(--ws-bg);
+}
+
+#pComposite, #pOverlay {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  touch-action: none;
+}
+
+#pComposite {
+  background: transparent;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  cursor: crosshair;
+}
+
+#pOverlay {
+  pointer-events: none;
+}
+
+/* ---------- right panels (layers worker fills) ---------- */
+.px-panels {
+  flex: 0 0 auto;
+  width: 264px;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+  padding: 10px;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .px-panels { width: 200px; }
+  .px-docinfo { display: none; }
+  .px-hint { display: none; }
+}
+
+@media (max-width: 640px) {
+  .px-panels { display: none; }
+  .px-tools { width: 48px; }
+  .px-tool { width: 36px; height: 36px; }
+  .px-canvaswrap { padding: 12px; }
+  #pComposite, #pOverlay { top: 12px; left: 12px; }
+}
