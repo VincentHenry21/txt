@@ -645,12 +645,45 @@
     o.value = s; o.textContent = s;
     fontSize.appendChild(o);
   });
-  fontFamily.addEventListener("change", function () {
+  fontFamily.addEventListener("change", function () { applyFontFamily(fontFamily.value); });
+  function fontFallback(name) {
+    var e = fontEntry(name);
+    var grp = e && e.grp;
+    if (grp === "serif") return "Georgia, 'Times New Roman', serif";
+    if (grp === "mono") return "'Courier New', monospace";
+    return "Arial, sans-serif";
+  }
+  function applyFontFamily(name) {
     if (!restoreRange()) return;
-    document.execCommand("styleWithCSS", false, true);
-    document.execCommand("fontName", false, fontFamily.value);
-    sheet.focus(); markDirty(); persistCurrent();
-  });
+    var css = "'" + name + "', " + fontFallback(name);
+    var sel = window.getSelection();
+    if (sel.isCollapsed) {
+      var sp = document.createElement("span");
+      sp.style.fontFamily = css;
+      sp.appendChild(document.createTextNode("\u200b"));
+      var r0 = sel.getRangeAt(0);
+      r0.insertNode(sp);
+      r0.setStart(sp.firstChild, 1);
+      r0.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r0);
+    } else {
+      var range = sel.getRangeAt(0);
+      var span = document.createElement("span");
+      span.style.fontFamily = css;
+      try {
+        range.surroundContents(span);
+      } catch (e) {
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        var nr = document.createRange();
+        nr.selectNodeContents(span);
+        sel.removeAllRanges();
+        sel.addRange(nr);
+      }
+    }
+    sheet.focus(); saveRange(); updateToolbar(); markDirty(); persistCurrent();
+  }
   fontSize.addEventListener("change", function () { applyFontSize(parseInt(fontSize.value, 10)); });
   function applyFontSize(px) {
     if (!restoreRange()) return;
