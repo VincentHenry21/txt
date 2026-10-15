@@ -52,7 +52,10 @@
      ============================================================ */
   var LAYOUTS = {
     cover:   { name: "Executive Title",        hint: "Big title + subtitle" },
+    content: { name: "Title + Bullets",        hint: "Title with bullet list" },
+    divider: { name: "Section Divider",        hint: "Big centered section title" },
     compare: { name: "Two-Column Comparison",  hint: "Side-by-side columns" },
+    pic:     { name: "Title + Picture",        hint: "Title with image area" },
     kpi:     { name: "Big KPI Metric Callout", hint: "One giant number" },
     chart:   { name: "Live GRD Chart + Bullets", hint: "Chart left, bullets right" },
     roadmap: { name: "Roadmap Timeline",       hint: "Milestones across time" },
@@ -64,7 +67,9 @@
     { id: "carbon",   name: "Carbon",   bg: "#2D2D30", bg2: "#1E1E1E", ink: "#F3F4F6", accent: "#FF9A00" },
     { id: "paper",    name: "Paper",    bg: "#F4EFE6", bg2: "#EAE4D7", ink: "#2C251E", accent: "#9A6B2F" },
     { id: "sunset",   name: "Sunset",   bg: "#FFF1E6", bg2: "#FBD3A8", ink: "#431407", accent: "#FF2E93" },
-    { id: "ocean",    name: "Ocean",    bg: "#E0F2FE", bg2: "#B7E0FB", ink: "#0C4A6E", accent: "#0284C7" }
+    { id: "ocean",    name: "Ocean",    bg: "#E0F2FE", bg2: "#B7E0FB", ink: "#0C4A6E", accent: "#0284C7" },
+    { id: "coral",    name: "Coral Pop", bg: "#FFF5F7", bg2: "#FFE0E9", ink: "#3B0A1E", accent: "#FF2E93" },
+    { id: "forest",   name: "Forest",   bg: "#0E1B14", bg2: "#1C2F24", ink: "#EAF5EC", accent: "#34D399" }
   ];
   var GRADIENTS = [
     { id: "none",   name: "Solid",    css: null },
@@ -173,7 +178,9 @@
      creation), falling back to the live setting, then 16:9 */
   function settingsAspectRatio(deck) {
     var a = (deck && deck.aspect) || getSettings().aspect || "16:9";
-    return a === "4:3" ? "4 / 3" : "16 / 9";
+    if (a === "4:3") return "4 / 3";
+    if (a === "9:16") return "9 / 16";
+    return "16 / 9";
   }
 
   /* ============================================================
@@ -204,6 +211,22 @@
             { html: "Deck title", cls: "dck-b-title", color: ink }),
           mkBlock("text", { x: 8, y: 50, w: 84, h: 12 },
             { html: "Subtitle goes here", cls: "dck-b-subtitle" })
+        ];
+      case "content":
+        return [
+          mkBlock("text", { x: 6, y: 4, w: 88, h: 12 }, { html: "Slide title", cls: "dck-b-h2" }),
+          mkBlock("bullets", { x: 6, y: 20, w: 88, h: 70 },
+            { items: ["First point", "Second point", "Third point"], cls: "dck-b-body" })
+        ];
+      case "divider":
+        return [
+          mkBlock("text", { x: 10, y: 38, w: 80, h: 24 },
+            { html: "Section title", cls: "dck-b-title", align: "center", morphId: "dck-title" })
+        ];
+      case "pic":
+        return [
+          mkBlock("text", { x: 6, y: 4, w: 88, h: 12 }, { html: "Picture slide", cls: "dck-b-h2" }),
+          mkBlock("image", { x: 25, y: 22, w: 50, h: 60 }, { src: "" })
         ];
       case "compare":
         return [
@@ -473,9 +496,10 @@
      block rendering
      ============================================================ */
   function blockEl(b, deck, mode) {
-    // mode: 'stage' | 'thumb' | 'present'
+    // mode: 'stage' | 'thumb' | 'present' | 'show' ('show' = static, container-scaled)
     var n = el("div", "dck-block dck-b-" + b.type);
     n.setAttribute("data-bid", b.id);
+    if (b.morphId) n.setAttribute("data-morph-id", b.morphId);
     n.style.left = b.x + "%";
     n.style.top = b.y + "%";
     n.style.width = b.w + "%";
@@ -483,6 +507,8 @@
     n.style.zIndex = String(10 + (b.z || 0));
     var theme = themeOf(deck);
     if (b.color) n.style.color = b.color;
+    if (b.fsCqw) n.style.fontSize = "max(9px," + b.fsCqw + "cqw)";
+    if (b.align) n.style.textAlign = b.align;
     if (b.type === "text") {
       n.classList.add(b.cls || "dck-b-body");
       if (mode === "stage") {
@@ -547,6 +573,11 @@
       var holder = el("div", "dck-grd-html");
       holder.innerHTML = b.html || "<p class=\"dck-grd-empty\">Waiting for live GRD data.</p>";
       n.appendChild(holder);
+    } else if (T.dckEngine && typeof T.dckEngine.renderBlock === "function") {
+      /* engine-owned block types (chart, smartart, ...): the engine fills n */
+      if (!T.dckEngine.renderBlock(b, deck, mode, n)) {
+        n.appendChild(el("div", "dck-unknown", "Unsupported block type"));
+      }
     }
     if (mode === "stage") {
       if (b.id === selBlockId) n.classList.add("sel");
@@ -1112,12 +1143,15 @@
     stage.innerHTML = "";
     var theme = themeOf(d);
     var grad = gradientCss(d);
-    stage.style.background = grad || ("linear-gradient(135deg," + theme.bg + "," + theme.bg2 + ")");
+    stage.style.background = d.bgSolid || grad || ("linear-gradient(135deg," + theme.bg + "," + theme.bg2 + ")");
     stage.style.color = theme.ink;
     stage.style.aspectRatio = settingsAspectRatio(d);
     stage.style.setProperty("--dck-accent", theme.accent);
     var ordered = s.blocks.slice().sort(function (a, b) { return (a.z || 0) - (b.z || 0); });
     ordered.forEach(function (b) { stage.appendChild(blockEl(b, d, "stage")); });
+    if (T.dckEngine && typeof T.dckEngine.decorateStage === "function") {
+      T.dckEngine.decorateStage(stage, d, s, "stage");
+    }
     renderBlockBar();
   }
 
@@ -1265,6 +1299,9 @@
     renderStage();
     renderInspector();
     renderNotes();
+    if (T.dckEngine && typeof T.dckEngine.onEditorRender === "function") {
+      try { T.dckEngine.onEditorRender(); } catch (e) {}
+    }
   }
 
   function showHome() {
@@ -1361,7 +1398,7 @@
             } else if (ntag === "H1" || ntag === "H2") break;
           }
         } else {
-          cur = { title: t, bullets: [], tables: [], grds: [] };
+          cur = { title: t, divider: true, bullets: [], tables: [], grds: [] };
           sections.push(cur);
         }
       } else if (tag === "H2") {
@@ -1408,7 +1445,8 @@
     // cover
     var cover = mkSlide("cover");
     cover.blocks = [
-      mkBlock("text", { x: 8, y: 26, w: 84, h: 22 }, { html: esc(p.title), cls: "dck-b-title" }),
+      mkBlock("text", { x: 8, y: 26, w: 84, h: 22 },
+        { html: esc(p.title), cls: "dck-b-title", morphId: "dck-title" }),
       mkBlock("text", { x: 8, y: 50, w: 84, h: 12 },
         { html: esc(p.subtitle || ""), cls: "dck-b-subtitle" })
     ];
@@ -1416,11 +1454,20 @@
     p.slides.forEach(function (sec) {
       var hasContent = sec.bullets.length || sec.tables.length || sec.grds.length || sec.title;
       if (!hasContent) return;
-      var s = mkSlide(sec.grds.length && !sec.bullets.length && !sec.tables.length ? "chart" : "blank");
+      var s = mkSlide(sec.divider ? "divider"
+        : (sec.grds.length && !sec.bullets.length && !sec.tables.length ? "chart" : "blank"));
       var y = 6;
+      if (sec.divider) {
+        s.blocks = [
+          mkBlock("text", { x: 10, y: 38, w: 80, h: 24 },
+            { html: esc(sec.title), cls: "dck-b-title", align: "center", morphId: "dck-title" })
+        ];
+        deck.slides.push(s);
+        return;
+      }
       if (sec.title) {
         s.blocks.push(mkBlock("text", { x: 6, y: y, w: 88, h: 12 },
-          { html: esc(sec.title), cls: "dck-b-h2" }));
+          { html: esc(sec.title), cls: "dck-b-h2", morphId: "dck-title" }));
         y += 16;
       }
       if (sec.bullets.length) {
@@ -1608,7 +1655,7 @@
     } catch (e) { /* fullscreen unavailable; overlay still works */ }
     if (T.bus && T.bus.emit) T.bus.emit("dck:present", { on: true, deck: deck.id });
   }
-  function renderPresentSlide() {
+  function renderPresentSlide(prevIdx) {
     if (!presenting) return;
     var deck = presenting.deck;
     var i = clamp(presenting.idx, 0, deck.slides.length - 1);
@@ -1617,23 +1664,29 @@
     var stage = $("dck-present-stage");
     var theme = themeOf(deck);
     var grad = gradientCss(deck);
-    stage.innerHTML = "";
+    var eng = T.dckEngine;
+    var useEngine = !!(eng && typeof eng.presentRender === "function");
+    if (!useEngine) stage.innerHTML = "";
     stage.style.background = grad || ("linear-gradient(135deg," + theme.bg + "," + theme.bg2 + ")");
     stage.style.color = theme.ink;
     stage.style.setProperty("--dck-accent", theme.accent);
-    // presenter transition: the deck's own choice wins unless it is the
-    // factory default ("none"), in which case the DCK setting applies
-    var st = getSettings().transition;
-    var tr = (deck.transition && deck.transition !== "none")
-      ? deck.transition
-      : (SETTING_TRANSITIONS[st] || "none");
-    stage.classList.remove("dck-tr-fade-up", "dck-tr-zoom-in", "dck-tr-slide-left");
-    if (tr !== "none") {
-      // re-trigger the entrance animation
-      void stage.offsetWidth;
-      stage.classList.add("dck-tr-" + tr);
+    var handled = useEngine &&
+      eng.presentRender(stage, deck, s, (typeof prevIdx === "number" ? prevIdx : null), i);
+    if (!handled) {
+      // presenter transition: the deck's own choice wins unless it is the
+      // factory default ("none"), in which case the DCK setting applies
+      var st = getSettings().transition;
+      var tr = (deck.transition && deck.transition !== "none")
+        ? deck.transition
+        : (SETTING_TRANSITIONS[st] || "none");
+      stage.classList.remove("dck-tr-fade-up", "dck-tr-zoom-in", "dck-tr-slide-left");
+      if (tr !== "none") {
+        // re-trigger the entrance animation
+        void stage.offsetWidth;
+        stage.classList.add("dck-tr-" + tr);
+      }
+      s.blocks.forEach(function (b) { stage.appendChild(blockEl(b, deck, "present")); });
     }
-    s.blocks.forEach(function (b) { stage.appendChild(blockEl(b, deck, "present")); });
     var count = $("dck-p-count");
     if (count) count.textContent = (i + 1) + " / " + deck.slides.length;
     var notes = $("dck-present-notes");
@@ -1649,10 +1702,26 @@
   }
   function pNav(dir) {
     if (!presenting) return;
-    var n = presenting.idx + dir;
-    if (n < 0 || n >= presenting.deck.slides.length) return;
-    presenting.idx = n;
-    renderPresentSlide();
+    function go() {
+      var prev = presenting.idx;
+      var slides = presenting.deck.slides;
+      var n = prev + dir;
+      while (n >= 0 && n < slides.length && slides[n].hidden) n += dir;
+      if ((n < 0 || n >= slides.length) && presenting.deck.loop) {
+        n = dir > 0 ? 0 : slides.length - 1;
+        while (n >= 0 && n < slides.length && slides[n].hidden) n += dir;
+      }
+      if (n < 0 || n >= slides.length) return;
+      presenting.idx = n;
+      renderPresentSlide(prev);
+    }
+    var eng = T.dckEngine;
+    if (eng && typeof eng.playSlideExit === "function") {
+      eng.playSlideExit($("dck-present-stage"),
+        presenting.deck.slides[presenting.idx], go);
+    } else {
+      go();
+    }
   }
   function onPresentKey(e) {
     if (!presenting) return;
@@ -1789,7 +1858,7 @@
     aspect.id = "dck-set-aspect";
     aspect.className = "dck-set-select";
     aspect.setAttribute("aria-label", "Default aspect ratio for new decks");
-    [["16:9", "16:9 (widescreen)"], ["4:3", "4:3 (classic)"]].forEach(function (o) {
+    [["16:9", "16:9 (widescreen)"], ["4:3", "4:3 (classic)"], ["9:16", "9:16 (vertical)"]].forEach(function (o) {
       var opt = document.createElement("option");
       opt.value = o[0]; opt.textContent = o[1];
       aspect.appendChild(opt);
@@ -2016,6 +2085,10 @@
     buildEditor(root);
     buildSettings(root);
     applySettings();
+    /* engine hook: the DCK engine builds its ribbon lazily with the editor */
+    if (T.dckEngine && typeof T.dckEngine.onEditorBuilt === "function") {
+      try { T.dckEngine.onEditorBuilt(); } catch (e) {}
+    }
   }
   function show() {
     ensureBuilt();
@@ -2091,6 +2164,39 @@
     currentDeck: currentDeck,
     currentSlide: currentSlide,
     saveNow: saveCurrent,
+    withCurrentSlide: withCurrentSlide,
+    withBlock: withBlock,
+    mutateDeck: function (fn) {
+      var d = currentDeck();
+      if (!d || typeof fn !== "function") return false;
+      fn(d);
+      putDeck(d);
+      if (built && view === "editor") renderEditor();
+      return true;
+    },
+    render: function () { if (built && view === "editor") renderEditor(); },
+    presentGo: function (i) {
+      if (!presenting) return false;
+      var n = clamp(i, 0, presenting.deck.slides.length - 1);
+      var prev = presenting.idx;
+      presenting.idx = n;
+      renderPresentSlide(prev);
+      return true;
+    },
+    presentState: function () {
+      if (!presenting) return null;
+      return { idx: presenting.idx, total: presenting.deck.slides.length, deckId: presenting.deck.id };
+    },
+    selectedBlockId: function () { return selBlockId; },
+    selectBlock: selectBlock,
+    setSlideIndex: function (i) {
+      var d = currentDeck();
+      if (!d || !d.slides.length) return;
+      curSlideIdx = clamp(i, 0, d.slides.length - 1);
+      selBlockId = null;
+      if (built && view === "editor") renderEditor();
+    },
+    curSlideIndex: function () { return curSlideIdx; },
     layouts: LAYOUTS,
     themes: THEMES,
     transitions: TRANSITIONS,
