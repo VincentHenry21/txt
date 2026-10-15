@@ -1666,6 +1666,8 @@
     else if (k === "ArrowDown") setActive(ui.sel.ec, ui.sel.er + 1, e.shiftKey);
     else if (k === "ArrowLeft") setActive(ui.sel.ec - 1, ui.sel.er, e.shiftKey);
     else if (k === "ArrowRight") setActive(ui.sel.ec + 1, ui.sel.er, e.shiftKey);
+    else if (k === "Home") setActive(0, ui.sel.er, e.shiftKey);
+    else if (k === "End") setActive(MAX_COL - 1, ui.sel.er, e.shiftKey);
     else if (k === "Enter") { if (e.shiftKey) moveSel(0, -1); else moveSel(0, 1); }
     else if (k === "Tab") { e.preventDefault(); moveSel(e.shiftKey ? -1 : 1, 0); }
     else if (k === "F2") startEdit();
