@@ -12,6 +12,49 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></symbol>
+<symbol id="i-paste" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+<symbol id="i-comment" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+</defs>
+</svg>
+<script>
+(function(){
+  var t = "light";
+  try { t = localStorage.getItem("txt-theme") || "light"; } catch(e){}
+  if (t !== "dark") t = "light";
+  document.documentElement.setAttribute("data-theme", t);
+  function paint(){
+    var u = document.getElementById("themeUse");
+    if (u) u.setAttribute("href", t === "dark" ? "#i-sun" : "#i-moon");
+    var b = document.getElementById("btnTheme");
+    if (b) b.title = t === "dark" ? "Light mode" : "Dark mode";
+  }
+  window.__toggleTxtTheme = function(){
+    t = t === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", t);
+    try { localStorage.setItem("txt-theme", t); } catch(e){}
+    paint();
+  };
+  var b = document.getElementById("btnTheme");
+  function wire(){ var bb = document.getElementById("btnTheme"); if (bb) bb.addEventListener("click", window.__toggleTxtTheme); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire); else wire();
+  paint();
+})();
+</script>
+
 
 <header class="topbar">
   <button type="button" class="brand" id="btnHome" data-i18n-title="home" title="Home">
@@ -37,6 +80,7 @@
         <button type="button" data-export="fonts" role="menuitem"><span class="ext">Aa</span><span class="desc" data-i18n="fmtFonts">Download fonts used</span></button>
       </div>
     </div>
+    <button type="button" id="btnTheme" class="tbtn theme-btn" title="Dark mode" aria-label="Toggle light and dark mode"><svg class="tic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-moon" id="themeUse"/></svg></button>
     <button type="button" id="btnLang" class="tbtn" title="Switch language">မြန်မာ</button>
     <button type="button" id="btnAccount" class="avatar-btn" data-i18n-title="account" title="Account">G</button>
   </div>
@@ -66,10 +110,10 @@
         <div class="rpanel hidden" data-panel="file">
           <div class="rgroup"><div class="rbtns">
             <button type="button" class="rbtn" id="btnFileNew"><span class="ric">+</span><span class="rlab" data-i18n="blankDoc">Blank</span></button>
-            <button type="button" class="rbtn" id="btnFileOpen"><span class="ric">&#128193;</span><span class="rlab" data-i18n="open">Open</span></button>
+            <button type="button" class="rbtn" id="btnFileOpen"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-folder"/></svg></span><span class="rlab" data-i18n="open">Open</span></button>
           </div><div class="rglabel" data-i18n="grpNew">New</div></div>
           <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnFilePrint"><span class="ric">&#9113;</span><span class="rlab" data-i18n="print">Print</span></button>
+            <button type="button" class="rbtn" id="btnFilePrint"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-print"/></svg></span><span class="rlab" data-i18n="print">Print</span></button>
           </div><div class="rglabel" data-i18n="grpPrint">Print</div></div>
           <div class="rgroup"><div class="rbtns">
             <button type="button" class="rbtn" id="btnFileFonts"><span class="ric">Aa</span><span class="rlab" data-i18n="grpFonts">Fonts</span></button>
@@ -83,7 +127,7 @@
           <div class="rgroup"><div class="rbtns">
             <button type="button" class="rbtn sm" id="btnUndo" data-i18n-title="undo" title="Undo"><span class="ric">&#8630;</span></button>
             <button type="button" class="rbtn sm" id="btnRedo" data-i18n-title="redo" title="Redo"><span class="ric">&#8631;</span></button>
-            <button type="button" class="rbtn sm" id="btnPastePlain" data-i18n-title="pastePlain" title="Paste plain text"><span class="ric">&#61664;</span></button>
+            <button type="button" class="rbtn sm" id="btnPastePlain" data-i18n-title="pastePlain" title="Paste plain text"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-paste"/></svg></span></button>
             <button type="button" class="rbtn sm" id="btnSelectAll" data-i18n-title="selectAll" title="Select all"><span class="ric">&#10697;</span></button>
           </div><div class="rglabel" data-i18n="grpClipboard">Clipboard</div></div>
           <div class="rgroup"><div class="rbtns col">
@@ -143,7 +187,7 @@
             </select>
           </div><div class="rglabel" data-i18n="grpStyles">Styles</div></div>
           <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnFind"><span class="ric">&#8981;</span><span class="rlab" data-i18n="find">Find</span></button>
+            <button type="button" class="rbtn" id="btnFind"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-search"/></svg></span><span class="rlab" data-i18n="find">Find</span></button>
           </div><div class="rglabel" data-i18n="grpEditing">Editing</div></div>
         </div>
 
@@ -153,25 +197,25 @@
           </div><div class="rglabel" data-i18n="grpPages">Pages</div></div>
           <div class="rgroup"><div class="rbtns col">
             <div class="rrow">
-              <button type="button" class="rbtn sm wide" id="btnTable"><span class="ric">&#9783;</span><span class="rlab2" data-i18n="insertTable">Table</span></button>
+              <button type="button" class="rbtn sm wide" id="btnTable"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-table"/></svg></span><span class="rlab2" data-i18n="insertTable">Table</span></button>
               <button type="button" class="rbtn sm" id="btnRowAbove" data-i18n-title="rowAbove" title="Insert row above"><span class="ric">R&#8593;</span></button>
               <button type="button" class="rbtn sm" id="btnRowBelow" data-i18n-title="rowBelow" title="Insert row below"><span class="ric">R&#8595;</span></button>
               <button type="button" class="rbtn sm" id="btnDelRow" data-i18n-title="delRow" title="Delete row"><span class="ric">R&#10005;</span></button>
             </div>
             <div class="rrow">
-              <button type="button" class="rbtn sm wide" id="btnDelTable" data-i18n-title="delTable" title="Delete table"><span class="ric">&#9783;&#10005;</span></button>
+              <button type="button" class="rbtn sm wide" id="btnDelTable" data-i18n-title="delTable" title="Delete table"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-trash"/></svg></span></button>
               <button type="button" class="rbtn sm" id="btnColLeft" data-i18n-title="colLeft" title="Insert column left"><span class="ric">C&#8592;</span></button>
               <button type="button" class="rbtn sm" id="btnColRight" data-i18n-title="colRight" title="Insert column right"><span class="ric">C&#8594;</span></button>
               <button type="button" class="rbtn sm" id="btnDelCol" data-i18n-title="delCol" title="Delete column"><span class="ric">C&#10005;</span></button>
             </div>
           </div><div class="rglabel" data-i18n="grpTables">Tables</div></div>
           <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnImage"><span class="ric">&#128247;</span><span class="rlab" data-i18n="insertImage">Image</span></button>
+            <button type="button" class="rbtn" id="btnImage"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-image"/></svg></span><span class="rlab" data-i18n="insertImage">Image</span></button>
             <button type="button" class="rbtn" id="btnHr" data-cmd="insertHorizontalRule"><span class="ric">&#8213;</span><span class="rlab" data-i18n="hr">Line</span></button>
             <button type="button" class="rbtn" id="btnDropCap"><span class="ric">Aa</span><span class="rlab" data-i18n="dropCap">Drop cap</span></button>
           </div><div class="rglabel" data-i18n="grpMedia">Media</div></div>
           <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnLink"><span class="ric">&#128279;</span><span class="rlab" data-i18n="insertLink">Link</span></button>
+            <button type="button" class="rbtn" id="btnLink"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-link"/></svg></span><span class="rlab" data-i18n="insertLink">Link</span></button>
           </div><div class="rglabel" data-i18n="grpLinks">Links</div></div>
           <div class="rgroup"><div class="rbtns">
             <button type="button" class="rbtn" id="btnHeader"><span class="ric">&#9135;</span><span class="rlab" data-i18n="header">Header</span></button>
@@ -179,9 +223,9 @@
             <button type="button" class="rbtn" id="btnPageNum"><span class="ric">#</span><span class="rlab" data-i18n="pageNumber">Page no.</span></button>
           </div><div class="rglabel" data-i18n="grpHeaderFooter">Header and Footer</div></div>
           <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnDate"><span class="ric">&#128197;</span><span class="rlab" data-i18n="dateTime">Date</span></button>
+            <button type="button" class="rbtn" id="btnDate"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-calendar"/></svg></span><span class="rlab" data-i18n="dateTime">Date</span></button>
             <button type="button" class="rbtn" id="btnSymbol"><span class="ric">&Omega;</span><span class="rlab" data-i18n="symbol">Symbol</span></button>
-            <button type="button" class="rbtn" id="btnComment"><span class="ric">&#128172;</span><span class="rlab" data-i18n="comment">Comment</span></button>
+            <button type="button" class="rbtn" id="btnComment"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-comment"/></svg></span><span class="rlab" data-i18n="comment">Comment</span></button>
             <button type="button" class="rbtn" id="btnWatermark"><span class="ric">W</span><span class="rlab" data-i18n="watermark">Watermark</span></button>
           </div><div class="rglabel" data-i18n="grpText">Text</div></div>
         </div>
@@ -205,7 +249,7 @@
           </div><div class="rglabel" data-i18n="grpToc">Table of Contents</div></div>
           <div class="rgroup"><div class="rbtns">
             <button type="button" class="rbtn" id="btnCite"><span class="ric">&#10078;</span><span class="rlab" data-i18n="citeTitle">Cite</span></button>
-            <button type="button" class="rbtn" id="btnBiblio"><span class="ric">&#128214;</span><span class="rlab" data-i18n="biblioTitle">Bibliography</span></button>
+            <button type="button" class="rbtn" id="btnBiblio"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-book"/></svg></span><span class="rlab" data-i18n="biblioTitle">Bibliography</span></button>
           </div><div class="rglabel" data-i18n="grpCitations">Citations</div></div>
           <div class="rgroup"><div class="rbtns">
             <button type="button" class="rbtn" id="btnFootnote"><span class="ric">n<sup>1</sup></span><span class="rlab" data-i18n="footnoteTitle">Footnote</span></button>
@@ -214,13 +258,13 @@
 
         <div class="rpanel hidden" data-panel="review">
           <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnCommentsPane"><span class="ric">&#128172;</span><span class="rlab" data-i18n="comments">Comments</span></button>
+            <button type="button" class="rbtn" id="btnCommentsPane"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-comment"/></svg></span><span class="rlab" data-i18n="comments">Comments</span></button>
           </div><div class="rglabel" data-i18n="grpComments">Comments</div></div>
           <div class="rgroup"><div class="rbtns">
             <button type="button" class="rbtn" id="btnWordCount"><span class="ric">123</span><span class="rlab" data-i18n="wordCount">Word count</span></button>
           </div><div class="rglabel" data-i18n="grpProofing">Proofing</div></div>
           <div class="rgroup"><div class="rbtns">
-            <button type="button" class="rbtn" id="btnLang2"><span class="ric">&#127760;</span><span class="rlab" data-i18n="language">Language</span></button>
+            <button type="button" class="rbtn" id="btnLang2"><span class="ric"><svg class="ric" aria-hidden="true"><use href="#i-globe"/></svg></span><span class="rlab" data-i18n="language">Language</span></button>
           </div><div class="rglabel" data-i18n="grpLanguage">Language</div></div>
         </div>
 
