@@ -1,4 +1,4 @@
-/* NXT Ecosystem home: the front door of the project.
+/* NXT OS home: the front door of the project.
    Boot lands here instead of inside TXT. Each app keeps its own
    homescreen; this view launches apps and studios and surfaces
    recent files across the ecosystem. */
@@ -7,21 +7,21 @@
   if (!T) return;
 
   var APPS = [
-    { id: "txt", code: "TXT", color: "#2563EB", desc: "Flagship word processor" },
-    { id: "grd", code: "GRD", color: "#10B981", desc: "Spreadsheet grid and kanban" },
-    { id: "dck", code: "DCK", color: "#F97316", desc: "Slide deck generator" },
-    { id: "mem", code: "MEM", color: "#8B5CF6", desc: "Notes and whiteboard" },
-    { id: "pdf", code: "PDF", color: "#E11D48", desc: "PDF toolkit" },
-    { id: "hub", code: "HUB", color: "#4F46E5", desc: "Files and storage" }
+    { id: "txt", code: "TXT", color: "#7C3AED", desc: "Flagship word processor" },
+    { id: "grd", code: "GRD", color: "#06B6D4", desc: "Spreadsheet grid and kanban" },
+    { id: "dck", code: "DCK", color: "#FF2E93", desc: "Slide deck generator" },
+    { id: "mem", code: "MEM", color: "#10B981", desc: "Notes and whiteboard" },
+    { id: "pdf", code: "PDF", color: "#F59E0B", desc: "PDF toolkit" },
+    { id: "hub", code: "HUB", color: "#3B82F6", desc: "Files and storage" }
   ];
   var STUDIOS = [
-    { id: "word", code: "W", name: "Word" },
-    { id: "vector", code: "Ai", name: "Vector" },
-    { id: "pixel", code: "Ps", name: "Pixel" }
+    { id: "word", code: "T", name: "TXT" },
+    { id: "vector", code: "Vc", name: "VEC" },
+    { id: "pixel", code: "Px", name: "PXL" }
   ];
   var APP_IDS = ["grd", "dck", "mem", "pdf", "hub"];
 
-  var built = false, view = null, searchInput = null, recentBox = null;
+  var built = false, view = null, searchInput = null, recentBox = null, profileBox = null;
 
   function h(tag, cls, text) {
     var e = document.createElement(tag);
@@ -122,9 +122,11 @@
     var wrap = h("div", "nxt-wrap", null);
 
     var brand = h("div", "nxt-brand", null);
-    brand.appendChild(h("div", "nxt-brand-name", "NXT Ecosystem"));
-    brand.appendChild(h("div", "nxt-brand-tag", "Documents, sheets, slides, boards and files. One home."));
+    brand.appendChild(h("div", "nxt-brand-name", "NXT OS"));
+    brand.appendChild(h("div", "nxt-brand-tag", "Documents, sheets, slides, boards and files. One OS home."));
     wrap.appendChild(brand);
+
+    wrap.appendChild(buildProfile());
 
     var sWrap = h("div", "nxt-search-wrap", null);
     searchInput = document.createElement("input");
@@ -187,11 +189,124 @@
 
     view.appendChild(wrap);
     renderRecents();
+    renderFooter(wrap);
+  }
+
+  /* ---------- username profile (localStorage-persisted, switchable) ---------- */
+  function getUsername() {
+    try { return (T.store && T.store.get("nxt", "username")) || ""; }
+    catch (e) { return ""; }
+  }
+  function setUsername(name) {
+    try { if (T.store) T.store.set("nxt", "username", name); } catch (e) {}
+  }
+  function buildProfile() {
+    var box = h("div", "nxt-profile", null);
+    profileBox = box;
+    renderProfile(box);
+    return box;
+  }
+  function renderProfile(box) {
+    box.innerHTML = "";
+    var name = getUsername();
+    if (name) {
+      var greet = h("div", "nxt-greet", null);
+      greet.appendChild(document.createTextNode("Welcome "));
+      var ub = document.createElement("button");
+      ub.type = "button";
+      ub.className = "nxt-user";
+      ub.textContent = name;
+      ub.title = "Switch user";
+      ub.setAttribute("aria-label", "Signed in as " + name + ". Switch user.");
+      ub.addEventListener("click", function () { renderProfileEdit(box); });
+      greet.appendChild(ub);
+      greet.appendChild(document.createTextNode(", what's your goal for today?"));
+      box.appendChild(greet);
+    } else {
+      /* Signed-out users never see a form here: the dedicated login
+         screen (T.nxtLogin) handles sign-in. This branch is a fallback
+         that routes there. */
+      var g2 = h("div", "nxt-greet", "Welcome, what's your goal for today?");
+      box.appendChild(g2);
+      var sbtn = document.createElement("button");
+      sbtn.type = "button";
+      sbtn.className = "nxt-name-btn";
+      sbtn.textContent = "Sign in";
+      sbtn.style.marginTop = "10px";
+      sbtn.addEventListener("click", function () {
+        if (T.nxtLogin) T.nxtLogin.show();
+      });
+      box.appendChild(sbtn);
+    }
+  }
+  function renderProfileEdit(box) {
+    box.innerHTML = "";
+    var g = h("div", "nxt-greet", "Switch user");
+    box.appendChild(g);
+    var form = h("div", "nxt-signin", null);
+    var inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "nxt-name-input";
+    inp.value = getUsername();
+    inp.setAttribute("aria-label", "Username");
+    inp.maxLength = 24;
+    inp.autocomplete = "nickname";
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "nxt-name-btn";
+    btn.textContent = "Switch";
+    var cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "nxt-name-cancel";
+    cancel.textContent = "Cancel";
+    function save() {
+      var v = inp.value.trim();
+      if (!v) { inp.focus(); return; }
+      setUsername(v);
+      renderProfile(box);
+    }
+    btn.addEventListener("click", save);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") save(); });
+    cancel.addEventListener("click", function () { renderProfile(box); });
+    form.appendChild(inp);
+    form.appendChild(btn);
+    form.appendChild(cancel);
+    box.appendChild(form);
+    inp.focus();
+    inp.select();
+  }
+
+  /* ---------- footer with support link ---------- */
+  function renderFooter(wrap) {
+    var foot = h("div", "nxt-foot", null);
+    foot.appendChild(h("span", "nxt-foot-brand", "NXT OS • Developed by H3NZ"));
+    var links = h("div", "nxt-foot-links", null);
+    [["Terms", "showTerms"], ["Privacy", "showPrivacy"], ["FAQ", "showFaq"], ["Settings", "showSettings"]].forEach(function (pair) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "nxt-foot-link";
+      b.textContent = pair[0];
+      b.addEventListener("click", function () { if (T.nxtLegal) T.nxtLegal[pair[1]](); });
+      links.appendChild(b);
+    });
+    var a = document.createElement("a");
+    a.className = "nxt-foot-support";
+    a.href = "mailto:thitsarnextdoor@gmail.com";
+    a.textContent = "Support: thitsarnextdoor@gmail.com";
+    links.appendChild(a);
+    foot.appendChild(links);
+    wrap.appendChild(foot);
   }
 
   function show() {
     build();
+    /* The dedicated login screen owns sign-in. Home never renders for a
+       signed-out user; route them to T.nxtLogin instead. */
+    if (!getUsername()) {
+      if (T.nxtLogin) { T.nxtLogin.show(); return; }
+    }
     renderRecents();
+    if (profileBox) renderProfile(profileBox);
     if (searchInput) { searchInput.value = ""; applyFilter(""); }
     if (T.ecosystem && T.ecosystem.home) T.ecosystem.home();
     else if (view) {

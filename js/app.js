@@ -59,8 +59,11 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    if (T.nxtBoot) T.nxtBoot.show();
     T.bus.emit("app:boot");
+    if (T.nxtBoot) T.nxtBoot.step("store", 18, "Mounting local store");
     var doc = seed();
+    if (T.nxtBoot) T.nxtBoot.step("docs", 45, "Opening documents");
     $("#docTitle").value = doc.title;
     var mt = $("#mTitle"); if (mt) mt.textContent = doc.title;
     $("#docTitle").addEventListener("input", T.debounce(syncTitle, 500));
@@ -76,8 +79,16 @@
         if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { T.toast(T.t("copied")); });
       }
     });
-    if (T.nxthome) T.nxthome.show();
+    if (T.nxtBoot) T.nxtBoot.step("studios", 72, "Loading studios");
+    /* Signed-in users land on home; everyone else gets the dedicated login screen. */
+    var bootUser = "";
+    try { bootUser = (T.store && T.store.get("nxt", "username")) || ""; } catch (e) {}
+    if (bootUser && T.nxthome) T.nxthome.show();
+    else if (T.nxtLogin) T.nxtLogin.show();
+    else if (T.nxthome) T.nxthome.show();
     else if (T.homescreen) T.homescreen.show();
+    if (T.nxtBoot) T.nxtBoot.step("ready", 100, "Ready");
     T.bus.emit("app:ready");
+    if (T.nxtBoot) T.nxtBoot.done();
   });
 })();

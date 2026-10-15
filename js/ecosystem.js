@@ -17,7 +17,7 @@
 
   var PERSONAS = ["word", "vector", "pixel"];
   var APPS = ["txt", "grd", "dck", "mem", "pdf", "hub"];
-  var VIEWS = ["view-home", "view-word", "view-vector", "view-pixel",
+  var VIEWS = ["view-home", "view-login", "view-word", "view-vector", "view-pixel",
     "view-grd", "view-dck", "view-mem", "view-pdf", "view-hub"];
   var VIEW_FOR_PERSONA = { word: "view-word", vector: "view-vector", pixel: "view-pixel" };
   var VIEW_FOR_APP = {
@@ -25,12 +25,12 @@
     mem: "view-mem", pdf: "view-pdf", hub: "view-hub"
   };
   var APPS_META = [
-    { id: "txt", code: "TXT", color: "#2563EB", desc: "Flagship word processor" },
-    { id: "grd", code: "GRD", color: "#10B981", desc: "Spreadsheet grid and kanban" },
-    { id: "dck", code: "DCK", color: "#F97316", desc: "Slide deck generator" },
-    { id: "mem", code: "MEM", color: "#8B5CF6", desc: "Memory clipper and notes" },
-    { id: "pdf", code: "PDF", color: "#E11D48", desc: "PDF toolkit" },
-    { id: "hub", code: "HUB", color: "#4F46E5", desc: "Ecosystem home" }
+    { id: "txt", code: "TXT", color: "#7C3AED", desc: "Flagship word processor" },
+    { id: "grd", code: "GRD", color: "#06B6D4", desc: "Spreadsheet grid and kanban" },
+    { id: "dck", code: "DCK", color: "#FF2E93", desc: "Slide deck generator" },
+    { id: "mem", code: "MEM", color: "#10B981", desc: "Memory clipper and notes" },
+    { id: "pdf", code: "PDF", color: "#F59E0B", desc: "PDF toolkit" },
+    { id: "hub", code: "HUB", color: "#3B82F6", desc: "Ecosystem home" }
   ];
 
   var eco = { persona: "word", app: "txt" };
@@ -81,7 +81,7 @@
     sw.className = "segmented";
     sw.setAttribute("role", "tablist");
     sw.setAttribute("aria-label", "Persona");
-    [["word", "W", "Word"], ["vector", "Ai", "Vector"], ["pixel", "Ps", "Pixel"]].forEach(function (d, i) {
+    [["word", "T", "TXT"], ["vector", "Vc", "VEC"], ["pixel", "Px", "PXL"]].forEach(function (d, i) {
       var b = document.createElement("button");
       b.type = "button";
       b.setAttribute("data-persona", d[0]);
@@ -162,7 +162,7 @@
     la.innerHTML = "";
     var brand = document.createElement("div");
     brand.className = "launcher-brand";
-    brand.textContent = "NXT Ecosystem";
+    brand.textContent = "NXT OS";
     brand.style.cursor = "pointer";
     brand.title = "NXT home";
     brand.setAttribute("role", "button");
@@ -278,6 +278,11 @@
     try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
   }
 
+  /* ---------- NXT OS signature palette per app (nxt-theme.js is optional) ---------- */
+  function applyNxtTheme(appId) {
+    if (T.nxtTheme && typeof T.nxtTheme.apply === "function") T.nxtTheme.apply(appId);
+  }
+
   function setPersona(p) {
     if (PERSONAS.indexOf(p) < 0) p = "word";
     var prev = eco.persona;
@@ -307,6 +312,7 @@
       prevTheme = null;
     }
     focusView(VIEW_FOR_PERSONA[p]);
+    applyNxtTheme(p === "word" ? "txt" : p);
     T.bus.emit("ecosystem:persona", { persona: p });
   }
 
@@ -318,6 +324,7 @@
     syncPersonaSwitch();
     showOnly(VIEW_FOR_APP[a]);
     focusView(VIEW_FOR_APP[a]);
+    applyNxtTheme(a);
     T.bus.emit("ecosystem:app", { app: a });
   }
 
@@ -327,7 +334,17 @@
     syncPersonaSwitch();
     showOnly("view-home");
     focusView("view-home");
+    applyNxtTheme("home");
     T.bus.emit("ecosystem:home", {});
+  }
+
+  function showLogin() {
+    eco.app = "login";
+    hideLauncher();
+    showOnly("view-login");
+    focusView("view-login");
+    applyNxtTheme("home");
+    T.bus.emit("ecosystem:login", {});
   }
 
   /* ---------- split-screen ---------- */
@@ -442,26 +459,26 @@
 
   /* ---------- commands ---------- */
   T.register("persona.word", function () { setPersona("word"); },
-    { title: "Word persona", cat: "NXT", icon: "i-file", keys: "Ctrl+1", match: "word document" });
+    { title: "Word persona", cat: "NXT OS", icon: "i-file", keys: "Ctrl+1", match: "word document" });
   T.register("persona.vector", function () { setPersona("vector"); },
-    { title: "Vector persona", cat: "NXT", icon: "i-shapes", keys: "Ctrl+2", match: "vector illustrator svg" });
+    { title: "VEC studio", cat: "NXT OS", icon: "i-shapes", keys: "Ctrl+2", match: "vector illustrator svg" });
   T.register("persona.pixel", function () { setPersona("pixel"); },
-    { title: "Pixel persona", cat: "NXT", icon: "i-image", keys: "Ctrl+3", match: "pixel photoshop raster" });
+    { title: "PXL studio", cat: "NXT OS", icon: "i-image", keys: "Ctrl+3", match: "pixel photoshop raster" });
   APPS_META.forEach(function (m) {
     T.register("app." + m.id, (function (id) {
       return function () { openApp(id); };
-    })(m.id), { title: "Open " + m.code + " app", cat: "NXT", icon: "i-grid", match: m.code.toLowerCase() + " app open" });
+    })(m.id), { title: "Open " + m.code + " app", cat: "NXT OS", icon: "i-grid", match: m.code.toLowerCase() + " app open" });
   });
   T.register("theme.carbon", function () { applyCarbon(); },
     { title: "Adobe Pro Carbon theme", cat: "View", icon: "i-moon", match: "carbon adobe pro dark" });
   T.register("ecosystem.split", function () {
     if (splitState) setSplit(null);
     else setSplit(lastSplitApp);
-  }, { title: "Toggle split view", cat: "NXT", icon: "i-split", match: "split screen side by side" });
+  }, { title: "Toggle split view", cat: "NXT OS", icon: "i-split", match: "split screen side by side" });
   T.register("ecosystem.launcher", function () { toggleLauncher(); },
-    { title: "App launcher", cat: "NXT", icon: "i-grid", match: "launcher apps waffle" });
+    { title: "App launcher", cat: "NXT OS", icon: "i-grid", match: "launcher apps waffle" });
   T.register("nxt.home", function () { showHome(); },
-    { title: "NXT home", cat: "NXT", icon: "i-home", match: "nxt home launcher start" });
+    { title: "NXT home", cat: "NXT OS", icon: "i-home", match: "nxt home launcher start" });
 
   /* ---------- public API ---------- */
   T.ecosystem = {};
@@ -472,6 +489,7 @@
   T.ecosystem.setPersona = setPersona;
   T.ecosystem.openApp = openApp;
   T.ecosystem.home = showHome;
+  T.ecosystem.login = showLogin;
   T.ecosystem.toggleLauncher = toggleLauncher;
   T.ecosystem.setSplit = setSplit;
   T.ecosystem._toggleRatio = toggleRatio; // internal helper, exposed for tests
