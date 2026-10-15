@@ -975,8 +975,9 @@
     var home = mk("div", "eco-home", "grd-home");
     var head = mk("div", "eco-home-head");
     var badge = mk("span", "eco-badge", "grd-badge");
-    badge.textContent = "GRD";
-    badge.style.background = "#06B6D4";
+    var grdLogo = (T.appLogoImg ? T.appLogoImg("grd") : null);
+    if (grdLogo) { badge.className += " app-logo-badge"; badge.appendChild(grdLogo); }
+    else { badge.textContent = "GRD"; badge.style.background = "#06B6D4"; }
     var htitle = mk("div", "eco-home-titles");
     var h1 = mk("h1", "", "grd-home-title");
     h1.textContent = "GRD Spreadsheet";
@@ -1033,7 +1034,9 @@
     back.addEventListener("click", function () { renderHome(); switchSub("home"); });
     top.appendChild(back);
     var badge = mk("span", "grd-appbadge", "grd-top-badge");
-    badge.innerHTML = icon("i-grid");
+    var grdTopLogo = (T.appLogoImg ? T.appLogoImg("grd") : null);
+    if (grdTopLogo) { badge.className += " app-logo-badge"; badge.appendChild(grdTopLogo); }
+    else { badge.innerHTML = icon("i-grid"); }
     badge.setAttribute("aria-hidden", "true");
     top.appendChild(badge);
     var appname = mk("span", "grd-appname", "grd-appname");
