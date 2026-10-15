@@ -433,7 +433,7 @@
     var la = document.getElementById("appLauncher");
     if (!la || la.classList.contains("hidden")) return;
     var t = e.target;
-    if (t && t.closest && (t.closest("#appLauncher") || t.closest("#waffleBtn"))) return;
+    if (t && t.closest && (t.closest("#appLauncher") || t.closest(".waffle-btn"))) return;
     hideLauncher();
   });
   T.bus.on("overlay:escape", hideLauncher);
