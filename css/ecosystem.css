@@ -107,6 +107,33 @@
   color: var(--muted);
   margin: 0 2px 10px;
 }
+.launcher-head:not(:first-child) { margin-top: 14px; }
+.launcher-personas {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.launcher-persona {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.launcher-persona.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
 .launcher-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -332,6 +359,7 @@ div.live-grd.live-pulse { animation: livePulse 0.9s ease-out; }
 @media (max-width: 560px) {
   .launcher-grid { grid-template-columns: repeat(2, 1fr); }
   #personaSwitch button { font-size: 11px; padding: 7px 8px; }
+  #appLauncher { top: 52px; right: 8px; }
 }
 
 /* ---------- shared app homescreens (.eco-home) ---------- */
