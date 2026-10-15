@@ -612,6 +612,6 @@
     T.register("pixel.tool." + id, function () { PX.open(); selectTool(id); },
       { title: "Pixel: " + TOOLS[id].label + " tool", cat: "Pixel", icon: "i-image" });
   });
-  T.register("pixel.open", function () { PX.open(); }, { title: "Open Pixel Studio", cat: "Pixel", icon: "i-image" });
+  T.register("pixel.open", function () { PX.open(); }, { title: "Open PXL Studio", cat: "Pixel", icon: "i-image" });
   T.register("pixel.new", function () { PX.open(); PX.newDoc(1200, 900); }, { title: "Pixel: new document", cat: "Pixel", icon: "i-file" });
 })();

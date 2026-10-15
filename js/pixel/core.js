@@ -104,7 +104,7 @@
     zoomPctEl.addEventListener("click", function () { setZoom(1); });
     zc.appendChild(zb); zc.appendChild(zoomPctEl); zc.appendChild(zi);
     right.appendChild(zc);
-    var send = el("button", "px-btn px-primary", "Send to Word");
+    var send = el("button", "px-btn px-primary", "Send to TXT");
     send.type = "button"; send.id = "pSendWord"; send.title = "Insert flattened composite into the Word document";
     send.addEventListener("click", sendToWord);
     right.appendChild(send);
@@ -138,6 +138,13 @@
     main.appendChild(panels);
 
     root.appendChild(main);
+
+    /* NXT OS status bar credit (Phase 1 Identity): right-aligned brand credit
+       rendered in the app's H3NZ signature palette accent. */
+    var pxStatus = el("div", "nxt-statusbar", '<span class="nxt-sb-brand">NXT PXL • Developed by H3NZ</span>');
+    pxStatus.id = "px-statusbar";
+    root.appendChild(pxStatus);
+
     host.appendChild(root);
     host.appendChild(buildPxSettingsDrawer());
     host.appendChild(buildPxFilesDrawer());
@@ -842,7 +849,7 @@
       '<div class="px-set-row"><label for="pxSetAuto">Auto-select layer<span class="px-set-sub">Clicking the canvas selects the topmost opaque layer</span></label>' +
       '<input id="pxSetAuto" type="checkbox" class="px-toggle"></div>' +
       '<div class="px-set-about"><span class="px-about-title">About</span>' +
-      "<span>Pixel Studio is part of the NXT Ecosystem. Settings are saved on this device.</span></div>" +
+      "<span>PXL Studio is part of the NXT OS. Settings are saved on this device.</span></div>" +
       "</div>";
     d.querySelector('[data-x="close"]').addEventListener("click", function () { d.classList.add("hidden"); });
     d.querySelector("#pxSetBrush").addEventListener("change", function (e) {

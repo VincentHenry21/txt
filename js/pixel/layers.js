@@ -186,7 +186,7 @@
       '<div class="px-phead"><span>Layers</span></div>' +
       '<div class="px-ltools"></div>' +
       '<div class="px-lrows"></div>' +
-      '<button type="button" class="px-cta">' + T.icon("i-image") + '<span>Send Composite to Word Document</span></button>';
+      '<button type="button" class="px-cta">' + T.icon("i-image") + '<span>Send Composite to TXT Document</span></button>';
     var tools = panelEl.querySelector(".px-ltools");
     tools.appendChild(toolBtn("i-plus", "New layer", opNew));
     tools.appendChild(toolBtn("i-copy", "Duplicate layer", opDuplicate));
