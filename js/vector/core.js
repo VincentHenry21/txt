@@ -36,6 +36,15 @@
     return '<svg class="vico ' + (cls || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       (VICONS[name] || VICONS.select) + "</svg>";
   }
+  /* shared chrome icons for the per-app topbar (NXT phase 1) */
+  var GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+  var DOTS9 = "<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>";
+  function fileIco() {
+    return (typeof T.icon === "function") ? T.icon("i-file") : "";
+  }
+  function xIco() {
+    return (typeof T.icon === "function") ? T.icon("i-x") : "";
+  }
 
   /* ================= state ================= */
   var built = false;
@@ -67,6 +76,11 @@
     view.innerHTML =
       '<div id="vTopbar">' +
         '<div class="vt-left">' +
+          '<span class="v-studio"><span class="v-badge">Ai</span><span class="v-sname">Vector</span></span>' +
+          '<button type="button" id="vLauncher" class="icon-btn waffle-btn v-tbtn" title="App launcher" aria-label="Open app launcher"><span class="waffle-dots">' + DOTS9 + "</span></button>" +
+          '<button type="button" id="vSettingsBtn" class="icon-btn v-tbtn" title="Vector settings" aria-label="Vector settings">' + GEAR_SVG + "</button>" +
+          '<button type="button" id="vFilesBtn" class="icon-btn v-tbtn" title="Artwork files" aria-label="Artwork files">' + fileIco() + "</button>" +
+          '<span class="v-sep"></span>' +
           '<input id="vDocName" class="v-docname" value="Untitled-1" spellcheck="false" title="Document name">' +
           '<label class="v-dims" title="Artboard width">W <input id="vArtW" type="number" min="1" max="5000" value="800"></label>' +
           '<label class="v-dims" title="Artboard height">H <input id="vArtH" type="number" min="1" max="5000" value="600"></label>' +
@@ -137,9 +151,23 @@
     vCanvas.appendChild(defs);
     vCanvas.appendChild(vViewport);
     vWrap.insertBefore(vCanvas, vTextEdit);
+    // ruler strips (hidden until the showRulers setting enables them)
+    var rulerH = document.createElement("canvas");
+    rulerH.id = "vRulerH"; rulerH.className = "v-ruler-h";
+    var rulerV = document.createElement("canvas");
+    rulerV.id = "vRulerV"; rulerV.className = "v-ruler-v";
+    var rulerC = document.createElement("div");
+    rulerC.id = "vRulerCorner"; rulerC.className = "v-ruler-corner";
+    vWrap.appendChild(rulerH);
+    vWrap.appendChild(rulerV);
+    vWrap.appendChild(rulerC);
 
     wireChrome();
     applyView();
+    buildPerApp();
+    // panels.js builds at script load, but the innerHTML above wipes those
+    // nodes; rebuild the panels into the fresh #vPanels container.
+    try { if (T.vectorPanels && T.vectorPanels.init) T.vectorPanels.init(); } catch (e) {}
     built = true;
   }
 
@@ -150,6 +178,13 @@
     view.querySelector("#vZoomIn").addEventListener("click", function () { zoomStep(1.25); });
     view.querySelector("#vZoomOut").addEventListener("click", function () { zoomStep(1 / 1.25); });
     view.querySelector("#vZoomFit").addEventListener("click", function () { zoomFit(); });
+    view.querySelector("#vLauncher").addEventListener("click", function () {
+      if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") {
+        try { T.ecosystem.toggleLauncher(); } catch (e) { /* ignore */ }
+      }
+    });
+    view.querySelector("#vSettingsBtn").addEventListener("click", function () { toggleDrawer("settings"); });
+    view.querySelector("#vFilesBtn").addEventListener("click", function () { toggleDrawer("files"); });
     function artResize() {
       var w = T.clamp(parseInt(vArtW.value, 10) || artW, 1, 5000);
       var h = T.clamp(parseInt(vArtH.value, 10) || artH, 1, 5000);
@@ -173,6 +208,7 @@
     if (!vViewport) { return; }
     vViewport.setAttribute("transform", "translate(" + pan.x + " " + pan.y + ") scale(" + zm + ")");
     if (vZoomPct) { vZoomPct.textContent = Math.round(zm * 100) + "%"; }
+    drawRulers();
   }
   function zoomAt(cx, cy, factor) {
     var before = toLocal({ clientX: cx, clientY: cy });
@@ -431,6 +467,7 @@
     if (vArtW) { vArtW.value = String(artW); }
     if (vArtH) { vArtH.value = String(artH); }
     if (!silent) { checkpoint(); commit(); }
+    drawRulers();
   }
   function clearLayers() {
     layerGroups().forEach(function (g) { vViewport.removeChild(g); });
@@ -446,10 +483,12 @@
     undoStack.length = 0; redoStack.length = 0;
     docSeq += 1;
     if (vDocName) { vDocName.value = "Untitled-" + docSeq; }
+    vCurFileId = null; // a fresh doc is detached: it can never overwrite a saved file
     select([]);
     zoomFit();
     syncUndoBtns();
     T.bus.emit("vector:change");
+    renderFilesList();
   }
   function getSVG() {
     buildView();
@@ -637,7 +676,12 @@
 
   /* ================= pointer routing ================= */
   var drag = null;
-  function evLocal(e) { return toLocal(e); }
+  var VGRID = 10; // snap-to-grid cell size, in artboard units
+  function snapPt(p) {
+    if (!vSettings.snapToGrid) { return p; }
+    return { x: Math.round(p.x / VGRID) * VGRID, y: Math.round(p.y / VGRID) * VGRID };
+  }
+  function evLocal(e) { return snapPt(toLocal(e)); }
   function onDown(e) {
     if (e.button === 1 || (curToolId === "hand")) { beginPan(e); return; }
     if (e.button !== 0) { return; }
@@ -730,7 +774,7 @@
     }
     if (e.key.indexOf("Arrow") === 0 && sel.length) {
       e.preventDefault();
-      var d = e.shiftKey ? 10 : 1;
+      var d = e.shiftKey ? vSettings.nudgeStep * 10 : vSettings.nudgeStep;
       var dx = 0, dy = 0;
       if (e.key === "ArrowLeft") { dx = -d; }
       else if (e.key === "ArrowRight") { dx = d; }
@@ -805,6 +849,362 @@
     if (cb) { try { cb(ok ? v : null); } catch (e) { /* ignore */ } }
   }
 
+  /* ================= per-app settings (NXT phase 1) =================
+     Persisted in T.store under the 'vector' namespace, key 'settings'.
+     Applied on init and on every change; edited through the settings drawer. */
+  var VSET_DEFAULTS = { nudgeStep: 1, snapToGrid: false, showRulers: false };
+  var vSettings = { nudgeStep: 1, snapToGrid: false, showRulers: false };
+  function loadSettings() {
+    var s = null;
+    try { s = T.store ? T.store.get("vector", "settings") : null; } catch (e) { s = null; }
+    if (s && typeof s === "object") {
+      if (isFinite(+s.nudgeStep) && +s.nudgeStep >= 1) {
+        vSettings.nudgeStep = Math.min(100, Math.max(1, Math.round(+s.nudgeStep)));
+      }
+      vSettings.snapToGrid = !!s.snapToGrid;
+      vSettings.showRulers = !!s.showRulers;
+    }
+  }
+  function saveSettings() {
+    try {
+      if (T.store) {
+        T.store.set("vector", "settings", {
+          nudgeStep: vSettings.nudgeStep,
+          snapToGrid: vSettings.snapToGrid,
+          showRulers: vSettings.showRulers
+        });
+      }
+    } catch (e) { /* storage unavailable: settings stay in memory */ }
+  }
+  function applySettings() {
+    if (vWrap) { vWrap.classList.toggle("v-show-rulers", !!vSettings.showRulers); }
+    drawRulers();
+    syncSettingsUI();
+  }
+  function updateSettings(patch) {
+    patch = patch || {};
+    if (patch.nudgeStep !== undefined && isFinite(+patch.nudgeStep)) {
+      vSettings.nudgeStep = Math.min(100, Math.max(1, Math.round(+patch.nudgeStep)));
+    }
+    if (patch.snapToGrid !== undefined) { vSettings.snapToGrid = !!patch.snapToGrid; }
+    if (patch.showRulers !== undefined) { vSettings.showRulers = !!patch.showRulers; }
+    saveSettings();
+    applySettings();
+  }
+  function settingsCopy() {
+    return {
+      nudgeStep: vSettings.nudgeStep,
+      snapToGrid: vSettings.snapToGrid,
+      showRulers: vSettings.showRulers
+    };
+  }
+
+  /* ================= rulers ================= */
+  function drawRulers() {
+    if (!vWrap || !vSettings.showRulers) { return; }
+    var r;
+    try { r = vWrap.getBoundingClientRect(); } catch (e) { return; }
+    if (!r || r.width < 10) { return; }
+    drawRuler("vRulerH", "h", r.width - 18, 18);
+    drawRuler("vRulerV", "v", r.height - 18, 18);
+  }
+  function drawRuler(id, axis, len, th) {
+    var cv = document.getElementById(id);
+    if (!cv) { return; }
+    var x;
+    try { x = cv.getContext("2d"); } catch (e) { x = null; }
+    if (!x) { return; }
+    var dpr = window.devicePixelRatio || 1;
+    var w = axis === "h" ? len : th, hgt = axis === "h" ? th : len;
+    cv.width = Math.max(1, Math.round(w * dpr));
+    cv.height = Math.max(1, Math.round(hgt * dpr));
+    x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    x.clearRect(0, 0, w, hgt);
+    x.fillStyle = "#2D2D30";
+    x.fillRect(0, 0, w, hgt);
+    var off = (axis === "h" ? pan.x : pan.y) - 18; // ruler strip starts 18px in
+    var step = 50;
+    var v, start = Math.floor((-off / zm) / step) * step, end = (len - off) / zm;
+    x.font = "9px Inter, sans-serif";
+    x.fillStyle = "#9CA3AF";
+    x.strokeStyle = "#5a5a5e";
+    x.lineWidth = 1;
+    for (v = start; v <= end; v += step) {
+      var p = Math.round(v * zm + off) + 0.5;
+      var major = (v % 100) === 0;
+      x.beginPath();
+      if (axis === "h") { x.moveTo(p, 0); x.lineTo(p, major ? 10 : 6); }
+      else { x.moveTo(0, p); x.lineTo(major ? 10 : 6, p); }
+      x.stroke();
+      if (major) {
+        if (axis === "h") { x.fillText(String(v), p + 3, 11); }
+        else { x.fillText(String(v), 2, p + 3); }
+      }
+    }
+  }
+
+  /* ================= settings drawer ================= */
+  function buildSettingsDrawer() {
+    var d = document.createElement("div");
+    d.id = "vSettingsDrawer";
+    d.className = "v-drawer hidden";
+    d.setAttribute("role", "dialog");
+    d.setAttribute("aria-label", "Vector settings");
+    d.innerHTML =
+      '<div class="v-drawer-head"><span>Vector settings</span>' +
+      '<button type="button" class="icon-btn v-dclose" data-x="close" title="Close" aria-label="Close settings">' + xIco() + "</button></div>" +
+      '<div class="v-drawer-body">' +
+      '<div class="v-set-row"><label for="vSetNudge">Nudge step<span class="v-set-sub">Arrow-key move distance, in px</span></label>' +
+      '<input id="vSetNudge" type="number" min="1" max="100" step="1"></div>' +
+      '<div class="v-set-row"><label for="vSetSnap">Snap to grid<span class="v-set-sub">Snap pointer to the 10 px grid while drawing and dragging</span></label>' +
+      '<input id="vSetSnap" type="checkbox" class="v-toggle"></div>' +
+      '<div class="v-set-row"><label for="vSetRulers">Show rulers<span class="v-set-sub">Artboard rulers along the top and left</span></label>' +
+      '<input id="vSetRulers" type="checkbox" class="v-toggle"></div>' +
+      '<div class="v-set-about"><span class="v-about-title">About</span>' +
+      "<span>Vector Studio is part of the NXT Ecosystem. Settings are saved on this device.</span></div>" +
+      "</div>";
+    d.querySelector('[data-x="close"]').addEventListener("click", function () { d.classList.add("hidden"); });
+    d.querySelector("#vSetNudge").addEventListener("change", function (e) {
+      updateSettings({ nudgeStep: parseInt(e.target.value, 10) });
+    });
+    d.querySelector("#vSetSnap").addEventListener("change", function (e) {
+      updateSettings({ snapToGrid: e.target.checked });
+    });
+    d.querySelector("#vSetRulers").addEventListener("change", function (e) {
+      updateSettings({ showRulers: e.target.checked });
+    });
+    return d;
+  }
+  function syncSettingsUI() {
+    if (!view) { return; }
+    var n = view.querySelector("#vSetNudge"),
+        s = view.querySelector("#vSetSnap"),
+        r = view.querySelector("#vSetRulers");
+    if (n) { n.value = String(vSettings.nudgeStep); }
+    if (s) { s.checked = vSettings.snapToGrid; }
+    if (r) { r.checked = vSettings.showRulers; }
+  }
+  function toggleDrawer(which) {
+    if (!view) { return; }
+    var s = view.querySelector("#vSettingsDrawer"),
+        f = view.querySelector("#vFilesDrawer");
+    if (!s || !f) { return; }
+    if (which === "settings") {
+      var willShow = s.classList.contains("hidden");
+      s.classList.toggle("hidden");
+      if (willShow) { f.classList.add("hidden"); }
+    } else {
+      var willShowF = f.classList.contains("hidden");
+      f.classList.toggle("hidden");
+      if (willShowF) { s.classList.add("hidden"); renderFilesList(); }
+    }
+  }
+
+  /* ================= per-app files (NXT phase 1) =================
+     Named artwork records {id, name, updatedAt, svg}, persisted in
+     T.store under the 'vector' namespace, key 'files'.
+     The open file auto-saves (debounced) on every vector:change;
+     create/duplicate snapshot the SVG immediately. newDoc() detaches the
+     canvas from any file so a blank doc can never overwrite a saved file. */
+  var vFiles = [], vCurFileId = null, vSaveTimer = null;
+  function vFilesLoad() {
+    var arr = null;
+    try { arr = T.store ? T.store.get("vector", "files") : null; } catch (e) { arr = null; }
+    vFiles = Array.isArray(arr) ? arr.filter(function (rec) { return rec && rec.id; }) : [];
+  }
+  function vFilesSave() {
+    try { if (T.store) { T.store.set("vector", "files", vFiles); } } catch (e) { /* ignore */ }
+    // store.js swallows quota errors, so verify with a read-back
+    var ok = true;
+    try {
+      var back = T.store ? T.store.get("vector", "files") : null;
+      ok = !!(back && back.length === vFiles.length);
+    } catch (e2) { ok = false; }
+    if (!ok && typeof T.toast === "function") {
+      T.toast("Storage is full: the file list was not saved. Your open artwork is kept in memory.", "error");
+    }
+    return ok;
+  }
+  function vFindFile(id) {
+    for (var i = 0; i < vFiles.length; i++) { if (vFiles[i].id === id) { return vFiles[i]; } }
+    return null;
+  }
+  function vNewId() {
+    return "vf" + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+  }
+  function vFlushSave() {
+    if (!vCurFileId) { return; }
+    var rec = vFindFile(vCurFileId);
+    if (!rec) { return; }
+    try { rec.svg = getSVG(); } catch (e) { return; }
+    rec.updatedAt = Date.now();
+    vFilesSave();
+  }
+  function fmtDate(ts) {
+    try { return new Date(ts).toLocaleString(); } catch (e) { return ""; }
+  }
+  var vectorFiles = {
+    list: function () {
+      return vFiles.map(function (r) {
+        return { id: r.id, name: r.name, updatedAt: r.updatedAt, svg: r.svg };
+      });
+    },
+    create: function (name) {
+      buildView();
+      vFilesLoad();
+      vFlushSave(); // keep current work inside the previously open file
+      newDoc();     // newDoc detaches from any file
+      var nm = (name || "").trim() || ("Artwork " + (vFiles.length + 1));
+      var rec = { id: vNewId(), name: nm, updatedAt: Date.now(), svg: getSVG() };
+      vFiles.unshift(rec);
+      vCurFileId = rec.id;
+      vFilesSave();
+      if (vDocName) { vDocName.value = nm; }
+      renderFilesList();
+      return rec.id;
+    },
+    rename: function (id, name) {
+      vFilesLoad();
+      var rec = vFindFile(id);
+      if (!rec) { return false; }
+      var nm = (name || "").trim();
+      if (!nm) { return false; }
+      rec.name = nm;
+      rec.updatedAt = Date.now();
+      vFilesSave();
+      if (id === vCurFileId && vDocName) { vDocName.value = nm; }
+      renderFilesList();
+      return true;
+    },
+    duplicate: function (id) {
+      vFilesLoad();
+      var rec = vFindFile(id);
+      if (!rec) { return null; }
+      var copy = { id: vNewId(), name: rec.name + " copy", updatedAt: Date.now(), svg: rec.svg };
+      vFiles.unshift(copy);
+      vFilesSave();
+      renderFilesList();
+      return copy.id;
+    },
+    remove: function (id) {
+      var rec = vFindFile(id);
+      if (!rec) { return Promise.resolve(false); }
+      function doRemove() {
+        vFilesLoad();
+        vFiles = vFiles.filter(function (r) { return r.id !== id; });
+        if (vCurFileId === id) { vCurFileId = null; }
+        vFilesSave();
+        renderFilesList();
+        if (typeof T.toast === "function") { T.toast("Artwork deleted."); }
+        return true;
+      }
+      if (typeof T.modal === "function") {
+        return T.modal({
+          title: "Delete artwork",
+          sub: "Delete \"" + rec.name + "\"? This cannot be undone.",
+          okText: "Delete",
+          danger: true
+        }).then(function (res) { return res ? doRemove() : false; });
+      }
+      doRemove();
+      return Promise.resolve(true);
+    },
+    open: function (id) {
+      buildView();
+      vFilesLoad();
+      var rec = vFindFile(id);
+      if (!rec || !rec.svg) { return false; }
+      vFlushSave();
+      setSVG(rec.svg);
+      vCurFileId = id;
+      if (vDocName) { vDocName.value = rec.name; }
+      renderFilesList();
+      return true;
+    },
+    currentId: function () { return vCurFileId; }
+  };
+
+  /* ================= files drawer ================= */
+  function buildFilesDrawer() {
+    var d = document.createElement("div");
+    d.id = "vFilesDrawer";
+    d.className = "v-drawer hidden";
+    d.setAttribute("role", "dialog");
+    d.setAttribute("aria-label", "Artwork files");
+    d.innerHTML =
+      '<div class="v-drawer-head"><span>Artwork files</span>' +
+      '<button type="button" class="v-new" id="vFileNew">New</button>' +
+      '<button type="button" class="icon-btn v-dclose" data-x="close" title="Close" aria-label="Close files">' + xIco() + "</button></div>" +
+      '<div class="v-drawer-body"><div id="vFilesList" class="v-files-list"></div></div>';
+    d.querySelector('[data-x="close"]').addEventListener("click", function () { d.classList.add("hidden"); });
+    d.querySelector("#vFileNew").addEventListener("click", function () {
+      if (typeof T.modal !== "function") { vectorFiles.create(""); return; }
+      T.modal({
+        title: "New artwork",
+        fields: [{ key: "name", label: "Name", value: "Artwork " + (vFiles.length + 1) }],
+        okText: "Create"
+      }).then(function (res) {
+        vectorFiles.create(res && res.name ? res.name : "");
+      });
+    });
+    return d;
+  }
+  function renderFilesList() {
+    if (!view) { return; }
+    var host = view.querySelector("#vFilesList");
+    if (!host) { return; }
+    host.innerHTML = "";
+    vFilesLoad();
+    if (!vFiles.length) {
+      host.innerHTML = '<div class="v-files-empty">No saved artwork yet. Create one to keep named versions of this canvas.</div>';
+      return;
+    }
+    vFiles.forEach(function (rec) {
+      var row = document.createElement("div");
+      row.className = "v-file-row" + (rec.id === vCurFileId ? " current" : "");
+      var open = document.createElement("button");
+      open.type = "button";
+      open.className = "v-file-open";
+      open.title = "Open " + rec.name;
+      open.innerHTML = '<span class="v-file-name">' + T.esc(rec.name) + "</span>" +
+        '<span class="v-file-meta">' + T.esc(fmtDate(rec.updatedAt)) +
+        (rec.id === vCurFileId ? " · open" : "") + "</span>";
+      open.addEventListener("click", function () { vectorFiles.open(rec.id); });
+      row.appendChild(open);
+      function act(iconId, title, fn) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "v-fact";
+        b.title = title;
+        b.setAttribute("aria-label", title);
+        b.innerHTML = (typeof T.icon === "function") ? T.icon(iconId) : title;
+        b.addEventListener("click", function (e) { e.stopPropagation(); fn(); });
+        row.appendChild(b);
+      }
+      act("i-pen", "Rename", function () {
+        if (typeof T.modal !== "function") { return; }
+        T.modal({
+          title: "Rename artwork",
+          fields: [{ key: "name", label: "Name", value: rec.name }],
+          okText: "Rename"
+        }).then(function (res) {
+          if (res && res.name) { vectorFiles.rename(rec.id, res.name); }
+        });
+      });
+      act("i-copy", "Duplicate", function () { vectorFiles.duplicate(rec.id); });
+      act("i-trash", "Delete", function () { vectorFiles.remove(rec.id); });
+      host.appendChild(row);
+    });
+  }
+  function buildPerApp() {
+    view.appendChild(buildSettingsDrawer());
+    view.appendChild(buildFilesDrawer());
+    loadSettings();
+    applySettings();
+    vFilesLoad();
+    renderFilesList();
+  }
+
   /* ================= show / hide ================= */
   function show() {
     buildView();
@@ -841,10 +1241,13 @@
     beginTextEdit: beginTextEdit, endTextEdit: endTextEdit,
     icon: vIcon,
     paint: cur, resetPaint: resetPaint, swapPaint: swapPaint, applyPaintToSelection: applyPaintToSelection,
+    // NXT phase 1: per-app settings + named artwork files
+    files: vectorFiles,
+    settings: settingsCopy, setSettings: updateSettings,
     // internal helpers shared with tools.js (stable within v5)
     _x: {
       SVGNS: SVGNS,
-      toLocal: toLocal, view: function () { return view; }, canvas: function () { return vCanvas; },
+      toLocal: toLocal, snapPt: snapPt, view: function () { return view; }, canvas: function () { return vCanvas; },
       viewport: function () { return vViewport; }, overlay: function () { return vOverlay; },
       wrap: function () { return vWrap; },
       relMatrix: relMatrix, xformBox: xformBox, unionBox: unionBox,
@@ -867,4 +1270,11 @@
   T.register("vector.zoomFit", function () { T.vector.zoomFit(); }, { title: "Vector: fit artboard", cat: "Vector", icon: "i-eye" });
   T.register("vector.zoomIn", function () { T.vector.zoomIn(); }, { title: "Vector: zoom in", cat: "Vector", icon: "i-plus" });
   T.register("vector.zoomOut", function () { T.vector.zoomOut(); }, { title: "Vector: zoom out", cat: "Vector", icon: "i-minus" });
+
+  /* NXT phase 1: auto-save the open artwork file (debounced) on every change.
+     The save is a no-op when no file is open, so untitled docs stay in memory. */
+  T.bus.on("vector:change", function () {
+    if (vSaveTimer) { clearTimeout(vSaveTimer); }
+    vSaveTimer = setTimeout(function () { vSaveTimer = null; vFlushSave(); }, 800);
+  });
 })();

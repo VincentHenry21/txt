@@ -680,6 +680,7 @@
 
   /* ================= assembly ================= */
   var PAN = {};
+  var busBound = false;
   function refresh() {
     if (!T.vector || !T.vectorOps) return;
     refreshTransform();
@@ -688,8 +689,7 @@
   }
   function init() {
     if (!T.vector || !T.vectorOps) return false;
-    var host = document.getElementById("vPanels");
-    if (!host) {
+    var host = document.getElementById("vPanels");    if (!host) {
       var vv = document.getElementById("view-vector");
       if (!vv) return false;
       host = document.createElement("aside");
@@ -706,8 +706,11 @@
     PAN.gradient = buildGradient(); host.appendChild(PAN.gradient);
     PAN.layers = buildLayers(); host.appendChild(PAN.layers);
     ensureLayer();
-    T.bus.on("vector:selection", refresh);
-    T.bus.on("vector:change", refresh);
+    if (!busBound) {
+      busBound = true;
+      T.bus.on("vector:selection", refresh);
+      T.bus.on("vector:change", refresh);
+    }
     refresh();
     return true;
   }
