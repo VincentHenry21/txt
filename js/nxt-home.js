@@ -183,6 +183,32 @@
     });
     wrap.appendChild(grid);
 
+    wrap.appendChild(h("div", "nxt-sec-head", "Learn"));
+    var learnGrid = h("div", "nxt-grid", null);
+    var tut = h("button", "nxt-tile", null);
+    tut.type = "button";
+    tut.setAttribute("data-search", "tutorials help guide learn how to");
+    tut.setAttribute("aria-label", "Tutorials: step-by-step guides for every app");
+    var tutBadge = h("span", "nxt-tile-badge", null);
+    tutBadge.style.background = "#4F46E5";
+    /* book icon (inline, no gradient ids) to avoid colliding with the NXT logo
+       already rendered in the boot splash and login views */
+    tutBadge.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>' +
+      '<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+    tutBadge.style.display = "inline-flex";
+    tutBadge.style.alignItems = "center";
+    tutBadge.style.justifyContent = "center";
+    tut.appendChild(tutBadge);
+    tut.appendChild(h("span", "nxt-tile-name", "Tutorials"));
+    tut.appendChild(h("span", "nxt-tile-desc", "Step-by-step guides for every app"));
+    tut.addEventListener("click", function () {
+      if (T.tutorials && T.tutorials.open) T.tutorials.open();
+    });
+    learnGrid.appendChild(tut);
+    wrap.appendChild(learnGrid);
+
     wrap.appendChild(h("div", "nxt-sec-head", "Recent"));
     recentBox = h("div", "nxt-recents", null);
     wrap.appendChild(recentBox);

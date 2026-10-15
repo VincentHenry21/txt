@@ -17,7 +17,7 @@
 
   var PERSONAS = ["word", "vector", "pixel"];
   var APPS = ["txt", "grd", "dck", "mem", "pdf", "hub"];
-  var VIEWS = ["view-home", "view-login", "view-word", "view-vector", "view-pixel",
+  var VIEWS = ["view-home", "view-login", "view-tutorials", "view-word", "view-vector", "view-pixel",
     "view-grd", "view-dck", "view-mem", "view-pdf", "view-hub"];
   var VIEW_FOR_PERSONA = { word: "view-word", vector: "view-vector", pixel: "view-pixel" };
   var VIEW_FOR_APP = {
@@ -347,6 +347,15 @@
     T.bus.emit("ecosystem:login", {});
   }
 
+  function showTutorials() {
+    eco.app = "tutorials";
+    hideLauncher();
+    showOnly("view-tutorials");
+    focusView("view-tutorials");
+    applyNxtTheme("home");
+    T.bus.emit("ecosystem:tutorials", {});
+  }
+
   /* ---------- split-screen ---------- */
   function homeFor(viewId) {
     if (!homeOf[viewId]) {
@@ -490,6 +499,7 @@
   T.ecosystem.openApp = openApp;
   T.ecosystem.home = showHome;
   T.ecosystem.login = showLogin;
+  T.ecosystem.showTutorials = showTutorials;
   T.ecosystem.toggleLauncher = toggleLauncher;
   T.ecosystem.setSplit = setSplit;
   T.ecosystem._toggleRatio = toggleRatio; // internal helper, exposed for tests
