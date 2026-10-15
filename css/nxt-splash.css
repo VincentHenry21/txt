@@ -1,0 +1,126 @@
+/* NXT OS Phase 1 workstream C: per-app splash cards.
+   Brief Adobe/MS-style cover shown when an app or studio opens.
+   Non-interactive (pointer-events: none), auto-dismissed, removed from DOM. */
+
+#nxtSplash {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 12, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  z-index: 3000;
+  pointer-events: none;
+  animation: nxtSplashIn 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes nxtSplashIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.nxt-splash-card {
+  width: 340px;
+  min-height: 220px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 34px 24px 30px;
+  background: #141419;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  animation: nxtSplashPop 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes nxtSplashPop {
+  from { opacity: 0; transform: scale(0.94) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.nxt-splash-logo {
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nxt-splash-logo svg {
+  width: 72px;
+  height: 72px;
+  display: block;
+}
+
+.nxt-splash-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  height: 72px;
+  padding: 0 16px;
+  border-radius: 16px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--nxacc, #7C3AED);
+  border: 2px solid var(--nxacc, #7C3AED);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.nxt-splash-name {
+  margin-top: 14px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--nxacc, #7C3AED);
+}
+
+.nxt-splash-cap {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.nxt-splash-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.nxt-splash-bar i {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--nxacc, #7C3AED) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: nxtSplashShimmer 1.1s linear infinite;
+}
+
+@keyframes nxtSplashShimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #nxtSplash, .nxt-splash-card { animation: none; }
+  .nxt-splash-bar i { animation-duration: 2.2s; }
+}
