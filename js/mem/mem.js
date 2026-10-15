@@ -648,7 +648,7 @@
 
     panel.appendChild(body);
     var about = mk("div", "mem-settings-about", "mem-settingsAbout");
-    about.innerHTML = "<strong>MEM</strong> · Part of NXT Ecosystem<br>Notes and whiteboards that clip straight into TXT.";
+    about.innerHTML = "<strong>MEM</strong> · Part of NXT OS<br>Notes and whiteboards that clip straight into TXT.";
     panel.appendChild(about);
     wrap.appendChild(panel);
     wrap.addEventListener("mousedown", function (e) { if (e.target === wrap) closeSettings(); });
@@ -758,7 +758,7 @@
     var home = mk("div", "eco-home", "mem-home");
     var head = mk("div", "eco-home-head");
     var badge = mk("span", "app-badge");
-    badge.style.background = "#8B5CF6";
+    badge.style.background = "#10B981";
     badge.textContent = "MEM";
     var titles = mk("div");
     var h1 = mk("h1"); h1.textContent = "MEM";
@@ -794,7 +794,7 @@
     secRec.appendChild(hRec); secRec.appendChild(grid); secRec.appendChild(empty);
     home.appendChild(secRec);
     var foot = mk("div", "mem-home-footer", "mem-homeFooter");
-    foot.textContent = "Part of NXT Ecosystem";
+    foot.textContent = "Part of NXT OS";
     home.appendChild(foot);
     return home;
   }
@@ -1276,6 +1276,14 @@
     var hint = mk("div", "mem-hint", "mem-boardHint");
     hint.textContent = "Drag the background to pan. Ctrl+scroll or pinch to zoom.";
     wrap.appendChild(hint);
+
+    /* NXT OS status bar credit (Phase 1 Identity): right-aligned brand credit
+       rendered in the app's H3NZ signature palette accent. */
+    var memStatus = mk("div", "nxt-statusbar", "mem-boardStatusbar");
+    var memBrand = mk("span", "nxt-sb-brand");
+    memBrand.textContent = "NXT MEM • Developed by H3NZ";
+    memStatus.appendChild(memBrand);
+    wrap.appendChild(memStatus);
 
     wireBoardInput(vp);
     return wrap;
@@ -1932,21 +1940,21 @@
   }
   if (typeof T.register === "function") {
     T.register("mem.open", function () { openMemApp(); },
-      { title: "Open MEM notes", cat: "NXT", icon: "i-file", match: "mem notes whiteboard open" });
+      { title: "Open MEM notes", cat: "NXT OS", icon: "i-file", match: "mem notes whiteboard open" });
     T.register("mem.home", function () { openMemApp(); goHome(); },
-      { title: "MEM home", cat: "NXT", icon: "i-grid", match: "mem home start" });
+      { title: "MEM home", cat: "NXT OS", icon: "i-grid", match: "mem home start" });
     T.register("mem.new", function () {
       openMemApp(); goMasonry();
       var n = addNote("note"); renderMasonry(); focusNoteCard(n.id);
-    }, { title: "New MEM note", cat: "NXT", icon: "i-plus", match: "mem new note create" });
+    }, { title: "New MEM note", cat: "NXT OS", icon: "i-plus", match: "mem new note create" });
     T.register("mem.new-checklist", function () {
       openMemApp(); goMasonry();
       var n = addNote("checklist"); renderMasonry(); focusNoteCard(n.id);
-    }, { title: "New MEM checklist", cat: "NXT", icon: "i-checklist", match: "mem checklist todo" });
+    }, { title: "New MEM checklist", cat: "NXT OS", icon: "i-checklist", match: "mem checklist todo" });
     T.register("mem.new-board", function () {
       openMemApp();
       var b = addBoard(); openBoard(b.id);
-    }, { title: "New MEM whiteboard", cat: "NXT", icon: "i-shapes", match: "mem new board whiteboard" });
+    }, { title: "New MEM whiteboard", cat: "NXT OS", icon: "i-shapes", match: "mem new board whiteboard" });
   }
 
   /* ================= bus ================= */
