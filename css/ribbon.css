@@ -1,0 +1,119 @@
+/* TXT ribbon: smart multi-tab toolbar + minimal pill bar. */
+
+#ribbon { border-bottom: 1px solid var(--line); z-index: 50; position: relative; }
+#ribbon.collapsed #ribbonPanels { display: none; }
+#ribbonTabs { display: flex; gap: 2px; padding: 6px 40px 0 12px; overflow-x: auto; scrollbar-width: thin; }
+#ribbonTabs button {
+  border: 0; background: none; padding: 8px 15px; font-size: 13px; font-weight: 600;
+  color: var(--muted); cursor: pointer; border-radius: 9px 9px 0 0; white-space: nowrap;
+  border-bottom: 2px solid transparent; transition: color 0.13s, background 0.13s;
+}
+#ribbonTabs button:hover { color: var(--ink); background: var(--accent-soft); }
+#ribbonTabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+#ribbonPanels { border-top: 1px solid var(--line); }
+.rpanel { display: flex; gap: 2px; padding: 9px 12px; overflow-x: auto; align-items: stretch; scrollbar-width: thin; }
+.rpanel.hidden { display: none; }
+.rgroup {
+  display: flex; flex-direction: column; padding: 0 12px; border-right: 1px solid var(--line);
+  flex: 0 0 auto; min-width: 0;
+}
+.rgroup:last-child { border-right: 0; }
+.rgroup > .rg-label {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.4px; color: var(--muted);
+  text-align: center; padding-top: 6px; white-space: nowrap; text-transform: uppercase;
+}
+.rgroup > .rg-body { display: flex; gap: 3px; align-items: center; flex: 1; }
+.rgroup > .rg-body.col { flex-direction: column; align-items: stretch; gap: 4px; justify-content: center; }
+.rrow { display: flex; gap: 3px; align-items: center; }
+
+.rbtn {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  border: 0; background: none; border-radius: 9px; padding: 7px 10px; cursor: pointer;
+  color: var(--ink); min-width: 54px; transition: background 0.13s, transform 0.08s, color 0.13s;
+  position: relative;
+}
+.rbtn:hover { background: var(--accent-soft); }
+.rbtn:active { transform: scale(0.96); }
+.rbtn.active { background: var(--accent-soft); color: var(--accent); }
+.rbtn .rlab { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.rbtn.sm { min-width: 0; padding: 6px 8px; }
+.rbtn.wide { flex-direction: row; gap: 7px; }
+.rbtn svg { width: 19px; height: 19px; }
+.rbtn.sm svg { width: 16px; height: 16px; }
+.rbtn .caret { width: 10px; height: 10px; margin-left: -4px; }
+.rbtn .keytip-anchor { position: relative; }
+
+.rsel { min-width: 0; }
+.rsel.w-font { width: 158px; }
+.rsel.w-size { width: 64px; }
+.rsel.w-style { width: 120px; }
+
+.split { display: inline-flex; }
+.split .rbtn:first-child { border-radius: 9px 0 0 9px; }
+.split .split-caret {
+  border: 0; background: none; cursor: pointer; border-radius: 0 9px 9px 0; padding: 7px 6px; color: var(--ink);
+}
+.split .split-caret:hover { background: var(--accent-soft); }
+
+.collapse-btn {
+  position: absolute; top: 4px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--surface); cursor: pointer; z-index: 5;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.collapse-btn svg { width: 13px; height: 13px; }
+#ribbon.collapsed .collapse-btn svg { transform: rotate(180deg); }
+
+/* compact single-line bar */
+#ribbon.mode-compact #ribbonPanels .rpanel { padding: 5px 10px; }
+#ribbon.mode-compact .rgroup { flex-direction: row; align-items: center; padding: 0 8px; }
+#ribbon.mode-compact .rgroup > .rg-label { display: none; }
+#ribbon.mode-compact .rbtn { min-width: 0; padding: 6px 8px; }
+#ribbon.mode-compact .rbtn .rlab { display: none; }
+#ribbon.mode-compact .rgroup > .rg-body.col { flex-direction: row; }
+/* zen: ribbon hidden entirely */
+#ribbon.mode-zen { display: none; }
+
+/* minimal floating pill toolbar */
+.pill-bar {
+  position: absolute; top: calc(var(--topbar-h) + 10px); left: 50%; transform: translateX(-50%);
+  z-index: 55; display: flex; gap: 2px; align-items: center; padding: 6px 10px;
+  border: 1px solid var(--line); border-radius: 999px; box-shadow: var(--shadow-lg);
+  animation: popIn 0.16s ease-out; max-width: calc(100vw - 24px); overflow-x: auto;
+}
+
+/* styles gallery pills */
+.style-pills { display: flex; gap: 6px; overflow-x: auto; max-width: 300px; padding: 2px; }
+.style-pill {
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px;
+  padding: 6px 13px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: border-color 0.13s, background 0.13s;
+}
+.style-pill:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+/* table grid picker */
+.tbl-grid { display: grid; grid-template-columns: repeat(8, 22px); gap: 3px; padding: 8px; }
+.tbl-cell { width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface-2); cursor: pointer; padding: 0; }
+.tbl-cell.lit { background: var(--accent); border-color: var(--accent); }
+
+/* symbol grid */
+.sym-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 8px; max-width: 320px; }
+.sym-cell {
+  border: 0; background: none; font-size: 17px; padding: 7px 4px; border-radius: 7px; cursor: pointer; color: var(--ink);
+}
+.sym-cell:hover { background: var(--accent-soft); }
+
+/* inline dropdown menu (ribbon popups) */
+.rmenu {
+  position: absolute; z-index: 120; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; box-shadow: var(--shadow-lg); padding: 6px; min-width: 210px;
+  animation: popIn 0.13s ease-out;
+}
+.rmenu button.mi {
+  display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none;
+  padding: 9px 11px; border-radius: 8px; cursor: pointer; font-size: 13px; text-align: left; color: var(--ink);
+}
+.rmenu button.mi:hover { background: var(--accent-soft); }
+.rmenu button.mi.active { color: var(--accent); font-weight: 700; }
+.rmenu .mi-sep { height: 1px; background: var(--line); margin: 5px 4px; }
+.rmenu .mi-head { font-size: 11px; font-weight: 700; color: var(--muted); padding: 7px 11px 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+.uline-swatch { font-size: 15px; font-weight: 700; }

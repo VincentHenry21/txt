@@ -1,0 +1,126 @@
+/* TXT modules.css: integration-owned styles for classes introduced by feature workers.
+   Additive only; theme tokens come from tokens.css. */
+
+/* find & replace hits (sidebar.js) */
+mark.find-hit { background: #fde68a; color: inherit; border-radius: 2px; padding: 0 1px; }
+mark.find-hit.current { background: #f59e0b; color: #fff; outline: 2px solid #f59e0b; }
+
+/* header/footer pills (insert.js) */
+.pgnum-pill, .date-pill {
+  display: inline-block; background: var(--accent-soft); color: var(--accent);
+  border: 1px solid var(--line); border-radius: 6px; padding: 1px 8px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.bookmark-mark {
+  display: inline-block; width: 10px; height: 14px; margin: 0 2px;
+  background: var(--warn); border-radius: 2px 2px 5px 5px; vertical-align: -2px;
+}
+
+/* shape banner + images + code wrap (insert.js) */
+.shape-banner { margin: 1em 0; border-radius: 12px; overflow: hidden; }
+.shape-banner svg { display: block; width: 100%; height: auto; }
+.psheet img.txt-img { max-width: 100%; border-radius: 8px; }
+.codewrap { position: relative; margin: 1em 0; }
+.codewrap .copy-code {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25);
+  border-radius: 6px; font-size: 11px; padding: 3px 9px; cursor: pointer;
+}
+.codewrap .copy-code:hover { background: rgba(255,255,255,.22); }
+
+/* task checklist (home.js) */
+.psheet ul.task-list { list-style: none; padding-left: 4px; }
+.psheet ul.task-list li.task { display: flex; align-items: flex-start; gap: 9px; margin: 6px 0; }
+.psheet ul.task-list li.task input[type="checkbox"] { margin-top: 4px; width: 15px; height: 15px; accent-color: var(--accent); flex: 0 0 auto; }
+.psheet ul.task-list li.done > span, .psheet ul.task-list li.done { color: var(--muted); text-decoration: line-through; }
+
+/* sidebar thumbnails + outline flash (sidebar.js) */
+.thumb-view { overflow: hidden; border-radius: 6px; background: var(--page); position: relative; }
+.thumb-view > div { transform-origin: top left; }
+.ol-flash { animation: olFlash .7s ease-out; border-radius: 6px; }
+@keyframes olFlash { 0% { background: var(--accent-soft); } 100% { background: transparent; } }
+
+/* table / symbol popups (insert.js) */
+.tbl-pop, .sym-pop { padding: 8px; }
+.tbl-pop .tbl-label { font-size: 12px; color: var(--muted); text-align: center; padding: 4px 0 8px; font-weight: 600; }
+.sym-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; max-width: 340px; }
+.sym-grid button {
+  border: 0; background: none; font-size: 16px; padding: 6px 2px; border-radius: 6px;
+  cursor: pointer; color: var(--ink);
+}
+.sym-grid button:hover { background: var(--accent-soft); }
+
+/* swatch pickers in ribbon menus (home.js) */
+.sw-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; padding: 8px; max-width: 260px; }
+button.sw-pick {
+  width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line);
+  cursor: pointer; padding: 0;
+}
+button.sw-pick:hover { transform: scale(1.15); }
+
+/* track-changes panel rows (changes.js) */
+.chg-panel { display: flex; flex-direction: column; gap: 8px; }
+.chg-row {
+  border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px;
+  background: var(--surface-2); font-size: 13px;
+}
+.chg-row .chg-badge {
+  display: inline-block; font-size: 10.5px; font-weight: 700; border-radius: 5px;
+  padding: 2px 7px; margin-right: 7px; text-transform: uppercase; letter-spacing: .4px;
+}
+.chg-row .chg-badge.ins { background: rgba(5,150,105,.15); color: var(--ok); }
+.chg-row .chg-badge.del { background: rgba(220,38,38,.13); color: var(--danger); }
+.chg-row .chg-quote { color: var(--muted); font-style: italic; display: block; margin: 5px 0; }
+.chg-row .chg-meta { font-size: 11.5px; color: var(--muted); }
+.chg-row .chg-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+/* TOC extras (refs.js) */
+.toc-line.toc-l2 { padding-left: 18px; }
+.toc-line.toc-l3 { padding-left: 36px; }
+.toc-line .pg { font-size: 12.5px; color: var(--muted); }
+.fn-entry { margin: 4px 0; font-size: 13px; }
+.bib-list { margin: 1em 0; }
+
+/* comment panel extras (comments.js) */
+.cmt-jump-flash { outline: 2px solid var(--warn) !important; outline-offset: 2px; border-radius: 3px; }
+.insp-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 12px; }
+
+/* mobile sheet lists (mobile.js) */
+.sheet-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sheet-tiles button {
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: 12px;
+  padding: 14px 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 7px; color: var(--ink);
+}
+.sheet-tiles button:hover { border-color: var(--accent); background: var(--accent-soft); }
+.sheet-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+.sheet-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin: 12px 0 4px; }
+
+/* ink dock extras (ink.js) */
+.ink-sw {
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line);
+  cursor: pointer; padding: 0;
+}
+.ink-sw.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* speech dock extras (speech.js) */
+.speech-dock .val { font-size: 11px; color: var(--muted); min-width: 30px; text-align: right; }
+
+/* AI panel extras (ai.js) */
+.ai-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.ai-actions button {
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px;
+  padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink);
+}
+.ai-actions button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.ai-text { width: 100%; min-height: 90px; border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; font-size: 13px; background: var(--surface); }
+.typing-dots { color: var(--accent); font-weight: 700; }
+
+/* stats modal extras (stats.js) */
+.stat-mark { background: #fef08a; border-radius: 2px; }
+.syl0 { background: rgba(37,99,235,.10); border-radius: 2px; }
+.syl1 { background: rgba(217,119,6,.12); border-radius: 2px; }
+
+/* range inputs inside menus */
+.rmenu input[type="range"] { width: 160px; margin: 8px; accent-color: var(--accent); }
+.rmenu input[type="color"] { width: 44px; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: none; padding: 2px; cursor: pointer; }
