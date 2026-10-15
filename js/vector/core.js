@@ -98,11 +98,13 @@
           '<span id="vZoomPct" class="v-status" title="Zoom level">100%</span>' +
           '<button type="button" id="vZoomIn" class="vbtn" title="Zoom in">' + vIcon("plus") + "</button>" +
           '<button type="button" id="vZoomFit" class="vbtn" title="Fit artboard">' + vIcon("fit") + "</button>" +
+          '<span class="v-sep"></span>' +
+          '<span class="v-status v-brand" title="NXT VEC">NXT VEC • Developed by H3NZ</span>' +
           '<button type="button" id="vPropsBtn" class="vbtn v-props-btn" title="Properties panel" aria-label="Toggle properties panel" aria-expanded="false">' + vIcon("chevUp") + "<span>Properties</span></button>" +
           '<button type="button" id="vOverflowBtn" class="vbtn v-overflow-btn" title="More actions" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">' + vIcon("more") + "</button>" +
         "</div>" +
         '<div id="vOverflow" class="hidden" role="menu" aria-label="Vector actions">' +
-          '<button type="button" id="vWordCta" class="v-menu-item" role="menuitem">' + vIcon("send") + "<span>Insert / Update in Word Document</span></button>" +
+          '<button type="button" id="vWordCta" class="v-menu-item" role="menuitem">' + vIcon("send") + "<span>Insert / Update in TXT Document</span></button>" +
         "</div>" +
       "</div>" +
       '<div id="vMain">' +
@@ -1022,7 +1024,7 @@
       '<div class="v-set-row"><label for="vSetRulers">Show rulers<span class="v-set-sub">Artboard rulers along the top and left</span></label>' +
       '<input id="vSetRulers" type="checkbox" class="v-toggle"></div>' +
       '<div class="v-set-about"><span class="v-about-title">About</span>' +
-      "<span>Vector Studio is part of the NXT Ecosystem. Settings are saved on this device.</span></div>" +
+      "<span>VEC Studio is part of the NXT OS. Settings are saved on this device.</span></div>" +
       "</div>";
     d.querySelector('[data-x="close"]').addEventListener("click", function () { d.classList.add("hidden"); });
     d.querySelector("#vSetNudge").addEventListener("change", function (e) {
