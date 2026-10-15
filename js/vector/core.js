@@ -188,9 +188,10 @@
     view.querySelector("#vZoomIn").addEventListener("click", function () { zoomStep(1.25); });
     view.querySelector("#vZoomOut").addEventListener("click", function () { zoomStep(1 / 1.25); });
     view.querySelector("#vZoomFit").addEventListener("click", function () { zoomFit(); });
-    view.querySelector("#vLauncher").addEventListener("click", function () {
+    view.querySelector("#vLauncher").addEventListener("click", function (e) {
+      e.stopPropagation();
       if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") {
-        try { T.ecosystem.toggleLauncher(); } catch (e) { /* ignore */ }
+        try { T.ecosystem.toggleLauncher(); } catch (err) { /* ignore */ }
       }
     });
     view.querySelector("#vSettingsBtn").addEventListener("click", function () { toggleDrawer("settings"); });
