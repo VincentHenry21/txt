@@ -265,7 +265,169 @@
   align-self: flex-start;
 }
 .hub-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.hub-actions .hub-btn { min-height: 40px; padding: 8px 12px; font-size: 13px; }
+.hub-actions .hub-btn { min-height: 44px; padding: 10px 12px; font-size: 13px; }
+
+/* ---------- per-app topbar (NXT phase 1: every app gets its own bar) ---------- */
+.hub-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  min-height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  color: var(--ink);
+}
+.hub-topbar .hub-badge { min-width: 44px; padding: 6px 10px; }
+.hub-topbar-title { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.hub-topbar-name { font-size: 15px; font-weight: 800; letter-spacing: 0.8px; }
+.hub-topbar-eco { font-size: 11px; color: var(--ink-dim); font-weight: 600; }
+.hub-spacer { flex: 1; }
+.hub-topbar .icon-btn { min-width: 44px; min-height: 44px; border-radius: 10px; }
+.hub-topbar .icon-btn svg { width: 20px; height: 20px; }
+.hub-topbar [lang="my"] { line-height: 1.85; }
+
+/* ---------- section tabs (Recent / Files / Clipboard) ---------- */
+.hub-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0 18px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+.hub-tab {
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 1px solid transparent;
+  border-radius: 10px 10px 0 0;
+  background: transparent;
+  color: var(--ink-dim);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hub-tab:hover { color: var(--ink); }
+.hub-tab-active {
+  color: var(--accent);
+  border-color: var(--line);
+  border-bottom-color: transparent;
+  background: var(--surface);
+}
+.hub-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hub-panel.hidden { display: none; }
+.hub-panel > h2 {
+  font-size: 15px;
+  font-weight: 750;
+  margin: 0 0 12px;
+  color: var(--ink);
+}
+
+/* ---------- cross-app file browser ---------- */
+.hub-filesec { margin-bottom: 22px; }
+.hub-filehead { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; min-height: 44px; }
+.hub-filelabel { font-size: 14px; font-weight: 700; color: var(--ink); }
+.hub-filecount {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-dim);
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-variant-numeric: tabular-nums;
+}
+.hub-filesempty { padding: 6px 2px; }
+.hub-filerow .hub-btn { min-height: 44px; }
+.hub-clipbtns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+
+/* ---------- storage warning ---------- */
+.hub-warn {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(225, 29, 72, 0.08);
+  border: 1px solid #E11D48;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  color: var(--ink);
+  min-height: 44px;
+}
+.hub-warn svg { width: 20px; height: 20px; color: #E11D48; flex: 0 0 auto; margin-top: 2px; }
+.hub-warntext { font-size: 13px; line-height: 1.5; }
+
+/* ---------- settings drawer ---------- */
+.hub-setbody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hub-setrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 4px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+.hub-settext { flex: 1; min-width: 0; }
+.hub-setrow input[type="number"],
+.hub-setrow select {
+  min-height: 44px;
+  min-width: 120px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--ws-bg);
+  color: var(--ink);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.hub-setrow input[type="number"]:focus,
+.hub-setrow select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hub-switch { position: relative; width: 52px; height: 32px; flex: 0 0 auto; }
+.hub-switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; min-height: 32px; }
+.hub-switch .hub-knob {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  transition: background 200ms ease;
+}
+.hub-switch .hub-knob::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  transition: transform 200ms ease, background 200ms ease;
+}
+.hub-switch input:checked + .hub-knob { background: var(--accent); border-color: var(--accent); }
+.hub-switch input:checked + .hub-knob::after { transform: translateX(19px); background: #fff; }
+.hub-switch input:focus-visible + .hub-knob { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hub-about { border-bottom: none; }
+.hub-settingswrap [lang="my"], .hub-settingsdrawer [lang="my"] { line-height: 1.85; }
+
+/* ---------- NXT Ecosystem footer ---------- */
+.hub-footer {
+  margin-top: 8px;
+  padding: 18px 4px 8px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-dim);
+  text-align: center;
+  min-height: 44px;
+}
 
 /* ---------- responsive ---------- */
 @media (max-width: 640px) {
@@ -273,4 +435,10 @@
   .hub-row { flex-wrap: wrap; }
   .hub-openbtn { width: 100%; }
   .hub-stolabel { min-width: 64px; }
+  .hub-topbar { padding: 4px 8px; gap: 8px; }
+  .hub-topbar-eco { display: none; } /* compact: brand collapses to the HUB badge on mobile */
+  .hub-tabs { overflow-x: auto; }
+  .hub-tab { padding: 8px 14px; }
+  .hub-filerow { flex-wrap: wrap; }
+  .hub-filerow .hub-btn { flex: 1 1 auto; }
 }

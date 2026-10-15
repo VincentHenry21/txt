@@ -4,8 +4,9 @@
 
 /* ---------- mobile top bar (44px) ---------- */
 .m-topbar {
-  height: 44px; flex: 0 0 auto; z-index: 60; display: flex; align-items: center; gap: 4px;
+  height: 44px; flex: 0 0 auto; z-index: 130; display: flex; align-items: center; gap: 4px;
   padding: 0 8px; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0;
 }
 .m-title { flex: 1; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 

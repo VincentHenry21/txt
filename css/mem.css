@@ -272,6 +272,82 @@ html[data-theme="carbon"] #view-mem {
   border-radius: 999px; font-size: 12px; font-weight: 700; padding: 4px 12px; cursor: pointer;
 }
 
+/* ---------- per-app topbar chrome: MEM badge, launcher, gear ---------- */
+#view-mem .mem-appbadge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; height: 28px; padding: 0 10px; flex: 0 0 auto;
+  border-radius: 8px; background: #8B5CF6; color: #fff;
+  font-size: 12px; font-weight: 800; letter-spacing: 0.5px;
+}
+#view-mem .mem-topbtn {
+  min-width: 44px; min-height: 44px; padding: 6px; flex: 0 0 auto;
+}
+#view-mem .mem-topbtn svg { width: 20px; height: 20px; }
+
+/* ---------- per-app settings drawer ---------- */
+#view-mem .mem-settings-wrap {
+  position: absolute; inset: 0; z-index: 60;
+  display: flex; justify-content: flex-end;
+  background: rgba(0, 0, 0, 0.35);
+}
+#view-mem .mem-settings-wrap.hidden { display: none; }
+#view-mem .mem-settings {
+  width: min(360px, 94%); height: 100%;
+  background: var(--surface); color: var(--ink);
+  border-left: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.25);
+}
+#view-mem .mem-settings-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px 10px 18px; border-bottom: 1px solid var(--line); flex: 0 0 auto;
+}
+#view-mem .mem-settings-head h2 { font-size: 16px; font-weight: 700; margin: 0; }
+#view-mem .mem-settings-body { flex: 1; overflow-y: auto; }
+#view-mem .mem-set-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 18px; min-height: 64px;
+  border-bottom: 1px solid var(--line);
+}
+#view-mem .mem-set-row.mem-set-stack { flex-direction: column; align-items: stretch; gap: 10px; padding-top: 14px; padding-bottom: 14px; }
+#view-mem .mem-set-label { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#view-mem .mem-set-label strong { font-size: 14px; font-weight: 700; }
+#view-mem .mem-set-label span { font-size: 12px; color: var(--ink-dim); }
+#view-mem .mem-set-colors { display: flex; gap: 8px; flex-wrap: wrap; }
+#view-mem .mem-set-colors .mem-swatch { width: 44px; height: 44px; }
+#view-mem .mem-switch {
+  position: relative; width: 60px; height: 44px; flex: 0 0 auto;
+  border: 0; background: transparent; cursor: pointer; padding: 0;
+}
+#view-mem .mem-switch .mem-track {
+  position: absolute; left: 4px; right: 4px; top: 8px; height: 28px;
+  border-radius: 999px; background: var(--line); transition: background 0.18s;
+}
+#view-mem .mem-switch .mem-knob {
+  position: absolute; top: 11px; left: 7px; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); transition: left 0.18s;
+}
+#view-mem .mem-switch[aria-pressed="true"] .mem-track { background: var(--accent); }
+#view-mem .mem-switch[aria-pressed="true"] .mem-knob { left: 31px; }
+#view-mem .mem-set-sort button { min-height: 44px; min-width: 64px; }
+#view-mem .mem-settings-about {
+  padding: 14px 18px 18px; border-top: 1px solid var(--line);
+  font-size: 12px; line-height: 1.6; color: var(--ink-dim); flex: 0 0 auto;
+}
+#view-mem .mem-settings-about strong { color: var(--ink); }
+
+/* ---------- dot grid toggle ---------- */
+#view-mem .mem-viewport.mem-nodots { background-image: none; }
+
+/* ---------- files list actions + homescreen footer ---------- */
+#view-mem .mem-file-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+#view-mem .mem-file-actions .mem-mini { min-height: 44px; }
+#view-mem .mem-mini.mem-danger:hover { border-color: #DC2626; color: #DC2626; }
+#view-mem .mem-home-footer {
+  text-align: center; padding: 18px 12px 24px;
+  font-size: 12px; color: var(--ink-dim);
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 1024px) {
   #view-mem .mem-masonry-grid { columns: 260px 3; }
