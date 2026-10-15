@@ -37,14 +37,14 @@
     { id: "dck", code: "DCK", color: "#FF2E93", label: "Decks" },
     { id: "mem", code: "MEM", color: "#10B981", label: "Notes" },
     { id: "pdf", code: "PDF", color: "#F59E0B", label: "PDF docs" },
-    { id: "vector", code: "VCT", color: "#84CC16", label: "Vector drawings" },
+    { id: "vac", code: "VAC", color: "#84CC16", label: "VAC drawings" },
     { id: "pixel", code: "PXL", color: "#EC4899", label: "Pixel images" }
   ];
   var APP_BY_ID = {};
   APPS.forEach(function (a) { APP_BY_ID[a.id] = a; });
 
   /* apps with a file source, in browser order */
-  var FILE_APPS = ["txt", "grd", "dck", "mem", "pdf", "vector", "pixel"];
+  var FILE_APPS = ["txt", "grd", "dck", "mem", "pdf", "vac", "pixel"];
 
   /* localStorage key prefixes counted toward each app's storage footprint */
   var LS_PREFIX = {
@@ -53,7 +53,7 @@
     dck: ["dck:", "DCK_"],
     mem: ["mem:", "MEM_"],
     pdf: ["pdf:", "PDF_"],
-    vector: ["vector:"],
+    vac: ["vac:", "vector:"],
     pixel: ["pixel:"],
     hub: ["hub:", "HUB_"]
   };
@@ -109,7 +109,7 @@
   }
   function openAppView(app) {
     try {
-      if ((app === "vector" || app === "pixel") && T.ecosystem && typeof T.ecosystem.setPersona === "function") {
+      if ((app === "vac" || app === "pixel") && T.ecosystem && typeof T.ecosystem.setPersona === "function") {
         T.ecosystem.setPersona(app);
         return;
       }
@@ -194,7 +194,7 @@
         });
       });
     } catch (e) { /* txt not ready */ }
-    ["grd", "dck", "mem", "pdf", "vector", "pixel"].forEach(function (app) {
+    ["grd", "dck", "mem", "pdf", "vac", "pixel"].forEach(function (app) {
       var rec = storeGet(app, "recent");
       if (!rec || !rec.length) return;
       rec.forEach(function (e) {
@@ -719,8 +719,9 @@
   function buildTopbar(view) {
     var bar = el("div", "hub-topbar", "hub-topbar");
     var hb = el("span", "hub-badge");
-    hb.style.background = "#3B82F6";
-    hb.textContent = "HUB";
+    var hubTopLogo = (T.appLogoImg ? T.appLogoImg("hub") : null);
+    if (hubTopLogo) { hb.className += " app-logo-badge"; hb.appendChild(hubTopLogo); }
+    else { hb.style.background = "#3B82F6"; hb.textContent = "HUB"; }
     var title = el("div", "hub-topbar-title");
     var nm = el("span", "hub-topbar-name");
     nm.textContent = "HUB";
@@ -849,7 +850,7 @@
     var at = el("div", "hub-settext");
     var at1 = el("div", "hub-title"); at1.textContent = "About";
     var at2 = el("div", "hub-meta");
-    at2.textContent = "HUB, part of the NXT OS. One dashboard for TXT, GRD, DCK, MEM, PDF, Vector and Pixel.";
+    at2.textContent = "HUB, part of the NXT OS. One dashboard for TXT, GRD, DCK, MEM, PDF, VAC and Pixel.";
     at.appendChild(at1); at.appendChild(at2);
     about.appendChild(at);
     body.appendChild(about);
@@ -962,8 +963,9 @@
     /* header: NXT OS brand, HUB as the app name */
     var head = el("div", "eco-home-head");
     var hb = el("span", "app-badge");
-    hb.style.background = "#3B82F6";
-    hb.textContent = "HUB";
+    var hubLogo = (T.appLogoImg ? T.appLogoImg("hub") : null);
+    if (hubLogo) { hb.className += " app-logo-badge"; hb.appendChild(hubLogo); }
+    else { hb.style.background = "#3B82F6"; hb.textContent = "HUB"; }
     var htxt = el("div");
     var h1 = el("h1"); h1.textContent = "Hub";
     var hp = el("p"); hp.textContent = "NXT OS · every file, every app, one dashboard.";
