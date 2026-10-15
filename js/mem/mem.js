@@ -86,6 +86,7 @@
     for (var i = 0; i < bs.length; i++) if (bs[i].id === b.id) { bs[i] = b; done = true; break; }
     if (!done) bs.unshift(b);
     setBoards(bs);
+    if (typeof ui !== "undefined" && ui.board && ui.board.id === b.id) ui.board = b;
     touchRecent({ id: b.id, title: b.title || "Untitled board", updatedAt: b.updatedAt, kind: "board" });
   }
   function retagNote(n) {
