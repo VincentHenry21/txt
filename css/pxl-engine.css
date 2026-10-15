@@ -1,0 +1,136 @@
+/* NXT PXL Develop Engine styles. Works in light and dark mode via tokens.
+   PXL signature palette #EC4899 used for develop accents. No em dashes. */
+.dv-panel .px-phead span {
+  color: #EC4899;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.dv-btnbar { flex-wrap: wrap; }
+.dv-srow { margin: 0; }
+
+/* accordions */
+.dv-acc { border: 1px solid var(--line); border-radius: 8px; margin: 6px 0; overflow: hidden; }
+.dv-acchead {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; background: var(--surface-2); border: 0; cursor: pointer;
+  color: var(--ink); font-size: 13px; font-weight: 600; min-height: 44px;
+}
+.dv-acchead:hover { background: var(--accent-soft); }
+.dv-chev svg { width: 16px; height: 16px; transition: transform 0.15s ease; display: block; }
+.dv-acc.open .dv-chev svg { transform: rotate(180deg); }
+.dv-accbody { display: none; padding: 8px 10px 10px; }
+.dv-acc.open .dv-accbody { display: block; }
+.dv-subhead { font-size: 12px; font-weight: 700; color: var(--muted); margin: 10px 0 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* histogram */
+.dv-hist { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 8px; background: #0b0d12; }
+.dv-zones { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 6px; }
+.dv-zone {
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 4px;
+  text-align: center; cursor: ew-resize; user-select: none; touch-action: none;
+  background: var(--surface-2); min-height: 44px;
+  display: flex; flex-direction: column; justify-content: center; gap: 2px;
+}
+.dv-zone:hover { border-color: #EC4899; }
+.dv-zlab { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.dv-zval { font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* tone curve */
+.dv-ctabs { display: flex; gap: 4px; margin-bottom: 6px; }
+.dv-ctab {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; min-height: 32px;
+}
+.dv-ctab.on { border-color: #EC4899; color: #EC4899; font-weight: 700; }
+.dv-curve { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 8px; background: #0b0d12; touch-action: none; cursor: crosshair; }
+.dv-cpresets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* HSL mixer */
+.dv-hslgrid { display: flex; flex-direction: column; gap: 2px; }
+.dv-hslrow { display: grid; grid-template-columns: 22px repeat(3, 1fr); gap: 6px; align-items: center; min-height: 44px; }
+.dv-hslchip { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line); }
+.dv-hslcell { display: flex; align-items: center; gap: 4px; }
+.dv-hsln { font-size: 10px; color: var(--muted); width: 10px; }
+.dv-hslcell input[type="range"] { width: 100%; min-height: 36px; accent-color: #EC4899; }
+
+/* grading wheels */
+.dv-wheels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.dv-wheelcell { text-align: center; }
+.dv-wheellab { font-size: 11px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.dv-wheel { width: 100%; max-width: 96px; height: auto; touch-action: none; cursor: crosshair; }
+.dv-wheellab2 { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* presets */
+.dv-pfolder { margin-top: 8px; }
+.dv-pftitle { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.dv-pfcount { color: var(--muted); font-weight: 400; }
+.dv-pgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.dv-preset {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 8px; padding: 10px 8px; font-size: 12px; cursor: pointer; min-height: 44px;
+}
+.dv-preset:hover { border-color: #EC4899; background: var(--accent-soft); }
+.dv-pgroups { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 8px 0; }
+.dv-pg { font-size: 13px; color: var(--ink); display: flex; gap: 6px; align-items: center; text-transform: capitalize; }
+.dv-pfield { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.dv-pfield input[type="text"], .dv-pfield select {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 6px; padding: 10px; font-size: 14px; min-height: 44px;
+}
+
+/* masks */
+.dv-masklist { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.dv-maskrow {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  border: 1px solid var(--line); border-radius: 8px; min-height: 44px;
+}
+.dv-maskrow.sel { border-color: #EC4899; }
+.dv-maskname { flex: 1; text-align: left; background: none; border: 0; color: var(--ink); font-size: 13px; cursor: pointer; }
+.dv-maskedit { margin-top: 6px; }
+.dv-maskov { position: absolute; z-index: 30; touch-action: none; }
+
+/* history */
+.dv-histlist { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; max-height: 220px; overflow-y: auto; }
+.dv-histrow {
+  text-align: left; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); border-radius: 6px; padding: 8px 10px; font-size: 12px; cursor: pointer; min-height: 36px;
+}
+.dv-histrow:hover { border-color: #EC4899; }
+.dv-snaps { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.dv-snaprow { display: flex; gap: 4px; align-items: center; }
+.dv-snapname { flex: 1; }
+
+/* filmstrip */
+.dv-film { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px; margin-top: 6px; }
+.dv-fitem {
+  flex: 0 0 auto; width: 132px; border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px; background: var(--surface); cursor: pointer;
+}
+.dv-fitem.sel { border-color: #EC4899; box-shadow: 0 0 0 1px #EC4899; }
+.dv-fthumb { width: 100%; height: auto; display: block; border-radius: 4px; }
+.dv-fname { font-size: 11px; color: var(--ink); margin: 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-stars { display: flex; gap: 2px; }
+.dv-star { background: none; border: 0; padding: 2px; cursor: pointer; color: var(--line); min-width: 24px; min-height: 24px; }
+.dv-star svg { width: 14px; height: 14px; fill: currentColor; display: block; }
+.dv-star.on { color: #F59E0B; }
+.dv-flag {
+  margin-top: 4px; width: 100%; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--surface-2); color: var(--muted); font-size: 11px; padding: 6px; cursor: pointer; min-height: 32px;
+}
+.dv-flag.pick { color: #10B981; border-color: #10B981; font-weight: 700; }
+.dv-flag.reject { color: #EF4444; border-color: #EF4444; font-weight: 700; }
+
+/* Burmese text line height */
+.dv-panel [lang="my"] { line-height: 1.85; }
+
+/* small screens: wheels and zones collapse gracefully */
+@media (max-width: 520px) {
+  .dv-wheels { grid-template-columns: repeat(2, 1fr); }
+  .dv-pgrid { grid-template-columns: 1fr 1fr; }
+  .dv-zones { grid-template-columns: repeat(5, 1fr); }
+  .dv-zlab { font-size: 8px; }
+}
+/* iPad: keep panels roomy */
+@media (min-width: 521px) and (max-width: 1100px) {
+  .dv-wheels { grid-template-columns: repeat(4, 1fr); }
+}
