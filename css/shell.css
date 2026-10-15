@@ -172,6 +172,10 @@
   background: var(--surface); border-top: 1px solid var(--line); font-size: 12px; color: var(--muted);
 }
 .sb-left, .sb-right { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.sb-brand {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--accent);
+  white-space: nowrap; padding: 4px 8px; line-height: 1.85;
+}
 .sb-btn {
   border: 0; background: none; cursor: pointer; font-size: 12px; color: var(--muted);
   padding: 4px 8px; border-radius: 6px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
