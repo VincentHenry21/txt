@@ -737,13 +737,14 @@
     var dots = el("span", "waffle-dots");
     for (var i = 0; i < 9; i++) dots.appendChild(el("i"));
     waffle.appendChild(dots);
-    waffle.addEventListener("click", function () {
+    waffle.addEventListener("click", function (e) {
+      e.stopPropagation();
       try {
         if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") {
           T.ecosystem.toggleLauncher();
           return;
         }
-      } catch (e) { /* fall through to the toast */ }
+      } catch (err) { /* fall through to the toast */ }
       toast("The app launcher is not available yet.", "error");
     });
     var gear = el("button", "icon-btn", "hub-settingsBtn");
