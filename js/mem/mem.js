@@ -573,7 +573,9 @@
     '2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>';
   function memTopbarChrome(bar, tag) {
     var badge = mk("span", "mem-appbadge");
-    badge.textContent = "MEM";
+    var memTopLogo = (T.appLogoImg ? T.appLogoImg("mem") : null);
+    if (memTopLogo) { badge.className += " app-logo-badge"; badge.appendChild(memTopLogo); }
+    else { badge.textContent = "MEM"; }
     badge.setAttribute("aria-hidden", "true");
     bar.insertBefore(badge, bar.firstChild);
     var launch = btn("mem-launcher-" + tag, "App launcher", null, "icon-btn waffle-btn mem-topbtn");
@@ -758,8 +760,9 @@
     var home = mk("div", "eco-home", "mem-home");
     var head = mk("div", "eco-home-head");
     var badge = mk("span", "app-badge");
-    badge.style.background = "#10B981";
-    badge.textContent = "MEM";
+    var memLogo = (T.appLogoImg ? T.appLogoImg("mem") : null);
+    if (memLogo) { badge.className += " app-logo-badge"; badge.appendChild(memLogo); }
+    else { badge.style.background = "#10B981"; badge.textContent = "MEM"; }
     var titles = mk("div");
     var h1 = mk("h1"); h1.textContent = "MEM";
     var sub = mk("p"); sub.textContent = "Whiteboard and notes. Clip anything straight into TXT.";
