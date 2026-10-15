@@ -1185,70 +1185,111 @@
     } catch (e) { return ""; }
   }
 
-  function renderHome() {
-    if (!built) return;
-    var q = (E.search && E.search.value || "").trim().toLowerCase();
-    if (!E.search) E.search = document.getElementById("grd-search");
-    q = (document.getElementById("grd-search").value || "").trim().toLowerCase();
-    var rg = document.getElementById("grd-recent-grid");
-    var tg = document.getElementById("grd-tpl-grid");
-    var empty = document.getElementById("grd-home-empty");
-    rg.innerHTML = ""; tg.innerHTML = "";
+  /* Homescreen: skeleton-first paint. Grids render asynchronously so the
+     .nxt-skeleton shimmer shows while large lists are built; on fast renders
+     the timeout fires before the browser paints, so there is no flicker. */
+  var homeSeq = 0; // guards the async paint against rapid re-renders
 
-    var list = files.list();
-    var shown = 0;
-    list.forEach(function (f) {
+  function collectHomeItems(q) {
+    var filesOut = [];
+    files.list().forEach(function (f) {
       if (q && (f.name || "").toLowerCase().indexOf(q) < 0) return;
-      var card = mk("div", "eco-home-card");
-      var t = mk("div", "eco-card-title"); t.textContent = f.name || "Untitled sheet";
-      var m = mk("div", "eco-card-meta"); m.textContent = "Updated " + fmtDate(f.updatedAt);
-      var open = btn("Open", "", "eco-btn", "Open this sheet");
-      open.addEventListener("click", function () {
-        if (!files.open(f.id)) { toast("That sheet is no longer available.", "error"); renderHome(); }
-      });
-      var rn = btn("Rename", "", "eco-btn", "Rename this sheet");
-      rn.addEventListener("click", function () { startInlineRename(card, t, f); });
-      var dup = btn("Duplicate", "", "eco-btn", "Duplicate this sheet");
-      dup.addEventListener("click", function () {
-        if (files.duplicate(f.id)) { toast("Sheet duplicated."); renderHome(); }
-      });
-      var del = btn("Delete", "", "eco-btn eco-btn-danger", "Delete this sheet");
-      del.addEventListener("click", function () {
-        confirmDlg({
-          title: "Delete sheet?",
-          sub: "Delete \"" + (f.name || "Untitled sheet") + "\" permanently?",
-          okText: "Delete",
-          danger: true
-        }).then(function (ok) {
-          if (ok && files.remove(f.id)) { toast("Sheet deleted."); renderHome(); }
-        });
-      });
-      var row = mk("div", "eco-card-actions");
-      row.appendChild(open); row.appendChild(rn); row.appendChild(dup); row.appendChild(del);
-      card.appendChild(t); card.appendChild(m); card.appendChild(row);
-      rg.appendChild(card);
-      shown++;
+      filesOut.push(f);
     });
-
+    var tplsOut = [];
     TEMPLATES.forEach(function (tp) {
       if (q && (tp.name + " " + tp.desc).toLowerCase().indexOf(q) < 0) return;
-      var card = mk("div", "eco-home-card eco-tpl-card");
-      var t = mk("div", "eco-card-title"); t.textContent = tp.name;
-      var m = mk("div", "eco-card-meta"); m.textContent = tp.desc;
-      var use = btn("Use template", "", "eco-btn", "Create a new sheet from the " + tp.name + " template");
-      use.addEventListener("click", function () {
-        var d = newDoc(tp.name + " sheet", tp.id);
-        openDoc(d.id);
-        switchSub("app");
-        switchTab(tp.id === "kanban" ? "kanban" : "grid");
-      });
-      card.appendChild(t); card.appendChild(m); card.appendChild(use);
-      tg.appendChild(card);
-      shown++;
+      tplsOut.push(tp);
     });
+    return { files: filesOut, tpls: tplsOut };
+  }
 
-    document.getElementById("grd-sec-recent").style.display = list.length || !q ? "" : "none";
-    empty.classList.toggle("hidden", shown > 0);
+  function homeSkeletonCard() {
+    var s = mk("div", "eco-home-card nxt-skeleton");
+    s.style.minHeight = "104px";
+    s.setAttribute("aria-hidden", "true");
+    return s;
+  }
+
+  function paintHomeSkeletons(rg, tg, items) {
+    rg.innerHTML = ""; tg.innerHTML = "";
+    var n = 0;
+    items.files.forEach(function () { if (n < 8) { rg.appendChild(homeSkeletonCard()); n++; } });
+    n = 0;
+    items.tpls.forEach(function () { if (n < 8) { tg.appendChild(homeSkeletonCard()); n++; } });
+  }
+
+  function fileCard(f) {
+    var card = mk("div", "eco-home-card");
+    var t = mk("div", "eco-card-title"); t.textContent = f.name || "Untitled sheet";
+    var m = mk("div", "eco-card-meta"); m.textContent = "Updated " + fmtDate(f.updatedAt);
+    var open = btn("Open", "", "eco-btn", "Open this sheet");
+    open.addEventListener("click", function () {
+      if (!files.open(f.id)) { toast("That sheet is no longer available.", "error"); renderHome(); }
+    });
+    var rn = btn("Rename", "", "eco-btn", "Rename this sheet");
+    rn.addEventListener("click", function () { startInlineRename(card, t, f); });
+    var dup = btn("Duplicate", "", "eco-btn", "Duplicate this sheet");
+    dup.addEventListener("click", function () {
+      if (files.duplicate(f.id)) { toast("Sheet duplicated."); renderHome(); }
+    });
+    var del = btn("Delete", "", "eco-btn eco-btn-danger", "Delete this sheet");
+    del.addEventListener("click", function () {
+      confirmDlg({
+        title: "Delete sheet?",
+        sub: "Delete \"" + (f.name || "Untitled sheet") + "\" permanently?",
+        okText: "Delete",
+        danger: true
+      }).then(function (ok) {
+        if (ok && files.remove(f.id)) { toast("Sheet deleted."); renderHome(); }
+      });
+    });
+    var row = mk("div", "eco-card-actions");
+    row.appendChild(open); row.appendChild(rn); row.appendChild(dup); row.appendChild(del);
+    card.appendChild(t); card.appendChild(m); card.appendChild(row);
+    return card;
+  }
+
+  function tplCard(tp) {
+    var card = mk("div", "eco-home-card eco-tpl-card");
+    var t = mk("div", "eco-card-title"); t.textContent = tp.name;
+    var m = mk("div", "eco-card-meta"); m.textContent = tp.desc;
+    var use = btn("Use template", "", "eco-btn", "Create a new sheet from the " + tp.name + " template");
+    use.addEventListener("click", function () {
+      var d = newDoc(tp.name + " sheet", tp.id);
+      openDoc(d.id);
+      switchSub("app");
+      switchTab(tp.id === "kanban" ? "kanban" : "grid");
+    });
+    card.appendChild(t); card.appendChild(m); card.appendChild(use);
+    return card;
+  }
+
+  function paintHomeCards(rg, tg, items, q) {
+    rg.innerHTML = ""; tg.innerHTML = "";
+    items.files.forEach(function (f) { rg.appendChild(fileCard(f)); });
+    items.tpls.forEach(function (tp) { tg.appendChild(tplCard(tp)); });
+    var shown = items.files.length + items.tpls.length;
+    var anyFiles = files.list().length > 0;
+    document.getElementById("grd-sec-recent").style.display = (anyFiles || !q) ? "" : "none";
+    document.getElementById("grd-home-empty").classList.toggle("hidden", shown > 0);
+  }
+
+  function renderHome() {
+    if (!built) return;
+    var q = "";
+    var sEl = document.getElementById("grd-search");
+    if (sEl) { q = (sEl.value || "").trim().toLowerCase(); E.search = sEl; }
+    var rg = document.getElementById("grd-recent-grid");
+    var tg = document.getElementById("grd-tpl-grid");
+    if (!rg || !tg) return;
+    var items = collectHomeItems(q);
+    paintHomeSkeletons(rg, tg, items);
+    var seq = ++homeSeq;
+    setTimeout(function () {
+      if (seq !== homeSeq || !built) return;
+      paintHomeCards(rg, tg, items, q);
+    }, 0);
   }
 
   /* Inline rename inside a homescreen file card (no modal needed). */
@@ -1299,12 +1340,29 @@
       e.stopPropagation();
     });
     fxi.addEventListener("blur", function () { /* commit on blur only if changed via Enter already */ });
-    fx.appendChild(name); fx.appendChild(fxLab); fx.appendChild(fxi);
+    /* Mobile (<=640px) opens the formatbar as a bottom sheet; the toggle
+       button is only visible there (see css/grd.css). */
+    var fmtT = btn("Format", "grd-fmt-toggle", "grd-btn", "Open format controls");
+    fmtT.setAttribute("aria-expanded", "false");
+    fmtT.setAttribute("aria-controls", "grd-formatbar");
+    fmtT.addEventListener("click", function () { toggleFmtSheet(); });
+    fx.appendChild(name); fx.appendChild(fxLab); fx.appendChild(fmtT); fx.appendChild(fxi);
     v.appendChild(fx);
     E.namebox = name; E.fx = fxi;
 
-    /* format toolbar */
-    var ft = mk("div", "grd-formatbar", "grd-formatbar");
+    /* format toolbar: inline on desktop, a shared .nxt-sheet bottom sheet
+       on <=640px (the .nxt-sheet chrome only applies inside that media
+       query, so desktop is unaffected). */
+    var ft = mk("div", "grd-formatbar nxt-sheet", "grd-formatbar");
+    var fthandle = mk("div", "nxt-sheet-handle");
+    fthandle.setAttribute("aria-hidden", "true");
+    ft.appendChild(fthandle);
+    var fthead = mk("div", "grd-fmt-head");
+    var fttitle = mk("span", "grd-fmt-title"); fttitle.textContent = "Format";
+    var fmtClose = btn("Close", "grd-fmt-close", "grd-btn", "Close format panel");
+    fmtClose.addEventListener("click", function () { toggleFmtSheet(false); });
+    fthead.appendChild(fttitle); fthead.appendChild(fmtClose);
+    ft.appendChild(fthead);
     var bold = btn("B", "grd-f-bold", "grd-tbtn grd-tbtn-bold", "Bold");
     bold.addEventListener("click", function () { toggleBold(); });
     var fg = mk("input", "", "grd-f-fg"); fg.type = "color"; fg.value = "#111111"; fg.title = "Text color";
@@ -1332,6 +1390,17 @@
     [bold, fg, bg, nf, ct, sAsc, sDesc, clr].forEach(function (x) { ft.appendChild(x); });
     v.appendChild(ft);
     E.numfmtSel = nf; E.ctypeSel = ct; E.boldBtn = bold;
+    E.fmtBar = ft;
+
+    /* mobile sheet: tap outside or Escape closes */
+    var fmtScrim = mk("div", "grd-fmt-scrim", "grd-fmt-scrim");
+    fmtScrim.setAttribute("aria-hidden", "true");
+    fmtScrim.addEventListener("click", function () { toggleFmtSheet(false); });
+    v.appendChild(fmtScrim);
+    E.fmtScrim = fmtScrim;
+    ft.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { toggleFmtSheet(false); e.stopPropagation(); }
+    });
 
     /* grid */
     var wrap = mk("div", "grd-gridwrap", "grd-gridwrap");
@@ -1369,6 +1438,19 @@
     E.viewGrid = v;
 
     document.addEventListener("keydown", onDocKey);
+  }
+
+  /* Opens/closes the mobile Format bottom sheet (no-op on desktop: the
+     sheet chrome only exists inside the <=640px media query). */
+  function toggleFmtSheet(force) {
+    var ft = E.fmtBar || document.getElementById("grd-formatbar");
+    if (!ft) return;
+    var open = typeof force === "boolean" ? force : !ft.classList.contains("grd-open");
+    ft.classList.toggle("grd-open", open);
+    var sc = E.fmtScrim || document.getElementById("grd-fmt-scrim");
+    if (sc) sc.classList.toggle("grd-open", open);
+    var t = document.getElementById("grd-fmt-toggle");
+    if (t) t.setAttribute("aria-expanded", open ? "true" : "false");
   }
 
   function buildGridSkeleton() {
