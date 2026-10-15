@@ -350,15 +350,15 @@
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  background: rgba(225, 29, 72, 0.08);
-  border: 1px solid #E11D48;
+  background: rgba(255, 46, 147, 0.08);
+  border: 1px solid #FF2E93;
   border-radius: var(--radius);
   padding: 12px 14px;
   margin-bottom: 12px;
   color: var(--ink);
   min-height: 44px;
 }
-.hub-warn svg { width: 20px; height: 20px; color: #E11D48; flex: 0 0 auto; margin-top: 2px; }
+.hub-warn svg { width: 20px; height: 20px; color: #FF2E93; flex: 0 0 auto; margin-top: 2px; }
 .hub-warntext { font-size: 13px; line-height: 1.5; }
 
 /* ---------- settings drawer ---------- */
@@ -420,7 +420,7 @@
 .hub-about { border-bottom: none; }
 .hub-settingswrap [lang="my"], .hub-settingsdrawer [lang="my"] { line-height: 1.85; }
 
-/* ---------- NXT Ecosystem footer ---------- */
+/* ---------- NXT OS footer ---------- */
 .hub-footer {
   margin-top: 8px;
   padding: 18px 4px 8px;
@@ -429,7 +429,15 @@
   color: var(--ink-dim);
   text-align: center;
   min-height: 44px;
+  display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; justify-content: center;
 }
+.hub-foot-brand { line-height: 1.85; }
+.hub-foot-links { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.hub-foot-link {
+  border: 0; background: none; cursor: pointer; min-height: 44px; min-width: 44px; padding: 0 8px;
+  font-size: 11px; font-weight: 600; color: var(--ink-dim); line-height: 1.85;
+}
+.hub-foot-link:hover { color: var(--accent); }
 
 /* ---------- skeleton loaders (NXT shared shimmer pattern) ---------- */
 .nxt-skeleton { position: relative; overflow: hidden; background: var(--surface-2); border-radius: 10px; min-height: 20px; }
