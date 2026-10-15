@@ -1,26 +1,32 @@
-/* TXT ecosystem HUB dashboard (v5 wave): fills #view-hub.
+/* TXT ecosystem HUB dashboard (v5 wave + NXT phase 1): fills #view-hub.
 
    Dependency-free IIFE module. The HUB view IS its own homescreen: a unified
-   dashboard with an omnibox, recent files across all apps, per-app storage
-   analytics, quick actions, and a persistent cross-app clipboard shelf.
+   dashboard with a per-app topbar (9-dot launcher + HUB settings), an
+   omnibox, quick actions, tabbed sections (Recent / Files / Clipboard),
+   a cross-app file browser, per-app storage analytics, quick actions, and
+   a persistent cross-app clipboard shelf.
 
    T.hub = {
-     show(), hide(), search(q), toggleShelf(),
+     show(), hide(), search(q), toggleShelf(force), toggleSettings(force),
+     setTab(name), getTab(),
+     getSettings(), setSetting(key, val),
      collectRecents(), searchAll(q), storageStats(), formatBytes(n),
-     openRecent(item), quickNew(app),
+     openRecent(item), openFile(app, file), renameFile(app, file),
+     deleteFile(app, file), quickNew(app),
      getShelf(), pinItem(item), unpinItem(id), removeItem(id),
      pinSelection(), copyText(text), insertIntoTxt(item), downloadItem(item)
    }
 
-   Data sources (all read-only, all guarded; apps may not have run yet):
+   Data sources (all read-only unless a file action is taken, all guarded):
    - TXT word docs: (T.state && T.state.docs), bodies via T.loadDoc / localStorage "txt:doc:<id>"
-   - GRD/DCK/MEM/PDF: T.store.get('<app>') namespaces; their "recent" arrays
-     for the recents list, whole namespace scanned for content search.
-   - Shelf: persisted in T.store 'hub' namespace, key 'shelf'.
+   - GRD/DCK/MEM/PDF/Vector/Pixel: T.<app>.files = { list, create, rename,
+     duplicate, remove, open } when that API exists (feature-detected); the
+     legacy open/new method maps are kept as a fallback.
+   - Shelf + settings: persisted in T.store 'hub' namespace ('shelf', 'settings').
 
-   Opening a file: T.ecosystem.openApp(app), then the target app's own open
-   API, consumed defensively (T.grd.openSheet, T.dck.openDeck, T.mem.openNote,
-   T.pdf.openDoc, T.editor.openDoc). If the app is not loaded, a toast explains. */
+   Opening a file: T.ecosystem.openApp(app) (or setPersona for vector/pixel),
+   then the target app's own files.open API (or legacy open method). If the
+   app is not loaded, a toast explains. */
 (function () {
   "use strict";
   var T = window.TXT;
@@ -30,10 +36,15 @@
     { id: "grd", code: "GRD", color: "#10B981", label: "Sheets" },
     { id: "dck", code: "DCK", color: "#F97316", label: "Decks" },
     { id: "mem", code: "MEM", color: "#8B5CF6", label: "Notes" },
-    { id: "pdf", code: "PDF", color: "#E11D48", label: "PDF docs" }
+    { id: "pdf", code: "PDF", color: "#E11D48", label: "PDF docs" },
+    { id: "vector", code: "VCT", color: "#F59E0B", label: "Vector drawings" },
+    { id: "pixel", code: "PXL", color: "#EC4899", label: "Pixel images" }
   ];
   var APP_BY_ID = {};
   APPS.forEach(function (a) { APP_BY_ID[a.id] = a; });
+
+  /* apps with a file source, in browser order */
+  var FILE_APPS = ["txt", "grd", "dck", "mem", "pdf", "vector", "pixel"];
 
   /* localStorage key prefixes counted toward each app's storage footprint */
   var LS_PREFIX = {
@@ -42,10 +53,35 @@
     dck: ["dck:", "DCK_"],
     mem: ["mem:", "MEM_"],
     pdf: ["pdf:", "PDF_"],
+    vector: ["vector:"],
+    pixel: ["pixel:"],
     hub: ["hub:", "HUB_"]
   };
   var REF_BYTES = 5 * 1024 * 1024; // 5 MB reference for the storage section
   var SHELF_MAX = 100;
+  var SHELF_TAB_MAX = 6;
+
+  var TABS = [
+    { id: "recent", label: "Recent" },
+    { id: "files", label: "Files" },
+    { id: "clipboard", label: "Clipboard" }
+  ];
+
+  /* HUB settings: persisted via T.store, 'hub' namespace, 'settings' key. */
+  var SET_DEFAULTS = { warnMB: 50, landing: "recent", showCounts: true };
+
+  var GEAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" ' +
+    'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="12" cy="12" r="3"/>' +
+    '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06' +
+    'a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09' +
+    'A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83' +
+    'l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09' +
+    'A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83' +
+    'l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09' +
+    'a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83' +
+    'l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4' +
+    'h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
   /* ---------------- small safe helpers ---------------- */
   function esc(s) {
@@ -73,8 +109,18 @@
   }
   function openAppView(app) {
     try {
+      if ((app === "vector" || app === "pixel") && T.ecosystem && typeof T.ecosystem.setPersona === "function") {
+        T.ecosystem.setPersona(app);
+        return;
+      }
       if (T.ecosystem && typeof T.ecosystem.openApp === "function") T.ecosystem.openApp(app);
     } catch (e) { /* no shell */ }
+  }
+  function modalP(opts) {
+    if (T.modal && typeof T.modal === "function") {
+      try { return T.modal(opts); } catch (e) { return Promise.resolve(null); }
+    }
+    return Promise.resolve(null);
   }
   function stripHtml(html) {
     if (!html) return "";
@@ -92,6 +138,48 @@
     return (s > 0 ? "..." : "") + text.slice(s, e) + (e < text.length ? "..." : "");
   }
 
+  /* ---------------- settings ---------------- */
+  function getSettings() {
+    var raw = storeGet("hub", "settings") || {};
+    var warnMB = Number(raw.warnMB);
+    if (!(warnMB > 0)) warnMB = SET_DEFAULTS.warnMB;
+    var landing = raw.landing;
+    var ok = false;
+    TABS.forEach(function (t) { if (t.id === landing) ok = true; });
+    if (!ok) landing = SET_DEFAULTS.landing;
+    var showCounts = raw.showCounts === undefined ? SET_DEFAULTS.showCounts : !!raw.showCounts;
+    return { warnMB: warnMB, landing: landing, showCounts: showCounts };
+  }
+  function setSetting(key, val) {
+    var s = getSettings();
+    if (key === "warnMB") {
+      val = Number(val);
+      if (!(val > 0)) return s;
+      s.warnMB = val;
+    } else if (key === "landing") {
+      var ok = false;
+      TABS.forEach(function (t) { if (t.id === val) ok = true; });
+      if (!ok) return s;
+      s.landing = val;
+    } else if (key === "showCounts") {
+      s.showCounts = !!val;
+    } else {
+      return s;
+    }
+    storeSet("hub", "settings", s);
+    applySettings();
+    return s;
+  }
+  function applySettings() {
+    var s = getSettings();
+    if (built) {
+      syncSettingsForm();
+      renderStorage();
+      renderBrowser();
+    }
+    return s;
+  }
+
   /* ---------------- 1. recent files, unified ---------------- */
   function collectRecents() {
     var out = [];
@@ -105,7 +193,7 @@
         });
       });
     } catch (e) { /* txt not ready */ }
-    ["grd", "dck", "mem", "pdf"].forEach(function (app) {
+    ["grd", "dck", "mem", "pdf", "vector", "pixel"].forEach(function (app) {
       var rec = storeGet(app, "recent");
       if (!rec || !rec.length) return;
       rec.forEach(function (e) {
@@ -120,26 +208,162 @@
     return out;
   }
 
-  /* Open a recent file: switch to the app, then use that app's own open API. */
-  function openRecent(item) {
-    if (!item || !item.app) return;
-    var app = item.app, id = item.id;
+  /* Open a file: switch to the app, then use that app's own open API. */
+  function openFile(app, file) {
+    if (!app || !file) return;
+    openAppView(app);
     if (app === "txt") {
-      openAppView("txt");
-      if (T.editor && typeof T.editor.openDoc === "function") { T.editor.openDoc(id); return; }
+      if (T.editor && typeof T.editor.openDoc === "function") { T.editor.openDoc(file.id); return; }
       toast("The Word editor is not ready yet.", "error"); return;
     }
-    openAppView(app);
     var api = T[app];
+    if (api && api.files && typeof api.files.open === "function") {
+      try { api.files.open(file.id); } catch (e) { toast("Could not open the file.", "error"); }
+      return;
+    }
     var method = { grd: "openSheet", dck: "openDeck", mem: "openNote", pdf: "openDoc" }[app];
-    if (api && method && typeof api[method] === "function") { api[method](id); return; }
-    toast(APP_BY_ID[app].code + " is open, but it has not finished loading yet.", "error");
+    if (api && method && typeof api[method] === "function") { api[method](file.id); return; }
+    toast(((APP_BY_ID[app] || {}).code || app) + " is open, but it has not finished loading yet.", "error");
+  }
+
+  /* Backwards-compatible recent opener (recents carry title/kind). */
+  function openRecent(item) {
+    if (!item || !item.app) return;
+    openFile(item.app, { id: item.id, name: item.title || "Untitled" });
+  }
+
+  /* ---------------- cross-app file sources ---------------- */
+  /* Returns null when the app has no file source (section stays hidden),
+     otherwise [{id, name, updatedAt}] sorted newest first. */
+  function appFileSource(app) {
+    if (app === "txt") {
+      var docs = [];
+      try { docs = (T.state && T.state.docs) || []; } catch (e) { docs = []; }
+      return docs.filter(Boolean).map(function (m) {
+        return { id: m.id, name: m.title || "Untitled document", updatedAt: m.updatedAt || 0 };
+      }).sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+    }
+    var api = T[app];
+    if (api && api.files && typeof api.files.list === "function") {
+      var list = [];
+      try { list = api.files.list() || []; } catch (e) { list = []; }
+      return list.filter(Boolean).map(function (f) {
+        return { id: f.id, name: f.name || f.title || "Untitled", updatedAt: f.updatedAt || f.ts || 0 };
+      }).sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+    }
+    return null;
+  }
+
+  function refreshFileViews() {
+    renderBrowser();
+    renderRecents();
+    renderStorage();
+  }
+
+  /* Rename a file through the owning app's API (TXT via the core docs list). */
+  function renameFile(app, file) {
+    if (!app || !file) return Promise.resolve(false);
+    var label = ((APP_BY_ID[app] || {}).code || app);
+    return modalP({
+      title: "Rename",
+      sub: "Rename this " + label + " file.",
+      fields: [{ key: "name", label: "Name", value: file.name, ph: "File name" }],
+      okText: "Rename"
+    }).then(function (out) {
+      if (!out) return false;
+      var name = String(out.name == null ? "" : out.name).trim();
+      if (!name) { toast("Name cannot be empty.", "error"); return false; }
+      if (app === "txt") {
+        var docs = [];
+        try { docs = (T.state && T.state.docs) || []; } catch (e) { docs = []; }
+        var m = null;
+        for (var i = 0; i < docs.length; i++) {
+          if (docs[i] && docs[i].id === file.id) { m = docs[i]; break; }
+        }
+        if (!m) { toast("File not found.", "error"); return false; }
+        m.title = name;
+        m.updatedAt = Date.now();
+        try { if (typeof T.lsSet === "function") T.lsSet("txt:docs", docs); } catch (e) { /* blocked */ }
+        try {
+          if (typeof T.loadDoc === "function" && typeof T.docKey === "function" && typeof T.lsSet === "function") {
+            var body = T.loadDoc(file.id);
+            if (body) { body.title = name; T.lsSet(T.docKey(file.id), body); }
+          }
+        } catch (e) { /* blocked */ }
+        toast("Renamed.");
+        refreshFileViews();
+        return true;
+      }
+      var api = T[app];
+      if (api && api.files && typeof api.files.rename === "function") {
+        var r;
+        try { r = api.files.rename(file.id, name); }
+        catch (e) { toast("Rename failed.", "error"); return false; }
+        var done = function () { toast("Renamed."); refreshFileViews(); };
+        if (r && typeof r.then === "function") r.then(done, function () { toast("Rename failed.", "error"); });
+        else done();
+        return true;
+      }
+      toast("Renaming is not available for this app.", "error");
+      return false;
+    });
+  }
+
+  /* Delete a file through the owning app's API, after a confirm modal. */
+  function deleteFile(app, file) {
+    if (!app || !file) return Promise.resolve(false);
+    return modalP({
+      title: "Delete file?",
+      sub: "Delete \"" + file.name + "\"? This cannot be undone.",
+      okText: "Delete",
+      danger: true
+    }).then(function (ok) {
+      if (!ok) return false;
+      if (app === "txt") {
+        var docs = [];
+        try { docs = (T.state && T.state.docs) || []; } catch (e) { docs = []; }
+        var found = false;
+        docs = docs.filter(function (d) {
+          if (d && d.id === file.id) { found = true; return false; }
+          return true;
+        });
+        if (!found) { toast("File not found.", "error"); return false; }
+        try { if (T.state) T.state.docs = docs; } catch (e) { /* frozen */ }
+        try { if (typeof T.lsSet === "function") T.lsSet("txt:docs", docs); } catch (e) { /* blocked */ }
+        try {
+          localStorage.removeItem("txt:doc:" + file.id);
+          if (typeof T.histKey === "function") localStorage.removeItem(T.histKey(file.id));
+        } catch (e) { /* blocked */ }
+        try {
+          if (T.state && T.state.currentId === file.id && T.editor && typeof T.editor.newDoc === "function") {
+            var title = "Untitled document";
+            try { title = T.t("untitled"); } catch (e2) {}
+            T.editor.newDoc(title, "");
+          }
+        } catch (e) { /* headless */ }
+        toast("Deleted: " + file.name);
+        refreshFileViews();
+        return true;
+      }
+      var api = T[app];
+      if (api && api.files && typeof api.files.remove === "function") {
+        var r;
+        try { r = api.files.remove(file.id); }
+        catch (e) { toast("Delete failed.", "error"); return false; }
+        var done = function () { toast("Deleted: " + file.name); refreshFileViews(); };
+        if (r && typeof r.then === "function") r.then(done, function () { toast("Delete failed.", "error"); });
+        else done();
+        return true;
+      }
+      toast("Delete is not available for this app.", "error");
+      return false;
+    });
   }
 
   /* Quick actions: jump to an app and trigger its creation flow. */
   function quickNew(app) {
+    openAppView(app);
     if (app === "txt") {
-      openAppView("txt");
       if (T.editor && typeof T.editor.newDoc === "function") {
         var title = "Untitled document";
         try { title = T.t("untitled"); } catch (e) {}
@@ -148,11 +372,14 @@
       }
       toast("The Word editor is not ready yet.", "error"); return;
     }
-    openAppView(app);
     var api = T[app];
+    if (api && api.files && typeof api.files.create === "function") {
+      try { api.files.create(); } catch (e) { toast("Could not create the file.", "error"); }
+      return;
+    }
     var method = { grd: "newSheet", dck: "newDeck", mem: "newNote", pdf: "newDoc" }[app];
     if (api && method && typeof api[method] === "function") { api[method](); return; }
-    toast(APP_BY_ID[app].code + " is open, but it has not finished loading yet.", "error");
+    toast(((APP_BY_ID[app] || {}).code || app) + " is open, but it has not finished loading yet.", "error");
   }
 
   /* ---------------- 2. storage analytics ---------------- */
@@ -231,7 +458,7 @@
         var keys = Object.keys(node);
         for (var i = keys.length - 1; i >= 0; i--) {
           var k = keys[i];
-          if (k === "recent" || k === "shelf") continue; // handled separately
+          if (k === "recent" || k === "shelf" || k === "settings") continue; // handled separately
           stack.push({ node: node[k], path: fr.path ? fr.path + "." + k : k, ctx: ctx, depth: fr.depth + 1 });
         }
       } else if (typeof node === "string" && node.length >= 2 && node.length <= 4000) {
@@ -315,7 +542,7 @@
   function openResult(r) {
     if (!r) return;
     if (typeof r.run === "function") { r.run(); return; }
-    openRecent({ app: r.app, id: r.id });
+    openRecent({ app: r.app, id: r.id, title: r.title });
   }
 
   /* ---------------- 4. clipboard shelf ---------------- */
@@ -440,6 +667,7 @@
   var built = false;
   var els = {};
   var omniState = { results: [], active: -1 };
+  var tabState = "recent";
 
   function el(tag, cls, id) {
     var d = document.createElement(tag);
@@ -464,20 +692,257 @@
     return b;
   }
 
+  /* ---- per-app topbar: badge + HUB name, 9-dot launcher, settings gear ---- */
+  function buildTopbar(view) {
+    var bar = el("div", "hub-topbar", "hub-topbar");
+    var hb = el("span", "hub-badge");
+    hb.style.background = "#4F46E5";
+    hb.textContent = "HUB";
+    var title = el("div", "hub-topbar-title");
+    var nm = el("span", "hub-topbar-name");
+    nm.textContent = "HUB";
+    var eco = el("span", "hub-topbar-eco");
+    eco.textContent = "NXT Ecosystem";
+    title.appendChild(nm);
+    title.appendChild(eco);
+    var spacer = el("div", "hub-spacer");
+    var waffle = el("button", "icon-btn waffle-btn", "hub-launcherBtn");
+    waffle.type = "button";
+    waffle.title = "Open app launcher";
+    waffle.setAttribute("aria-label", "Open app launcher");
+    waffle.setAttribute("aria-haspopup", "true");
+    var dots = el("span", "waffle-dots");
+    for (var i = 0; i < 9; i++) dots.appendChild(el("i"));
+    waffle.appendChild(dots);
+    waffle.addEventListener("click", function () {
+      try {
+        if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") {
+          T.ecosystem.toggleLauncher();
+          return;
+        }
+      } catch (e) { /* fall through to the toast */ }
+      toast("The app launcher is not available yet.", "error");
+    });
+    var gear = el("button", "icon-btn", "hub-settingsBtn");
+    gear.type = "button";
+    gear.title = "HUB settings";
+    gear.setAttribute("aria-label", "HUB settings");
+    gear.innerHTML = GEAR_SVG;
+    gear.addEventListener("click", function () { toggleSettings(true); });
+    bar.appendChild(hb);
+    bar.appendChild(title);
+    bar.appendChild(spacer);
+    bar.appendChild(waffle);
+    bar.appendChild(gear);
+    view.appendChild(bar);
+  }
+
+  function setRowNumber(label, hint, id, min, max) {
+    var row = el("label", "hub-setrow");
+    var tx = el("div", "hub-settext");
+    var t1 = el("div", "hub-title"); t1.textContent = label;
+    var t2 = el("div", "hub-meta"); t2.textContent = hint;
+    tx.appendChild(t1); tx.appendChild(t2);
+    var inp = el("input", null, id);
+    inp.type = "number";
+    inp.min = String(min);
+    inp.max = String(max);
+    inp.step = "1";
+    row.appendChild(tx); row.appendChild(inp);
+    return row;
+  }
+  function setRowSelect(label, hint, id, options) {
+    var row = el("label", "hub-setrow");
+    var tx = el("div", "hub-settext");
+    var t1 = el("div", "hub-title"); t1.textContent = label;
+    var t2 = el("div", "hub-meta"); t2.textContent = hint;
+    tx.appendChild(t1); tx.appendChild(t2);
+    var sel = el("select", null, id);
+    options.forEach(function (o) {
+      var op = el("option");
+      op.value = o[0];
+      op.textContent = o[1];
+      sel.appendChild(op);
+    });
+    row.appendChild(tx); row.appendChild(sel);
+    return row;
+  }
+  function setRowToggle(label, hint, id) {
+    var row = el("label", "hub-setrow");
+    var tx = el("div", "hub-settext");
+    var t1 = el("div", "hub-title"); t1.textContent = label;
+    var t2 = el("div", "hub-meta"); t2.textContent = hint;
+    tx.appendChild(t1); tx.appendChild(t2);
+    var sw = el("span", "hub-switch");
+    var cb = el("input", null, id);
+    cb.type = "checkbox";
+    cb.setAttribute("role", "switch");
+    cb.setAttribute("aria-label", label);
+    var knob = el("span", "hub-knob");
+    sw.appendChild(cb); sw.appendChild(knob);
+    row.appendChild(tx); row.appendChild(sw);
+    return row;
+  }
+
+  function syncSettingsForm() {
+    var s = getSettings();
+    var warn = document.getElementById("hub-set-warnMB");
+    if (warn) warn.value = s.warnMB;
+    var land = document.getElementById("hub-set-landing");
+    if (land) land.value = s.landing;
+    var sc = document.getElementById("hub-set-showCounts");
+    if (sc) sc.checked = s.showCounts;
+  }
+
+  function buildSettingsDrawer(view) {
+    var wrap = el("div", "hub-drawerwrap", "hub-settingsWrap");
+    wrap.setAttribute("aria-hidden", "true");
+    var back = el("div", "hub-backdrop", "hub-settingsBackdrop");
+    back.addEventListener("click", function () { toggleSettings(false); });
+    var drawer = el("aside", "hub-drawer", "hub-settingsDrawer");
+    drawer.setAttribute("role", "dialog");
+    drawer.setAttribute("aria-label", "HUB settings");
+    var dh = el("div", "hub-drawer-head");
+    var dht = el("h2"); dht.textContent = "HUB settings";
+    var closeB = iconBtn("i-x", "Close settings", function () { toggleSettings(false); });
+    dh.appendChild(dht); dh.appendChild(closeB);
+    drawer.appendChild(dh);
+    var body = el("div", "hub-setbody", "hub-settingsList");
+    body.appendChild(setRowNumber(
+      "Storage warning",
+      "Show a warning when total storage passes this many megabytes.",
+      "hub-set-warnMB", 1, 100000));
+    body.appendChild(setRowSelect(
+      "Default landing tab",
+      "Which section HUB shows first when you open it.",
+      "hub-set-landing",
+      [["recent", "Recent"], ["files", "Files"], ["clipboard", "Clipboard"]]));
+    body.appendChild(setRowToggle(
+      "Show file counts",
+      "Show the number of files next to each app in the file browser.",
+      "hub-set-showCounts"));
+    var about = el("div", "hub-setrow hub-about");
+    var at = el("div", "hub-settext");
+    var at1 = el("div", "hub-title"); at1.textContent = "About";
+    var at2 = el("div", "hub-meta");
+    at2.textContent = "HUB, part of the NXT Ecosystem. One dashboard for TXT, GRD, DCK, MEM, PDF, Vector and Pixel.";
+    at.appendChild(at1); at.appendChild(at2);
+    about.appendChild(at);
+    body.appendChild(about);
+    drawer.appendChild(body);
+    wrap.appendChild(back); wrap.appendChild(drawer);
+    view.appendChild(wrap);
+    els.settingsWrap = wrap;
+    var warn = document.getElementById("hub-set-warnMB");
+    warn.addEventListener("change", function () { setSetting("warnMB", warn.value); });
+    var land = document.getElementById("hub-set-landing");
+    land.addEventListener("change", function () { setSetting("landing", land.value); });
+    var sc = document.getElementById("hub-set-showCounts");
+    sc.addEventListener("change", function () { setSetting("showCounts", sc.checked); });
+    syncSettingsForm();
+  }
+
+  function toggleSettings(force) {
+    if (!built) build();
+    var open = typeof force === "boolean" ? force : !els.settingsWrap.classList.contains("hub-open");
+    els.settingsWrap.classList.toggle("hub-open", open);
+    els.settingsWrap.setAttribute("aria-hidden", open ? "false" : "true");
+  }
+
+  /* ---- section tabs: Recent / Files / Clipboard ---- */
+  function setTab(name) {
+    var ok = false;
+    TABS.forEach(function (t) { if (t.id === name) ok = true; });
+    if (!ok) name = "recent";
+    tabState = name;
+    if (!built) return name;
+    TABS.forEach(function (t) {
+      var btn = document.getElementById("hub-tab-" + t.id);
+      var panel = document.getElementById("hub-panel-" + t.id);
+      var on = t.id === name;
+      if (btn) {
+        btn.classList.toggle("hub-tab-active", on);
+        btn.setAttribute("aria-selected", on ? "true" : "false");
+        btn.tabIndex = on ? 0 : -1;
+      }
+      if (panel) panel.classList.toggle("hidden", !on);
+    });
+    if (name === "clipboard") renderShelfTab();
+    return name;
+  }
+  function getTab() { return tabState; }
+
+  function buildTabs(root) {
+    var tabsBar = el("div", "hub-tabs", "hub-tabs");
+    tabsBar.setAttribute("role", "tablist");
+    tabsBar.setAttribute("aria-label", "HUB sections");
+    TABS.forEach(function (t) {
+      var b = el("button", "hub-tab", "hub-tab-" + t.id);
+      b.type = "button";
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-controls", "hub-panel-" + t.id);
+      b.textContent = t.label;
+      b.addEventListener("click", function () { setTab(t.id); });
+      tabsBar.appendChild(b);
+    });
+    root.appendChild(tabsBar);
+
+    /* recent panel */
+    var pRecent = el("div", "hub-panel", "hub-panel-recent");
+    pRecent.setAttribute("role", "tabpanel");
+    pRecent.setAttribute("aria-label", "Recent files");
+    var rcList = el("div", "hub-list", "hub-recent");
+    pRecent.appendChild(rcList);
+    root.appendChild(pRecent);
+    els.recent = rcList;
+
+    /* files panel: the cross-app file browser */
+    var pFiles = el("div", "hub-panel", "hub-panel-files");
+    pFiles.setAttribute("role", "tabpanel");
+    pFiles.setAttribute("aria-label", "All files");
+    var fList = el("div", "hub-files", "hub-files");
+    pFiles.appendChild(fList);
+    root.appendChild(pFiles);
+    els.files = fList;
+
+    /* clipboard panel: compact shelf with shortcuts to the full drawer */
+    var pClip = el("div", "hub-panel", "hub-panel-clipboard");
+    pClip.setAttribute("role", "tabpanel");
+    pClip.setAttribute("aria-label", "Clipboard");
+    var cBtns = el("div", "hub-clipbtns");
+    var openShelfBtn = el("button", "hub-btn", "hub-openShelf");
+    openShelfBtn.type = "button";
+    openShelfBtn.textContent = "Open clipboard shelf";
+    openShelfBtn.addEventListener("click", function () { toggleShelf(true); });
+    var pinBtn = el("button", "hub-btn hub-btn-ghost", "hub-pinClip");
+    pinBtn.type = "button";
+    pinBtn.textContent = "Pin current selection";
+    pinBtn.addEventListener("click", pinSelection);
+    cBtns.appendChild(openShelfBtn);
+    cBtns.appendChild(pinBtn);
+    pClip.appendChild(cBtns);
+    var cList = el("div", "hub-list", "hub-shelfTab");
+    pClip.appendChild(cList);
+    root.appendChild(pClip);
+    els.shelfTab = cList;
+  }
+
   function build() {
     var view = document.getElementById("view-hub");
     if (!view) return;
     view.innerHTML = "";
+    buildTopbar(view);
+
     var root = el("div", "eco-home hub-root", "hub-root");
 
-    /* header */
+    /* header: NXT Ecosystem brand, HUB as the app name */
     var head = el("div", "eco-home-head");
     var hb = el("span", "app-badge");
     hb.style.background = "#4F46E5";
     hb.textContent = "HUB";
     var htxt = el("div");
     var h1 = el("h1"); h1.textContent = "Hub";
-    var hp = el("p"); hp.textContent = "Every file, every app, one dashboard.";
+    var hp = el("p"); hp.textContent = "NXT Ecosystem · every file, every app, one dashboard.";
     htxt.appendChild(h1); htxt.appendChild(hp);
     var spacer = el("div", "spacer");
     var shelfBtn = el("button", "hub-btn hub-btn-ghost", "hub-shelfToggle");
@@ -550,13 +1015,8 @@
     qaSec.appendChild(qaH); qaSec.appendChild(qaRow);
     root.appendChild(qaSec);
 
-    /* recent files */
-    var rcSec = el("div", "eco-home-sec");
-    var rcH = el("h2"); rcH.textContent = "Recent files";
-    var rcList = el("div", "hub-list", "hub-recent");
-    rcSec.appendChild(rcH); rcSec.appendChild(rcList);
-    root.appendChild(rcSec);
-    els.recent = rcList;
+    /* tabbed sections: Recent / Files / Clipboard */
+    buildTabs(root);
 
     /* storage */
     var stSec = el("div", "eco-home-sec");
@@ -567,6 +1027,11 @@
     stSec.appendChild(stH); stSec.appendChild(stList); stSec.appendChild(stNote);
     root.appendChild(stSec);
     els.storage = stList;
+
+    /* NXT Ecosystem footer */
+    var foot = el("div", "hub-footer", "hub-footer");
+    foot.textContent = "Part of NXT Ecosystem";
+    root.appendChild(foot);
 
     view.appendChild(root);
 
@@ -612,8 +1077,78 @@
     view.appendChild(wrap);
     els.drawerWrap = wrap; els.shelfList = shelfList;
 
+    /* settings drawer */
+    buildSettingsDrawer(view);
+
     built = true;
+    setTab(getSettings().landing);
     renderShelf();
+  }
+
+  function fileRow(app, f) {
+    var row = el("div", "hub-row hub-filerow");
+    var info = el("div", "hub-rowinfo");
+    info.appendChild(badge(app));
+    var tt = el("div", "hub-rowtext");
+    var t1 = el("div", "hub-title"); t1.textContent = f.name;
+    var t2 = el("div", "hub-meta"); t2.textContent = rel(f.updatedAt);
+    tt.appendChild(t1); tt.appendChild(t2);
+    info.appendChild(tt);
+    row.appendChild(info);
+    var open = el("button", "hub-btn hub-btn-ghost");
+    open.type = "button";
+    open.textContent = "Open";
+    open.setAttribute("aria-label", "Open " + f.name);
+    open.addEventListener("click", function () { openFile(app, f); });
+    row.appendChild(open);
+    var ren = el("button", "hub-btn hub-btn-ghost");
+    ren.type = "button";
+    ren.textContent = "Rename";
+    ren.setAttribute("aria-label", "Rename " + f.name);
+    ren.addEventListener("click", function () { renameFile(app, f); });
+    row.appendChild(ren);
+    var del = iconBtn("i-trash", "Delete " + f.name, function () { deleteFile(app, f); });
+    row.appendChild(del);
+    return row;
+  }
+
+  function renderBrowser() {
+    if (!els.files) return;
+    els.files.innerHTML = "";
+    var s = getSettings();
+    var rendered = 0;
+    FILE_APPS.forEach(function (app) {
+      var files = appFileSource(app);
+      if (files === null) return; /* no file source: section stays hidden */
+      rendered++;
+      var sec = el("div", "hub-filesec");
+      var head = el("div", "hub-filehead");
+      head.appendChild(badge(app));
+      var label = el("span", "hub-filelabel");
+      label.textContent = (APP_BY_ID[app] || {}).label || app;
+      head.appendChild(label);
+      if (s.showCounts) {
+        var cnt = el("span", "hub-filecount");
+        cnt.textContent = String(files.length);
+        head.appendChild(cnt);
+      }
+      sec.appendChild(head);
+      if (!files.length) {
+        var empty = el("div", "eco-home-empty hub-filesempty");
+        empty.textContent = "No files yet.";
+        sec.appendChild(empty);
+      } else {
+        var list = el("div", "hub-list");
+        files.forEach(function (f) { list.appendChild(fileRow(app, f)); });
+        sec.appendChild(list);
+      }
+      els.files.appendChild(sec);
+    });
+    if (!rendered) {
+      var emptyAll = el("div", "eco-home-empty");
+      emptyAll.textContent = "No apps expose files yet.";
+      els.files.appendChild(emptyAll);
+    }
   }
 
   function renderRecents() {
@@ -656,6 +1191,18 @@
     if (!els.storage) return;
     els.storage.innerHTML = "";
     var st = storageStats();
+    var s = getSettings();
+    var threshold = s.warnMB * 1024 * 1024;
+    if (st.total > threshold) {
+      var w = el("div", "hub-warn");
+      w.setAttribute("role", "alert");
+      try { w.innerHTML = T.icon("i-shield"); } catch (e) { /* no icon */ }
+      var wt = el("div", "hub-warntext");
+      wt.textContent = "Storage is over your " + s.warnMB + " MB warning threshold (" +
+        formatBytes(st.total) + " used). Delete old files to free space.";
+      w.appendChild(wt);
+      els.storage.appendChild(w);
+    }
     var max = Math.max.apply(null, st.apps.map(function (a) { return a.bytes; }).concat([1]));
     st.apps.forEach(function (a) {
       var row = el("div", "hub-storow");
@@ -682,64 +1229,75 @@
     els.storage.appendChild(tot);
   }
 
-  function renderShelf() {
-    if (!els.shelfList) return;
-    els.shelfList.innerHTML = "";
-    var items = getShelf();
+  function shelfCard(it) {
+    var card = el("div", "hub-shelfcard");
+    var top = el("div", "hub-shelftop");
+    var chip = el("span", "hub-chip");
+    chip.textContent = it.type;
+    var tt = el("div", "hub-title"); tt.textContent = it.title;
+    var t2 = el("div", "hub-meta"); t2.textContent = rel(it.ts) + (it.pinned ? " · pinned" : "");
+    var tcol = el("div"); tcol.appendChild(tt); tcol.appendChild(t2);
+    top.appendChild(chip); top.appendChild(tcol);
+    card.appendChild(top);
+    if (it.type === "image" && /^data:image\//i.test(it.content)) {
+      var img = el("img", "hub-thumb");
+      img.src = it.content;
+      img.alt = it.title;
+      card.appendChild(img);
+    } else {
+      var prev = el("div", "hub-preview");
+      prev.textContent = String(it.content).slice(0, 160);
+      card.appendChild(prev);
+    }
+    var acts = el("div", "hub-actions");
+    var copyB = el("button", "hub-btn hub-btn-ghost");
+    copyB.type = "button"; copyB.textContent = "Copy";
+    copyB.addEventListener("click", function () {
+      copyText(it.type === "text" ? it.content : stripHtml(it.content)).then(function (ok) {
+        toast(ok ? "Copied." : "Copy failed in this browser.");
+      });
+    });
+    acts.appendChild(copyB);
+    var insB = el("button", "hub-btn hub-btn-ghost");
+    insB.type = "button"; insB.textContent = "Insert into TXT";
+    insB.addEventListener("click", function () { insertIntoTxt(it); });
+    acts.appendChild(insB);
+    if (it.type === "image" || it.type === "svg") {
+      var dlB = el("button", "hub-btn hub-btn-ghost");
+      dlB.type = "button"; dlB.textContent = "Download";
+      dlB.addEventListener("click", function () { downloadItem(it); });
+      acts.appendChild(dlB);
+    }
+    var pinB = el("button", "hub-btn hub-btn-ghost");
+    pinB.type = "button"; pinB.textContent = it.pinned ? "Unpin" : "Pin";
+    pinB.addEventListener("click", function () { unpinItem(it.id); });
+    acts.appendChild(pinB);
+    var delB = iconBtn("i-trash", "Delete item", function () { removeItem(it.id); });
+    acts.appendChild(delB);
+    card.appendChild(acts);
+    return card;
+  }
+
+  function renderShelfCards(container, items, limit) {
+    container.innerHTML = "";
     if (!items.length) {
       var empty = el("div", "eco-home-empty");
       empty.textContent = "Shelf is empty. Pin the current selection or type text above.";
-      els.shelfList.appendChild(empty);
+      container.appendChild(empty);
       return;
     }
-    items.forEach(function (it) {
-      var card = el("div", "hub-shelfcard");
-      var top = el("div", "hub-shelftop");
-      var chip = el("span", "hub-chip");
-      chip.textContent = it.type;
-      var tt = el("div", "hub-title"); tt.textContent = it.title;
-      var t2 = el("div", "hub-meta"); t2.textContent = rel(it.ts) + (it.pinned ? " · pinned" : "");
-      var tcol = el("div"); tcol.appendChild(tt); tcol.appendChild(t2);
-      top.appendChild(chip); top.appendChild(tcol);
-      card.appendChild(top);
-      if (it.type === "image" && /^data:image\//i.test(it.content)) {
-        var img = el("img", "hub-thumb");
-        img.src = it.content;
-        img.alt = it.title;
-        card.appendChild(img);
-      } else {
-        var prev = el("div", "hub-preview");
-        prev.textContent = String(it.content).slice(0, 160);
-        card.appendChild(prev);
-      }
-      var acts = el("div", "hub-actions");
-      var copyB = el("button", "hub-btn hub-btn-ghost", null);
-      copyB.type = "button"; copyB.textContent = "Copy";
-      copyB.addEventListener("click", function () {
-        copyText(it.type === "text" ? it.content : stripHtml(it.content)).then(function (ok) {
-          toast(ok ? "Copied." : "Copy failed in this browser.");
-        });
-      });
-      acts.appendChild(copyB);
-      var insB = el("button", "hub-btn hub-btn-ghost", null);
-      insB.type = "button"; insB.textContent = "Insert into TXT";
-      insB.addEventListener("click", function () { insertIntoTxt(it); });
-      acts.appendChild(insB);
-      if (it.type === "image" || it.type === "svg") {
-        var dlB = el("button", "hub-btn hub-btn-ghost", null);
-        dlB.type = "button"; dlB.textContent = "Download";
-        dlB.addEventListener("click", function () { downloadItem(it); });
-        acts.appendChild(dlB);
-      }
-      var pinB = el("button", "hub-btn hub-btn-ghost", null);
-      pinB.type = "button"; pinB.textContent = it.pinned ? "Unpin" : "Pin";
-      pinB.addEventListener("click", function () { unpinItem(it.id); });
-      acts.appendChild(pinB);
-      var delB = iconBtn("i-trash", "Delete item", function () { removeItem(it.id); });
-      acts.appendChild(delB);
-      card.appendChild(acts);
-      els.shelfList.appendChild(card);
+    items.slice(0, limit || items.length).forEach(function (it) {
+      container.appendChild(shelfCard(it));
     });
+  }
+
+  function renderShelf() {
+    var items = getShelf();
+    if (els.shelfList) renderShelfCards(els.shelfList, items);
+    renderShelfTab();
+  }
+  function renderShelfTab() {
+    if (els.shelfTab) renderShelfCards(els.shelfTab, getShelf(), SHELF_TAB_MAX);
   }
 
   /* ---------------- omnibox rendering ---------------- */
@@ -793,7 +1351,7 @@
     if (els.results) { els.results.innerHTML = ""; els.results.classList.add("hidden"); }
   }
 
-  /* ---------------- drawer ---------------- */
+  /* ---------------- drawers ---------------- */
   function toggleShelf(force) {
     if (!built) build();
     var open = typeof force === "boolean" ? force : !els.drawerWrap.classList.contains("hub-open");
@@ -807,7 +1365,9 @@
     if (!built) build();
     var view = document.getElementById("view-hub");
     if (view) view.classList.remove("hidden");
+    setTab(getSettings().landing);
     renderRecents();
+    renderBrowser();
     renderStorage();
     renderShelf();
   }
@@ -829,7 +1389,7 @@
     T.bus.on("ecosystem:app", function (p) {
       if (p && p.app === "hub") show();
     });
-    T.bus.on("overlay:escape", function () { toggleShelf(false); });
+    T.bus.on("overlay:escape", function () { toggleShelf(false); toggleSettings(false); });
   }
   document.addEventListener("keydown", function (e) {
     var mod = e.ctrlKey || e.metaKey;
@@ -849,12 +1409,20 @@
     { title: "Hub: toggle clipboard shelf", cat: "Hub", icon: "i-copy", keys: "Ctrl+Shift+K", match: "hub clipboard shelf pin drawer" });
   T.register("hub.pin-selection", function () { toggleShelf(true); pinSelection(); },
     { title: "Hub: pin current selection", cat: "Hub", icon: "i-bookmark", match: "hub pin selection clipboard" });
+  T.register("hub.settings", function () {
+    openAppView("hub");
+    show();
+    toggleSettings(true);
+  }, { title: "Hub: open settings", cat: "Hub", icon: "i-shield", match: "hub settings preferences" });
 
   T.hub = {
     show: show, hide: hide, search: search, toggleShelf: toggleShelf,
+    toggleSettings: toggleSettings, setTab: setTab, getTab: getTab,
+    getSettings: getSettings, setSetting: setSetting,
     collectRecents: collectRecents, searchAll: searchAll,
     storageStats: storageStats, formatBytes: formatBytes,
-    openRecent: openRecent, openResult: openResult, quickNew: quickNew,
+    openRecent: openRecent, openFile: openFile,
+    renameFile: renameFile, deleteFile: deleteFile, quickNew: quickNew,
     getShelf: getShelf, pinItem: pinItem, unpinItem: unpinItem, removeItem: removeItem,
     pinSelection: pinSelection, copyText: copyText,
     insertIntoTxt: insertIntoTxt, downloadItem: downloadItem
