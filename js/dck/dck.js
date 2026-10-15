@@ -750,9 +750,11 @@
     var home = el("div", "eco-home");
     home.id = "dck-home";
     var head = el("div", "eco-home-head");
-    var badge = el("span", "app-badge", "DCK");
+    var badge = el("span", "app-badge");
     badge.id = "dck-badge";
-    badge.style.background = "#FF2E93";
+    var dckLogo = (T.appLogoImg ? T.appLogoImg("dck") : null);
+    if (dckLogo) { badge.className += " app-logo-badge"; badge.appendChild(dckLogo); }
+    else { badge.textContent = "DCK"; badge.style.background = "#FF2E93"; }
     head.appendChild(badge);
     var htxt = el("div");
     htxt.appendChild(el("h1", null, "DCK"));
@@ -1781,9 +1783,11 @@
     bar.id = "dck-topbar";
     bar.setAttribute("role", "banner");
     bar.setAttribute("aria-label", "DCK app bar");
-    var badge = el("span", "app-badge", "DCK");
+    var badge = el("span", "app-badge");
     badge.id = "dck-topbar-badge";
-    badge.style.background = "#FF2E93";
+    var dckTopLogo = (T.appLogoImg ? T.appLogoImg("dck") : null);
+    if (dckTopLogo) { badge.className += " app-logo-badge"; badge.appendChild(dckTopLogo); }
+    else { badge.textContent = "DCK"; badge.style.background = "#FF2E93"; }
     badge.setAttribute("aria-hidden", "true");
     bar.appendChild(badge);
     bar.appendChild(el("span", "dck-topbar-name", "DCK"));
