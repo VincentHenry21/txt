@@ -27,6 +27,13 @@
   function toast(msg, kind) {
     if (T.toast) T.toast(msg, kind || "info");
   }
+  function icon(name) {
+    if (T.icon) return T.icon(name);
+    return "";
+  }
+  /* Gear glyph drawn inline: index.html ships no i-gear symbol, so the
+     per-app settings button carries its own SVG (no emoji, currentColor). */
+  var GEAR_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg>';
   function debounce(fn, ms) {
     if (T.debounce) return T.debounce(fn, ms);
     var t = null;
@@ -729,6 +736,69 @@
   }
 
   /* =====================================================================
+     Per-app file model for spreadsheets. Records carry {id, name, updatedAt}
+     plus the sheet payload (the doc the app already persists under
+     T.store 'grd' / 'docs', so existing saved sheets keep working).
+     UI confirms destructive removes through confirmDlg (T.modal-backed).
+     ===================================================================== */
+  function fileRec(d) {
+    return { id: d.id, name: d.title, updatedAt: d.updatedAt, doc: d };
+  }
+  function listFiles() {
+    var all = allDocs().map(fileRec);
+    all.sort(function (a, b) {
+      return a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0;
+    });
+    return all;
+  }
+  var files = {
+    list: listFiles,
+    create: function (name) {
+      var t = String(name == null ? "" : name).trim();
+      var d = newDoc(t || "Untitled sheet");
+      openDoc(d.id);
+      if (built) {
+        E.title.value = d.title;
+        renderHome(); switchSub("app"); switchTab("grid");
+      }
+      return fileRec(d);
+    },
+    rename: function (id, name) {
+      var d = docs[id];
+      if (!d) return null;
+      var t = String(name == null ? "" : name).trim();
+      d.title = t || "Untitled sheet";
+      docSaved(d);
+      if (built && current() && current().id === id) E.title.value = d.title;
+      return fileRec(d);
+    },
+    duplicate: function (id) {
+      loadPersisted();
+      var d = docs[id];
+      if (!d) return null;
+      var snap = JSON.parse(JSON.stringify(serializeDoc(d))); // deep copy: no shared arrays
+      var c = deserializeDoc(snap);
+      c.id = uid("grd");
+      c.title = d.title + " copy";
+      c.createdAt = nowISO();
+      c.updatedAt = nowISO();
+      docs[c.id] = c;
+      docSaved(c);
+      return fileRec(c);
+    },
+    remove: function (id) { return deleteDoc(id); },
+    open: function (id) {
+      var d = openDoc(id);
+      if (!d) return null;
+      if (built) {
+        E.title.value = d.title;
+        renderHome(); switchSub("app"); switchTab("grid");
+      }
+      return fileRec(d);
+    }
+  };
+
+  /* =====================================================================
      PART 4: UI shell. show() builds lazily into #view-grd. Sub-views:
      home (eco-home contract), grid, kanban, charts.
      ===================================================================== */
@@ -771,6 +841,7 @@
     var host = document.getElementById("view-grd");
     if (!host) return;
     if (!built) build(host);
+    applySettings();
     renderHome();
     switchSub("home");
   }
@@ -797,6 +868,103 @@
     if (tab === "grid") { renderCells(); paintSelection(); }
   }
 
+  /* ---------------- per-app settings (persisted via T.store 'grd' / 'settings') ----------------
+     Applied on app init and on every change through applySettings(). */
+  var DEFAULT_SETTINGS = {
+    showGridlines: true,
+    defaultNumFmt: "general",   // general | number | currency | percent
+    freezeHeaderRow: false,
+    compactRowHeight: false
+  };
+  var SETTING_NUMFMTS = ["general", "number", "currency", "percent"];
+
+  function settings() {
+    var s = (storeOK && T.store.get("grd", "settings")) || {};
+    var out = {};
+    for (var k in DEFAULT_SETTINGS) {
+      if (DEFAULT_SETTINGS.hasOwnProperty(k)) {
+        var v = s[k];
+        out[k] = (v === undefined) ? DEFAULT_SETTINGS[k] : v;
+      }
+    }
+    if (SETTING_NUMFMTS.indexOf(out.defaultNumFmt) < 0) out.defaultNumFmt = "general";
+    return out;
+  }
+  function saveSettings(patch) {
+    var s = settings();
+    for (var k in patch) {
+      if (patch.hasOwnProperty(k) && DEFAULT_SETTINGS.hasOwnProperty(k)) s[k] = patch[k];
+    }
+    if (storeOK) T.store.set("grd", "settings", s);
+    applySettings();
+    return s;
+  }
+  function rowH() { return settings().compactRowHeight ? 22 : 30; }
+  function applySettings() {
+    var s = settings();
+    if (E.grid) {
+      E.grid.classList.toggle("grd-no-gridlines", !s.showGridlines);
+      E.grid.classList.toggle("grd-freeze-row1", !!s.freezeHeaderRow);
+      E.grid.classList.toggle("grd-compact", !!s.compactRowHeight);
+    }
+    syncSettingsUI();
+  }
+  function syncSettingsUI() {
+    var s = settings();
+    var g = document.getElementById("grd-set-gridlines");
+    if (g) g.checked = !!s.showGridlines;
+    var nf = document.getElementById("grd-set-numfmt");
+    if (nf) nf.value = s.defaultNumFmt;
+    var fr = document.getElementById("grd-set-freezerow");
+    if (fr) fr.checked = !!s.freezeHeaderRow;
+    var cp = document.getElementById("grd-set-compact");
+    if (cp) cp.checked = !!s.compactRowHeight;
+  }
+  /* Newly entered values inherit the default number format unless the cell
+     already carries an explicit format (user-chosen formats are kept). */
+  function applyDefaultNumFmt(d, addr) {
+    var def = settings().defaultNumFmt || "general";
+    if (def === "general" || !d) return;
+    var f = d.grid.formats[addr];
+    if (!f || !f.numfmt) fmtOf(d.grid, addr).numfmt = def;
+  }
+
+  /* Promise confirm: T.modal when available, otherwise a local dialog inside
+     #view-grd. Resolves truthy on confirm, falsy on cancel. */
+  function confirmDlg(opts) {
+    opts = opts || {};
+    if (T.modal) {
+      try { return Promise.resolve(T.modal(opts)); } catch (e) { /* fall through */ }
+    }
+    return new Promise(function (resolve) {
+      var root = document.getElementById("grd-root") || document.body;
+      var wrap = mk("div", "grd-confirm-wrap");
+      wrap.setAttribute("role", "dialog");
+      wrap.setAttribute("aria-label", opts.title || "Confirm");
+      var box = mk("div", "grd-confirm-box");
+      var h = mk("h3", "grd-confirm-title");
+      h.textContent = opts.title || "Are you sure?";
+      box.appendChild(h);
+      if (opts.sub) {
+        var p = mk("p", "grd-confirm-sub");
+        p.textContent = opts.sub;
+        box.appendChild(p);
+      }
+      var row = mk("div", "grd-confirm-row");
+      var cancel = btn("Cancel", "", "grd-btn", "Cancel");
+      var ok = btn(opts.okText || "OK", "", "grd-btn " + (opts.danger ? "grd-btn-danger" : "grd-btn-accent"), opts.okText || "OK");
+      function done(v) { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); resolve(v); }
+      cancel.addEventListener("click", function () { done(false); });
+      ok.addEventListener("click", function () { done(true); });
+      wrap.addEventListener("mousedown", function (e) { if (e.target === wrap) done(false); });
+      wrap.addEventListener("keydown", function (e) { if (e.key === "Escape") done(false); });
+      row.appendChild(cancel); row.appendChild(ok);
+      box.appendChild(row); wrap.appendChild(box);
+      root.appendChild(wrap);
+      ok.focus();
+    });
+  }
+
   /* ---------------- homescreen ---------------- */
   function build(host) {
     host.innerHTML = "";
@@ -818,10 +986,7 @@
     var hactions = mk("div", "eco-home-actions");
     var newBtn = btn("New sheet", "grd-new-sheet", "eco-btn-primary", "Create a new spreadsheet");
     newBtn.addEventListener("click", function () {
-      var d = newDoc();
-      openDoc(d.id);
-      switchSub("app");
-      switchTab("grid");
+      files.create("Untitled sheet");
     });
     hactions.appendChild(newBtn);
     head.appendChild(badge); head.appendChild(htitle); head.appendChild(hactions);
@@ -854,6 +1019,10 @@
     empty.textContent = "No sheets yet. Create one from a template above.";
     home.appendChild(empty);
 
+    var foot = mk("div", "eco-home-foot", "grd-home-foot");
+    foot.textContent = "Part of NXT Ecosystem";
+    home.appendChild(foot);
+
     root.appendChild(home);
     E.home = home;
 
@@ -863,6 +1032,13 @@
     var back = btn("Back", "grd-back", "grd-btn", "Back to GRD home");
     back.addEventListener("click", function () { renderHome(); switchSub("home"); });
     top.appendChild(back);
+    var badge = mk("span", "grd-appbadge", "grd-top-badge");
+    badge.innerHTML = icon("i-grid");
+    badge.setAttribute("aria-hidden", "true");
+    top.appendChild(badge);
+    var appname = mk("span", "grd-appname", "grd-appname");
+    appname.textContent = "GRD";
+    top.appendChild(appname);
     var title = mk("input", "grd-title", "grd-title");
     title.setAttribute("aria-label", "Sheet title");
     title.addEventListener("change", function () {
@@ -881,6 +1057,31 @@
     var push = btn("Push to TXT", "grd-push-live", "grd-btn grd-btn-accent", "Push the selected range as a live table into the TXT word document");
     push.addEventListener("click", function () { pushSelectionToTxt(); });
     top.appendChild(push);
+    var spacer = mk("div", "grd-spacer", "grd-spacer");
+    spacer.setAttribute("aria-hidden", "true");
+    top.appendChild(spacer);
+    /* per-app 9-dot launcher */
+    var launch = mk("button", "icon-btn waffle-btn", "grd-launcher");
+    launch.type = "button";
+    launch.title = "Open app launcher";
+    launch.setAttribute("aria-label", "Open app launcher");
+    var dots = mk("span", "waffle-dots");
+    dots.setAttribute("aria-hidden", "true");
+    for (var di = 0; di < 9; di++) dots.appendChild(mk("i"));
+    launch.appendChild(dots);
+    launch.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (T.ecosystem && T.ecosystem.toggleLauncher) T.ecosystem.toggleLauncher();
+    });
+    top.appendChild(launch);
+    /* per-app settings */
+    var gear = mk("button", "icon-btn", "grd-settings-btn");
+    gear.type = "button";
+    gear.title = "GRD settings";
+    gear.setAttribute("aria-label", "GRD settings");
+    gear.innerHTML = GEAR_SVG;
+    gear.addEventListener("click", function (e) { e.stopPropagation(); toggleSettings(); });
+    top.appendChild(gear);
     app.appendChild(top);
 
     buildGridView(app);
@@ -889,8 +1090,92 @@
     root.appendChild(app);
     E.app = app;
     E.title = title;
+    buildSettings(root);
 
     built = true;
+  }
+
+  /* ---------------- settings drawer (inside #view-grd) ---------------- */
+  function buildSettings(root) {
+    var wrap = mk("div", "grd-settings hidden", "grd-settings");
+    wrap.setAttribute("role", "dialog");
+    wrap.setAttribute("aria-label", "GRD settings");
+    var scrim = mk("div", "grd-set-scrim");
+    scrim.addEventListener("click", closeSettings);
+    wrap.appendChild(scrim);
+    var panel = mk("div", "grd-set-panel", "grd-settings-panel");
+    var head = mk("div", "grd-set-head");
+    var h = mk("h2", "", "grd-settings-title");
+    h.textContent = "GRD settings";
+    var close = mk("button", "icon-btn", "grd-settings-close");
+    close.type = "button";
+    close.title = "Close settings";
+    close.setAttribute("aria-label", "Close settings");
+    close.innerHTML = icon("i-x");
+    close.addEventListener("click", closeSettings);
+    head.appendChild(h); head.appendChild(close);
+    panel.appendChild(head);
+    var body = mk("div", "grd-set-body");
+    function toggleRow(id, title, desc, key) {
+      var lab = mk("label", "grd-set-row");
+      var tx = mk("span", "grd-set-text");
+      var t1 = mk("span", "grd-set-title"); t1.textContent = title;
+      var d1 = mk("span", "grd-set-desc"); d1.textContent = desc;
+      tx.appendChild(t1); tx.appendChild(d1);
+      var inp = mk("input", "grd-switch", id);
+      inp.type = "checkbox";
+      inp.addEventListener("change", function () {
+        var p = {}; p[key] = inp.checked;
+        saveSettings(p);
+      });
+      lab.appendChild(tx); lab.appendChild(inp);
+      return lab;
+    }
+    body.appendChild(toggleRow("grd-set-gridlines", "Show gridlines", "Show cell borders in the sheet", "showGridlines"));
+    var nfRow = mk("div", "grd-set-row");
+    var nfTx = mk("span", "grd-set-text");
+    var nfT = mk("span", "grd-set-title"); nfT.textContent = "Default number format";
+    var nfD = mk("span", "grd-set-desc"); nfD.textContent = "Applied to values you type next";
+    nfTx.appendChild(nfT); nfTx.appendChild(nfD);
+    var nfSel = mk("select", "grd-set-select", "grd-set-numfmt");
+    nfSel.setAttribute("aria-label", "Default number format");
+    [["general", "General"], ["number", "Number"], ["currency", "Currency"], ["percent", "Percent"]].forEach(function (o) {
+      var op = mk("option"); op.value = o[0]; op.textContent = o[1]; nfSel.appendChild(op);
+    });
+    nfSel.addEventListener("change", function () { saveSettings({ defaultNumFmt: nfSel.value }); });
+    nfRow.appendChild(nfTx); nfRow.appendChild(nfSel);
+    body.appendChild(nfRow);
+    body.appendChild(toggleRow("grd-set-freezerow", "Freeze header row", "Keep row 1 visible while scrolling", "freezeHeaderRow"));
+    body.appendChild(toggleRow("grd-set-compact", "Compact row height", "Use shorter rows in the grid", "compactRowHeight"));
+    var about = mk("div", "grd-set-row grd-set-about");
+    var abTx = mk("span", "grd-set-text");
+    var abT = mk("span", "grd-set-title"); abT.textContent = "About";
+    var abD = mk("span", "grd-set-desc"); abD.textContent = "GRD Spreadsheet, part of NXT Ecosystem.";
+    abTx.appendChild(abT); abTx.appendChild(abD);
+    about.appendChild(abTx);
+    body.appendChild(about);
+    panel.appendChild(body);
+    wrap.appendChild(panel);
+    wrap.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { e.stopPropagation(); closeSettings(); }
+    });
+    root.appendChild(wrap);
+    E.settings = wrap;
+  }
+  function toggleSettings() {
+    if (!E.settings) return;
+    if (E.settings.classList.contains("hidden")) openSettings(); else closeSettings();
+  }
+  function openSettings() {
+    if (!E.settings) return;
+    syncSettingsUI();
+    E.settings.classList.remove("hidden");
+    var c = document.getElementById("grd-settings-close");
+    if (c) c.focus();
+  }
+  function closeSettings() {
+    if (!E.settings) return;
+    E.settings.classList.add("hidden");
   }
 
   function fmtDate(iso) {
@@ -910,24 +1195,36 @@
     var empty = document.getElementById("grd-home-empty");
     rg.innerHTML = ""; tg.innerHTML = "";
 
-    var recents = storeOK ? (T.store.get("grd", "recent") || []) : [];
-    recents = recents.filter(function (r) { return !q || (r.title || "").toLowerCase().indexOf(q) >= 0; });
+    var list = files.list();
     var shown = 0;
-    recents.forEach(function (r) {
+    list.forEach(function (f) {
+      if (q && (f.name || "").toLowerCase().indexOf(q) < 0) return;
       var card = mk("div", "eco-home-card");
-      var t = mk("div", "eco-card-title"); t.textContent = r.title || "Untitled sheet";
-      var m = mk("div", "eco-card-meta"); m.textContent = "Updated " + fmtDate(r.updatedAt);
+      var t = mk("div", "eco-card-title"); t.textContent = f.name || "Untitled sheet";
+      var m = mk("div", "eco-card-meta"); m.textContent = "Updated " + fmtDate(f.updatedAt);
       var open = btn("Open", "", "eco-btn", "Open this sheet");
       open.addEventListener("click", function () {
-        if (openDoc(r.id)) { switchSub("app"); switchTab("grid"); }
-        else { toast("That sheet is no longer available.", "error"); renderHome(); }
+        if (!files.open(f.id)) { toast("That sheet is no longer available.", "error"); renderHome(); }
+      });
+      var rn = btn("Rename", "", "eco-btn", "Rename this sheet");
+      rn.addEventListener("click", function () { startInlineRename(card, t, f); });
+      var dup = btn("Duplicate", "", "eco-btn", "Duplicate this sheet");
+      dup.addEventListener("click", function () {
+        if (files.duplicate(f.id)) { toast("Sheet duplicated."); renderHome(); }
       });
       var del = btn("Delete", "", "eco-btn eco-btn-danger", "Delete this sheet");
       del.addEventListener("click", function () {
-        if (deleteDoc(r.id)) { toast("Sheet deleted."); renderHome(); }
+        confirmDlg({
+          title: "Delete sheet?",
+          sub: "Delete \"" + (f.name || "Untitled sheet") + "\" permanently?",
+          okText: "Delete",
+          danger: true
+        }).then(function (ok) {
+          if (ok && files.remove(f.id)) { toast("Sheet deleted."); renderHome(); }
+        });
       });
       var row = mk("div", "eco-card-actions");
-      row.appendChild(open); row.appendChild(del);
+      row.appendChild(open); row.appendChild(rn); row.appendChild(dup); row.appendChild(del);
       card.appendChild(t); card.appendChild(m); card.appendChild(row);
       rg.appendChild(card);
       shown++;
@@ -950,8 +1247,33 @@
       shown++;
     });
 
-    document.getElementById("grd-sec-recent").style.display = recents.length || !q ? "" : "none";
+    document.getElementById("grd-sec-recent").style.display = list.length || !q ? "" : "none";
     empty.classList.toggle("hidden", shown > 0);
+  }
+
+  /* Inline rename inside a homescreen file card (no modal needed). */
+  function startInlineRename(card, titleEl, f) {
+    if (card.querySelector(".grd-rename-input")) return;
+    var inp = mk("input", "grd-rename-input");
+    inp.value = f.name || "";
+    inp.setAttribute("aria-label", "Sheet name");
+    inp.maxLength = 120;
+    titleEl.style.display = "none";
+    card.insertBefore(inp, titleEl.nextSibling);
+    inp.focus(); inp.select();
+    var done = false;
+    function finish(commit) {
+      if (done) return;
+      done = true;
+      if (commit) files.rename(f.id, inp.value);
+      renderHome();
+    }
+    inp.addEventListener("keydown", function (e) {
+      e.stopPropagation();
+      if (e.key === "Enter") finish(true);
+      else if (e.key === "Escape") finish(false);
+    });
+    inp.addEventListener("blur", function () { finish(true); });
   }
 
   /* ---------------- grid view ---------------- */
@@ -1069,6 +1391,7 @@
     for (var r = 0; r < MAX_ROW; r++) {
       (function (rr) {
         var rh = mk("div", "grd-rh"); rh.textContent = String(rr + 1);
+        rh.setAttribute("data-r", rr);
         rh.addEventListener("click", function () {
           ui.sel = { c: 0, r: rr, ec: MAX_COL - 1, er: rr };
           paintSelection(); syncFxBar(); updateStatusBar();
@@ -1290,7 +1613,7 @@
       E.editor.style.left = cell.offsetLeft + "px";
       E.editor.style.top = cell.offsetTop + "px";
       E.editor.style.width = Math.max(colW(ui.sel.ec) - 2, 40) + "px";
-      E.editor.style.height = ROW_H + "px";
+      E.editor.style.height = rowH() + "px";
     }
     E.editor.classList.remove("hidden");
     ui.editing = true;
@@ -1304,6 +1627,16 @@
     else if (e.key === "Tab") { e.preventDefault(); commitEditor(true); moveSel(e.shiftKey ? -1 : 1, 0); }
     else if (e.key === "Escape") { cancelEditor(); }
   }
+  /* Write a value through the normal commit path: model update, default number
+     format for newly entered values, then the full UI refresh. */
+  function commitValue(addr, raw) {
+    var d = current();
+    if (!d) return false;
+    setCell(d.grid, addr, raw);
+    applyDefaultNumFmt(d, addr);
+    afterEdit(addr);
+    return true;
+  }
   function commitEditor(refocus) {
     if (!ui.editing) return;
     var d = current();
@@ -1311,11 +1644,7 @@
     var val = E.editor.value;
     E.editor.classList.add("hidden");
     ui.editing = false;
-    if (d) {
-      var parsed = coerceInput(val);
-      setCell(d.grid, a, parsed);
-      afterEdit(a);
-    }
+    if (d) commitValue(a, coerceInput(val));
     if (refocus && E.wrap) E.wrap.focus();
   }
   function cancelEditor() {
@@ -1327,8 +1656,7 @@
     var d = current();
     if (!d) return;
     var a = addrOf(ui.sel.ec, ui.sel.er);
-    setCell(d.grid, a, coerceInput(E.fx.value));
-    afterEdit(a);
+    commitValue(a, coerceInput(E.fx.value));
   }
   function coerceInput(val) {
     if (val === "") return "";
@@ -1990,6 +2318,16 @@
     allDocs: allDocs,
     deleteDoc: deleteDoc,
     templates: function () { return TEMPLATES.slice(); },
+    // per-app file model: {id, name, updatedAt} records + sheet payload
+    files: files,
+    // per-app settings (persisted in T.store 'grd' / 'settings')
+    settings: settings,
+    saveSettings: saveSettings,
+    applySettings: applySettings,
+    openSettings: openSettings,
+    closeSettings: closeSettings,
+    // write path used by the cell editor and formula bar
+    commitValue: commitValue,
     // cross-app live blocks (DOM-free)
     pushLiveTable: pushLiveTable,
     pushLiveChart: pushLiveChart,
