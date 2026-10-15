@@ -66,6 +66,7 @@
   }
 
   /* ---------------- small UI helpers ---------------- */
+  var panelShells = [];
   function sliderRow(label, min, max, step, val, onInput) {
     var row = document.createElement("div");
     row.className = "px-srow";
@@ -80,8 +81,9 @@
   }
   function panelShell(title) {
     var d = document.createElement("div");
-    d.className = "px-panel";
+    d.className = "px-panel nxt-skeleton";
     d.innerHTML = '<div class="px-phead"><span>' + T.esc(title) + "</span></div>";
+    panelShells.push(d);
     return d;
   }
 
@@ -663,6 +665,11 @@
     buildHistogram(host);
     buildAdjust(host);
     buildTools(host);
+    setTimeout(function () {
+      for (var i = 0; i < panelShells.length; i++) {
+        panelShells[i].classList.remove("nxt-skeleton");
+      }
+    }, 150);
     drawHistogram();
     T.bus.on("pixel:change", scheduleHist);
     T.bus.on("pixel:layers", scheduleHist);

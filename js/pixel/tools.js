@@ -493,8 +493,17 @@
   }
 
   function buildOptions() {
-    var host = IN.optsEl();
+    var deskHost = IN.optsEl();
+    var sheetHost = document.getElementById("pSheetToolOpts");
+    var mobile = false;
+    try { mobile = !!(sheetHost && IN.isMobileView && IN.isMobileView()); } catch (e) { mobile = false; }
+    /* On mobile the tool options move into the panels bottom sheet with
+       large touch-friendly sliders; on desktop they stay in the top bar. */
+    var host = mobile ? sheetHost : deskHost;
+    if (deskHost && deskHost !== host) deskHost.innerHTML = "";
+    if (sheetHost && sheetHost !== host) sheetHost.innerHTML = "";
     if (!host) return;
+    host.classList.toggle("px-sheet-opts", mobile);
     host.innerHTML = "";
     var t = TOOLS[active];
     var b = PX.getBrush();
@@ -592,6 +601,7 @@
   buildOptions();
   bindCanvas();
   IN.toolCursorSize = TOOLS[active].cursorSize;
+  IN.rebuildOptions = buildOptions; /* used by core.js on breakpoint change */
   T.bus.on("pixel:open", function () { bindCanvas(); });
   /* NXT phase 1: rebuild the options bar when studio settings change
      (e.g. the default brush size set in Pixel settings). */

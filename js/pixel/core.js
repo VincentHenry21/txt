@@ -84,6 +84,13 @@
     docInfoEl = el("span", "px-docinfo", "No document");
     docInfoEl.id = "pDocInfo";
     right.appendChild(docInfoEl);
+    var pbtn = el("button", "px-btn", "Panels");
+    pbtn.type = "button"; pbtn.id = "pPanelsBtn";
+    pbtn.title = "Show panels";
+    pbtn.setAttribute("aria-label", "Toggle panels");
+    pbtn.setAttribute("aria-expanded", "false");
+    pbtn.addEventListener("click", function () { togglePxPanels(); });
+    right.appendChild(pbtn);
     var zc = el("div", "px-zoom");
     var zb = el("button", "px-btn", "-");
     zb.type = "button"; zb.title = "Zoom out"; zb.id = "pZoomOut";
@@ -119,8 +126,14 @@
     wrapEl.appendChild(over);
     main.appendChild(wrapEl);
 
-    var panels = el("div", "px-panels");
+    var panels = el("div", "px-panels nxt-sheet");
     panels.id = "pPanels";
+    var handle = el("div", "nxt-sheet-handle");
+    handle.setAttribute("aria-hidden", "true");
+    panels.appendChild(handle);
+    var sheetOpts = el("div", "px-sheet-opts");
+    sheetOpts.id = "pSheetToolOpts";
+    panels.appendChild(sheetOpts);
     main.appendChild(panels);
 
     root.appendChild(main);
@@ -151,6 +164,63 @@
     renderPxFilesList();
     newDoc(1200, 900);
     startAnts();
+    bindPxBreakpoint();
+  }
+
+  /* ---------------- mobile panels bottom sheet ----------------
+     On <=640px the panels become a bottom sheet (nxt-sheet) toggled by the
+     "Panels" button in the mobile toolbar. Escape closes it; crossing the
+     breakpoint back to desktop closes it and rebuilds the tool options bar
+     into the correct host (see tools.js rebuildOptions). */
+  function isMobileView() {
+    try {
+      if (typeof window.matchMedia === "function") {
+        var mq = window.matchMedia("(max-width: 640px)");
+        if (mq && typeof mq.matches === "boolean") return mq.matches;
+      }
+    } catch (e) { /* fall through to innerWidth */ }
+    return typeof window.innerWidth === "number" && window.innerWidth <= 640;
+  }
+
+  function togglePxPanels(force) {
+    var p = document.getElementById("pPanels");
+    if (!p) return false;
+    var open = (force === undefined) ? !p.classList.contains("open") : !!force;
+    p.classList.toggle("open", open);
+    var b = document.getElementById("pPanelsBtn");
+    if (b) {
+      b.textContent = open ? "Close" : "Panels";
+      b.setAttribute("aria-expanded", open ? "true" : "false");
+      b.title = open ? "Hide panels" : "Show panels";
+    }
+    return open;
+  }
+
+  var pxLastMobile = null;
+  function onPxBreakpoint() {
+    var mobile = isMobileView();
+    if (mobile === pxLastMobile) return;
+    pxLastMobile = mobile;
+    if (!mobile) togglePxPanels(false);
+    try {
+      var px = T.pixel;
+      if (px && px.internal && typeof px.internal.rebuildOptions === "function") {
+        px.internal.rebuildOptions();
+      }
+    } catch (e) { /* options rebuild is best-effort */ }
+  }
+  function bindPxBreakpoint() {
+    pxLastMobile = isMobileView();
+    try {
+      if (typeof window.matchMedia === "function") {
+        var mq = window.matchMedia("(max-width: 640px)");
+        if (mq) {
+          if (typeof mq.addEventListener === "function") { mq.addEventListener("change", onPxBreakpoint); return; }
+          if (typeof mq.addListener === "function") { mq.addListener(onPxBreakpoint); return; }
+        }
+      }
+    } catch (e) { /* fall through to resize */ }
+    window.addEventListener("resize", onPxBreakpoint);
   }
 
   /* ---------------- document & layers ---------------- */
@@ -942,6 +1012,8 @@
       ensure: function () { build(); },
       render: function () { composite(); },
       isActive: function () { return S.active; },
+      isMobileView: isMobileView,
+      togglePanels: togglePxPanels,
       toDoc: toDoc,
       docSize: function () { return { w: S.w, h: S.h }; },
       activeRaw: function () { return get(S.activeId) || S.layers[S.layers.length - 1] || null; },
@@ -972,6 +1044,7 @@
     var tag = (e.target && e.target.tagName || "").toLowerCase();
     if (tag === "input" || tag === "textarea" || tag === "select") return;
     var mod = e.ctrlKey || e.metaKey;
+    if (!mod && e.key === "Escape") { togglePxPanels(false); return; }
     if (mod && (e.key === "d" || e.key === "D")) {
       e.preventDefault();
       clearSelection();

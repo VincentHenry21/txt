@@ -181,7 +181,7 @@
   function buildPanel() {
     var host = ensurePanels();
     panelEl = document.createElement("div");
-    panelEl.className = "px-panel";
+    panelEl.className = "px-panel nxt-skeleton";
     panelEl.innerHTML =
       '<div class="px-phead"><span>Layers</span></div>' +
       '<div class="px-ltools"></div>' +
@@ -334,6 +334,9 @@
   function init() {
     buildPanel();
     renderRows();
+    setTimeout(function () {
+      if (panelEl) panelEl.classList.remove("nxt-skeleton");
+    }, 150);
     T.bus.on("pixel:layers", renderRows);
     T.bus.on("pixel:select", renderRows);
     T.bus.on("pixel:change", function () {
