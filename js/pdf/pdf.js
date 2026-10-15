@@ -596,7 +596,7 @@
 
     var foot = el("div", "pdf-eco-foot");
     foot.id = "pdf-eco-foot";
-    foot.textContent = "Part of NXT Ecosystem";
+    foot.textContent = "Part of NXT OS";
     home.appendChild(foot);
 
     view.appendChild(home);
@@ -794,7 +794,7 @@
     about.id = "pdf-set-about";
     var ah = el("h3"); ah.textContent = "About";
     var ap = el("p");
-    ap.textContent = "PDF Studio is part of the NXT Ecosystem. Convert, annotate, redact, sign and print documents, all on this device.";
+    ap.textContent = "PDF Studio is part of the NXT OS. Convert, annotate, redact, sign and print documents, all on this device.";
     about.appendChild(ah); about.appendChild(ap);
     body.appendChild(about);
 
@@ -1035,6 +1035,15 @@
     studio.appendChild(tb);
     studio.appendChild(pager);
     studio.appendChild(main);
+
+    /* NXT OS status bar credit (Phase 1 Identity): right-aligned brand credit
+       rendered in the app's H3NZ signature palette accent. */
+    var sbBar = el("div", "nxt-statusbar", "pdf-statusbar");
+    var sbBrand = el("span", "nxt-sb-brand");
+    sbBrand.textContent = "NXT PDF • Developed by H3NZ";
+    sbBar.appendChild(sbBrand);
+    studio.appendChild(sbBar);
+
     view.appendChild(studio);
 
     wireStage(stage);
