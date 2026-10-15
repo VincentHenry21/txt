@@ -139,6 +139,44 @@
   }
 
   /* ============================================================
+     per-app settings (persisted via T.store in the 'dck' namespace)
+     ============================================================ */
+  var DEFAULT_SETTINGS = {
+    aspect: "16:9",      // default aspect ratio for newly created decks/slides
+    transition: "fade",  // presenter entrance: none | fade | slide
+    timer: true,         // show the elapsed timer in presenter mode
+    spellcheck: true     // spellcheck on slide text editing surfaces
+  };
+  var SETTING_TRANSITIONS = { none: "none", fade: "fade-up", slide: "slide-left" };
+  function getSettings() {
+    var s = (T.store && T.store.get) ? T.store.get("dck", "settings") : null;
+    var out = {}, k;
+    for (k in DEFAULT_SETTINGS) out[k] = DEFAULT_SETTINGS[k];
+    if (s && typeof s === "object") {
+      for (k in DEFAULT_SETTINGS) {
+        if (s[k] !== undefined && s[k] !== null) out[k] = s[k];
+      }
+    }
+    return out;
+  }
+  function saveSettings(s) {
+    if (T.store && T.store.set) T.store.set("dck", "settings", s);
+  }
+  function applySettings() {
+    if (!built) return;
+    if (view === "editor" && currentDeck()) {
+      renderStage();
+      renderFilmstrip();
+    }
+  }
+  /* aspect ratio for a deck: the deck's own value (seeded from settings at
+     creation), falling back to the live setting, then 16:9 */
+  function settingsAspectRatio(deck) {
+    var a = (deck && deck.aspect) || getSettings().aspect || "16:9";
+    return a === "4:3" ? "4 / 3" : "16 / 9";
+  }
+
+  /* ============================================================
      slide / block factories
      ============================================================ */
   function mkSlide(layout) {
@@ -203,9 +241,12 @@
     }
   }
   function newDeck(title, templateId) {
+    var st = getSettings();
     var deck = {
       id: uid(), title: title || "Untitled deck",
-      theme: "studio", gradient: "none", transition: "fade-up",
+      theme: "studio", gradient: "none",
+      transition: SETTING_TRANSITIONS[st.transition] || "fade-up",
+      aspect: st.aspect || "16:9",
       slides: [], createdAt: Date.now(), updatedAt: Date.now()
     };
     var theme = themeOf(deck);
@@ -413,7 +454,7 @@
       n.classList.add(b.cls || "dck-b-body");
       if (mode === "stage") {
         n.contentEditable = "true";
-        n.spellcheck = false;
+        n.spellcheck = getSettings().spellcheck;
       }
       n.innerHTML = b.html || "";
       if (isMyText(n.textContent)) n.setAttribute("lang", "my");
@@ -433,7 +474,7 @@
         var li = document.createElement("li");
         if (mode === "stage") {
           li.contentEditable = "true";
-          li.spellcheck = false;
+          li.spellcheck = getSettings().spellcheck;
         }
         li.textContent = it;
         ul.appendChild(li);
@@ -682,7 +723,17 @@
     home.appendChild(secT);
 
     var secR = el("div", "eco-home-sec");
-    secR.appendChild(el("h2", null, "Recent decks"));
+    var secRHead = el("div", "dck-sec-head");
+    secRHead.appendChild(el("h2", null, "Your decks"));
+    var newDeckBtn = el("button", "dck-btn dck-btn-accent dck-filebtn", "New deck");
+    newDeckBtn.id = "dck-new-deck";
+    newDeckBtn.setAttribute("aria-label", "Create a new deck");
+    newDeckBtn.addEventListener("click", function () {
+      var rec = files.create("Untitled deck");
+      if (rec) openEditor(rec.id);
+    });
+    secRHead.appendChild(newDeckBtn);
+    secR.appendChild(secRHead);
     var grid = el("div", "eco-home-grid");
     grid.id = "dck-home-recent";
     secR.appendChild(grid);
@@ -691,55 +742,49 @@
     secR.appendChild(empty);
     home.appendChild(secR);
 
+    var foot = el("div", "dck-home-foot", "Part of NXT Ecosystem");
+    foot.id = "dck-home-footer";
+    home.appendChild(foot);
+
     search.addEventListener("input", function () { renderRecent(search.value); });
     root.appendChild(home);
     renderRecent("");
+  }
+  function currentQuery() {
+    var si = $("dck-home-search");
+    return si ? si.value : "";
   }
   function renderRecent(query) {
     var grid = $("dck-home-recent"), empty = $("dck-home-empty");
     if (!grid) return;
     grid.innerHTML = "";
-    var recent = (T.store && T.store.get) ? (T.store.get("dck", "recent") || []) : [];
     var q = (query || "").toLowerCase();
     var shown = 0;
-    recent.forEach(function (r) {
-      if (!r || !r.id) return;
-      var deck = getDeck(r.id);
-      var title = (deck && deck.title) || r.title || "Untitled deck";
-      if (q && title.toLowerCase().indexOf(q) < 0) return;
+    files.list().forEach(function (rec) {
+      if (q && rec.name.toLowerCase().indexOf(q) < 0) return;
       shown++;
       var card = el("div", "eco-home-card");
-      card.id = "dck-recent-" + r.id;
+      card.id = "dck-recent-" + rec.id;
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
-      card.setAttribute("aria-label", "Open deck: " + title);
-      card.appendChild(el("h3", null, title));
-      var meta = el("div", "meta",
-        (deck ? deck.slides.length : 0) + " slides · " + fmtDate(r.updatedAt));
-      card.appendChild(meta);
+      card.setAttribute("aria-label", "Open deck: " + rec.name);
+      card.appendChild(el("h3", null, rec.name));
+      card.appendChild(el("div", "meta", rec.slides + " slides · " + fmtDate(rec.updatedAt)));
       var row = el("div", "row");
-      var open = el("button", "dck-btn dck-btn-small", "Open");
-      open.id = "dck-open-" + r.id;
-      open.addEventListener("click", function (ev) { ev.stopPropagation(); openEditor(r.id); });
-      var del = el("button", "dck-btn dck-btn-small dck-btn-danger", "Delete");
-      del.id = "dck-del-" + r.id;
-      del.setAttribute("aria-label", "Delete deck: " + title);
-      del.addEventListener("click", function (ev) {
-        ev.stopPropagation();
-        confirmInline("Delete deck \"" + title + "\"?", function (yes) {
-          if (!yes) return;
-          var decks = loadDecks();
-          delete decks[r.id];
-          saveDecks(decks);
-          dropRecent(r.id);
-          if (curDeckId === r.id) { curDeckId = null; }
-          renderRecent($("dck-home-search") ? $("dck-home-search").value : "");
-          toast("Deck deleted.");
-        });
-      });
-      row.appendChild(open); row.appendChild(del);
+      function act(label, suffix, aria, fn, danger) {
+        var b = el("button", "dck-btn dck-filebtn" + (danger ? " dck-btn-danger" : ""), label);
+        b.id = "dck-file-" + suffix + "-" + rec.id;
+        b.setAttribute("aria-label", aria + ": " + rec.name);
+        b.addEventListener("click", function (ev) { ev.stopPropagation(); fn(); });
+        row.appendChild(b);
+        return b;
+      }
+      act("Open", "open", "Open deck", function () { files.open(rec.id); });
+      act("Rename", "rename", "Rename deck", function () { renameDeck(rec.id, rec.name); });
+      act("Duplicate", "dup", "Duplicate deck", function () { files.duplicate(rec.id); });
+      act("Delete", "del", "Delete deck", function () { files.remove(rec.id); }, true);
       card.appendChild(row);
-      function go() { openEditor(r.id); }
+      function go() { files.open(rec.id); }
       card.addEventListener("click", go);
       card.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); go(); }
@@ -901,6 +946,7 @@
       item.draggable = true;
       item.setAttribute("data-idx", String(i));
       var mini = el("div", "dck-mini");
+      mini.style.aspectRatio = settingsAspectRatio(d);
       s.blocks.forEach(function (b) { mini.appendChild(blockEl(b, d, "thumb")); });
       item.appendChild(mini);
       var meta = el("div", "dck-thumb-meta");
@@ -982,6 +1028,7 @@
     var grad = gradientCss(d);
     stage.style.background = grad || ("linear-gradient(135deg," + theme.bg + "," + theme.bg2 + ")");
     stage.style.color = theme.ink;
+    stage.style.aspectRatio = settingsAspectRatio(d);
     stage.style.setProperty("--dck-accent", theme.accent);
     var ordered = s.blocks.slice().sort(function (a, b) { return (a.z || 0) - (b.z || 0); });
     ordered.forEach(function (b) { stage.appendChild(blockEl(b, d, "stage")); });
@@ -1385,6 +1432,7 @@
       toast("Open a deck with at least one slide first.", "error");
       return;
     }
+    closeSettings();
     if ($("dck-present")) exitPresent();
     var ov = el("div", "dck-present");
     ov.id = "dck-present";
@@ -1406,6 +1454,7 @@
     count.id = "dck-p-count";
     var timer = el("span", "dck-p-timer", "00:00");
     timer.id = "dck-p-timer";
+    if (!getSettings().timer) timer.style.display = "none";
     var laser = el("button", "dck-btn", "Laser");
     laser.id = "dck-p-laser";
     laser.setAttribute("aria-pressed", "false");
@@ -1456,7 +1505,12 @@
     stage.style.background = grad || ("linear-gradient(135deg," + theme.bg + "," + theme.bg2 + ")");
     stage.style.color = theme.ink;
     stage.style.setProperty("--dck-accent", theme.accent);
-    var tr = deck.transition || "none";
+    // presenter transition: the deck's own choice wins unless it is the
+    // factory default ("none"), in which case the DCK setting applies
+    var st = getSettings().transition;
+    var tr = (deck.transition && deck.transition !== "none")
+      ? deck.transition
+      : (SETTING_TRANSITIONS[st] || "none");
     stage.classList.remove("dck-tr-fade-up", "dck-tr-zoom-in", "dck-tr-slide-left");
     if (tr !== "none") {
       // re-trigger the entrance animation
@@ -1532,6 +1586,298 @@
   }
 
   /* ============================================================
+     per-app top bar (launcher + settings), settings drawer,
+     and the per-app file model
+     ============================================================ */
+  var GEAR_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
+
+  function buildTopbar(root) {
+    var bar = el("div", "dck-topbar");
+    bar.id = "dck-topbar";
+    bar.setAttribute("role", "banner");
+    bar.setAttribute("aria-label", "DCK app bar");
+    var badge = el("span", "app-badge", "DCK");
+    badge.id = "dck-topbar-badge";
+    badge.style.background = "#F97316";
+    badge.setAttribute("aria-hidden", "true");
+    bar.appendChild(badge);
+    bar.appendChild(el("span", "dck-topbar-name", "DCK"));
+    var spacer = el("div", "dck-topbar-spacer");
+    bar.appendChild(spacer);
+    var waffle = el("button", "icon-btn waffle-btn");
+    waffle.id = "dck-launcher-btn";
+    waffle.type = "button";
+    waffle.setAttribute("aria-label", "Open app launcher");
+    waffle.setAttribute("aria-haspopup", "true");
+    var dots = el("span", "waffle-dots");
+    dots.setAttribute("aria-hidden", "true");
+    for (var i = 0; i < 9; i++) dots.appendChild(document.createElement("i"));
+    waffle.appendChild(dots);
+    waffle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") {
+        T.ecosystem.toggleLauncher();
+      } else {
+        toast("App launcher is not available right now.", "error");
+      }
+    });
+    bar.appendChild(waffle);
+    var gear = el("button", "icon-btn");
+    gear.id = "dck-settings-btn";
+    gear.type = "button";
+    gear.setAttribute("aria-label", "DCK settings");
+    gear.innerHTML = GEAR_SVG;
+    gear.addEventListener("click", function () { openSettings(); });
+    bar.appendChild(gear);
+    root.appendChild(bar);
+  }
+
+  function setRow(labelText, hintText, control) {
+    var row = el("div", "dck-set-row");
+    var txt = el("div", "dck-set-text");
+    txt.appendChild(el("strong", null, labelText));
+    if (hintText) txt.appendChild(el("small", null, hintText));
+    row.appendChild(txt);
+    row.appendChild(control);
+    return row;
+  }
+  function buildSettings(root) {
+    var ov = el("div", "dck-drawer-ov");
+    ov.id = "dck-settings-ov";
+    ov.style.display = "none";
+    var panel = el("div", "dck-drawer");
+    panel.id = "dck-settings";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-label", "DCK settings");
+    var head = el("div", "dck-drawer-head");
+    head.appendChild(el("h2", null, "DCK Settings"));
+    var close = el("button", "icon-btn");
+    close.id = "dck-settings-close";
+    close.type = "button";
+    close.setAttribute("aria-label", "Close settings");
+    close.innerHTML = (typeof T.icon === "function") ? T.icon("i-x") : "X";
+    close.addEventListener("click", closeSettings);
+    head.appendChild(close);
+    panel.appendChild(head);
+    var body = el("div", "dck-drawer-body");
+
+    var aspect = document.createElement("select");
+    aspect.id = "dck-set-aspect";
+    aspect.className = "dck-set-select";
+    aspect.setAttribute("aria-label", "Default aspect ratio for new decks");
+    [["16:9", "16:9 (widescreen)"], ["4:3", "4:3 (classic)"]].forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o[0]; opt.textContent = o[1];
+      aspect.appendChild(opt);
+    });
+    aspect.addEventListener("change", function () {
+      var s = getSettings();
+      s.aspect = aspect.value;
+      saveSettings(s);
+      toast("Default aspect ratio: " + aspect.value + ". Applies to newly created decks.");
+    });
+    body.appendChild(setRow("Default aspect ratio",
+      "Used when you create a new deck.", aspect));
+
+    var trans = document.createElement("select");
+    trans.id = "dck-set-transition";
+    trans.className = "dck-set-select";
+    trans.setAttribute("aria-label", "Slide transition for presenter mode");
+    [["none", "None"], ["fade", "Fade"], ["slide", "Slide"]].forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o[0]; opt.textContent = o[1];
+      trans.appendChild(opt);
+    });
+    trans.addEventListener("change", function () {
+      var s = getSettings();
+      s.transition = trans.value;
+      saveSettings(s);
+      toast("Slide transition: " + trans.options[trans.selectedIndex].text + ". Used in presenter mode.");
+    });
+    body.appendChild(setRow("Slide transition",
+      "Entrance animation used in presenter mode.", trans));
+
+    function toggleRow(id, title, hint, key) {
+      var lab = document.createElement("label");
+      lab.className = "dck-set-row";
+      lab.setAttribute("for", id);
+      var txt = el("div", "dck-set-text");
+      txt.appendChild(el("strong", null, title));
+      txt.appendChild(el("small", null, hint));
+      var cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.id = id;
+      cb.className = "dck-switch";
+      cb.addEventListener("change", function () {
+        var s = getSettings();
+        s[key] = cb.checked;
+        saveSettings(s);
+        applySettings();
+        toast(title + (cb.checked ? " on." : " off."));
+      });
+      lab.appendChild(txt);
+      lab.appendChild(cb);
+      return lab;
+    }
+    body.appendChild(toggleRow("dck-set-timer", "Presenter timer",
+      "Show the elapsed timer in presenter mode.", "timer"));
+    body.appendChild(toggleRow("dck-set-spellcheck", "Spellcheck",
+      "Underline spelling on slide text while editing.", "spellcheck"));
+
+    var about = el("div", "dck-set-about");
+    about.id = "dck-settings-about";
+    about.appendChild(el("div", "dck-set-about-t", "About"));
+    about.appendChild(el("p", null,
+      "DCK is part of the NXT Ecosystem. Build slide decks from your TXT documents, drop in live GRD charts, and present anywhere."));
+    body.appendChild(about);
+
+    panel.appendChild(body);
+    ov.appendChild(panel);
+    ov.addEventListener("click", function (e) { if (e.target === ov) closeSettings(); });
+    root.appendChild(ov);
+  }
+  function onSettingsKey(e) {
+    if (e.key === "Escape") { e.preventDefault(); closeSettings(); }
+  }
+  function openSettings() {
+    ensureBuilt();
+    var ov = $("dck-settings-ov");
+    if (!ov) return;
+    var s = getSettings();
+    var aspect = $("dck-set-aspect"), trans = $("dck-set-transition"),
+        timer = $("dck-set-timer"), spell = $("dck-set-spellcheck");
+    if (aspect) aspect.value = s.aspect;
+    if (trans) trans.value = s.transition;
+    if (timer) timer.checked = !!s.timer;
+    if (spell) spell.checked = !!s.spellcheck;
+    ov.style.display = "";
+    document.addEventListener("keydown", onSettingsKey, true);
+    var c = $("dck-settings-close");
+    if (c) { try { c.focus(); } catch (e) {} }
+  }
+  function closeSettings() {
+    var ov = $("dck-settings-ov");
+    if (ov) ov.style.display = "none";
+    document.removeEventListener("keydown", onSettingsKey, true);
+  }
+
+  /* ---- per-app file model: records are {id, name, updatedAt} plus the
+     deck payload already persisted in the 'dck' store namespace ---- */
+  function fileRecord(deck) {
+    if (!deck) return null;
+    return {
+      id: deck.id,
+      name: deck.title || "Untitled deck",
+      updatedAt: deck.updatedAt || 0,
+      slides: (deck.slides || []).length,
+      deck: deck
+    };
+  }
+  function modalConfirm(opts) {
+    if (T.modal && typeof T.modal === "function") {
+      try {
+        var r = T.modal(opts);
+        if (r && typeof r.then === "function") {
+          return r.then(function (v) { return !!v; }, function () { return false; });
+        }
+      } catch (e) { /* fall through to the inline confirm */ }
+    }
+    return new Promise(function (resolve) {
+      confirmInline((opts && opts.title) || "Are you sure?", resolve);
+    });
+  }
+  var files = {
+    list: function () {
+      var decks = loadDecks(), out = [];
+      for (var id in decks) {
+        var rec = fileRecord(decks[id]);
+        if (rec) out.push(rec);
+      }
+      out.sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+      return out;
+    },
+    create: function (name) {
+      var deck = newDeck(name || "Untitled deck", "blank");
+      return fileRecord(deck);
+    },
+    rename: function (id, name) {
+      var deck = getDeck(id);
+      if (!deck) return null;
+      var n = String(name == null ? "" : name).trim();
+      if (!n) return fileRecord(deck);
+      deck.title = n;
+      putDeck(deck);
+      touchRecent(deck);
+      if (built) {
+        if (curDeckId === id && view === "editor") renderEditor();
+        renderRecent(currentQuery());
+      }
+      return fileRecord(deck);
+    },
+    duplicate: function (id) {
+      var deck = getDeck(id);
+      if (!deck) return null;
+      var copy = JSON.parse(JSON.stringify(deck));
+      copy.id = uid();
+      copy.title = (deck.title || "Untitled deck") + " copy";
+      copy.createdAt = Date.now();
+      (copy.slides || []).forEach(function (s) {
+        s.id = uid();
+        (s.blocks || []).forEach(function (b) { b.id = uid(); });
+      });
+      putDeck(copy);
+      if (built) renderRecent(currentQuery());
+      toast("Deck duplicated.");
+      return fileRecord(copy);
+    },
+    remove: function (id) {
+      var deck = getDeck(id);
+      var name = deck ? (deck.title || "Untitled deck") : "this deck";
+      return modalConfirm({
+        title: "Delete deck?",
+        sub: "Delete \"" + name + "\"? This cannot be undone.",
+        okText: "Delete",
+        danger: true
+      }).then(function (yes) {
+        if (!yes) return false;
+        var decks = loadDecks();
+        delete decks[id];
+        saveDecks(decks);
+        dropRecent(id);
+        if (curDeckId === id) {
+          curDeckId = null;
+          if (built) showHome();
+        }
+        if (built) renderRecent(currentQuery());
+        toast("Deck deleted.");
+        return true;
+      });
+    },
+    open: function (id) { openEditor(id); }
+  };
+  function renameDeck(id, currentName) {
+    if (!(T.modal && typeof T.modal === "function")) {
+      toast("Rename is not available right now.", "error");
+      return Promise.resolve(null);
+    }
+    var r;
+    try {
+      r = T.modal({
+        title: "Rename deck",
+        okText: "Rename",
+        fields: [{ key: "name", label: "Deck name", type: "text", value: currentName || "" }]
+      });
+    } catch (e) { return Promise.resolve(null); }
+    return Promise.resolve(r).then(function (out) {
+      if (!out || !String(out.name || "").trim()) return null;
+      var rec = files.rename(id, out.name);
+      if (rec) toast("Deck renamed.");
+      return rec;
+    });
+  }
+
+  /* ============================================================
      shell: show / hide / lazy build
      ============================================================ */
   function ensureBuilt() {
@@ -1542,11 +1888,15 @@
     var root = el("div", "dck-root");
     root.id = "dck-root";
     viewEl.appendChild(root);
+    buildTopbar(root);
     buildHome(root);
     buildEditor(root);
+    buildSettings(root);
+    applySettings();
   }
   function show() {
     ensureBuilt();
+    applySettings();
     var viewEl = $("view-dck");
     if (viewEl) viewEl.classList.remove("hidden");
     if (view === "editor" && currentDeck()) renderEditor();
@@ -1621,6 +1971,10 @@
     layouts: LAYOUTS,
     themes: THEMES,
     transitions: TRANSITIONS,
+    files: files,
+    getSettings: getSettings,
+    applySettings: applySettings,
+    openSettings: openSettings,
     _built: function () { return built; }
   };
 })();
