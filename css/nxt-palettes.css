@@ -1,0 +1,252 @@
+/* NXT OS signature palettes (workstream D, Phase 1 Identity).
+   Per-app H3NZ palettes exposed as CSS variables on html[data-nxt-app],
+   switched at runtime by js/nxt-theme.js (T.nxtTheme.apply).
+
+   Variables per app:
+     --nxt-accent        saturated brand accent
+     --nxt-accent-hover  interactive hover tone
+     --nxt-accent-2      companion tone (glows, gradients)
+     --nxt-accent-soft   light-mode soft tint
+     --nxt-accent-ink    readable text on the saturated accent
+     --nxt-app-surface   app surface (white in light mode, dark tone below)
+     --nxt-glow          signature glow gradient
+
+   Theming convention follows css/tokens.css: themes are picked with
+   html[data-theme="studio"|"obsidian"|"sepia"|"contrast"]. Light themes
+   (studio, sepia) use the soft tint + #FFFFFF surface declared below;
+   dark themes (obsidian, contrast) override --nxt-app-surface to the
+   per-app dark tone. Accents stay identical in both modes.
+
+   Corporate accents are banned: Word blue, PPT orange, and Acrobat red must
+   not appear here (dck hover and hub hover use the approved substitutions). */
+
+/* ============================ home ============================ */
+html[data-nxt-app="home"] {
+  --nxt-accent: #E2E8F0;
+  --nxt-accent-hover: #CBD5E1;
+  --nxt-accent-2: #94A3B8;
+  --nxt-accent-soft: #F1F5F9;
+  --nxt-accent-ink: #111827;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #38BDF8, #C084FC);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="home"],
+html[data-theme="contrast"][data-nxt-app="home"] {
+  --nxt-app-surface: #0B0C10;
+}
+
+/* ============================ txt ============================ */
+html[data-nxt-app="txt"] {
+  --nxt-accent: #7C3AED;
+  --nxt-accent-hover: #6D28D9;
+  --nxt-accent-2: #A78BFA;
+  --nxt-accent-soft: #EDE9FE;
+  --nxt-accent-ink: #FFFFFF;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #7C3AED, #A78BFA);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="txt"],
+html[data-theme="contrast"][data-nxt-app="txt"] {
+  --nxt-app-surface: #130F1E;
+}
+
+/* ============================ grd ============================ */
+html[data-nxt-app="grd"] {
+  --nxt-accent: #06B6D4;
+  --nxt-accent-hover: #0891B2;
+  --nxt-accent-2: #67E8F9;
+  --nxt-accent-soft: #CFFAFE;
+  --nxt-accent-ink: #FFFFFF;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #06B6D4, #67E8F9);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="grd"],
+html[data-theme="contrast"][data-nxt-app="grd"] {
+  --nxt-app-surface: #08161B;
+}
+
+/* ============================ dck ============================ */
+html[data-nxt-app="dck"] {
+  --nxt-accent: #FF2E93;
+  --nxt-accent-hover: #DB2777;
+  --nxt-accent-2: #F472B6;
+  --nxt-accent-soft: #FFE4E6;
+  --nxt-accent-ink: #FFFFFF;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #FF2E93, #F472B6);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="dck"],
+html[data-theme="contrast"][data-nxt-app="dck"] {
+  --nxt-app-surface: #190B12;
+}
+
+/* ============================ mem ============================ */
+html[data-nxt-app="mem"] {
+  --nxt-accent: #10B981;
+  --nxt-accent-hover: #059669;
+  --nxt-accent-2: #6EE7B7;
+  --nxt-accent-soft: #D1FAE5;
+  --nxt-accent-ink: #FFFFFF;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #10B981, #6EE7B7);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="mem"],
+html[data-theme="contrast"][data-nxt-app="mem"] {
+  --nxt-app-surface: #091713;
+}
+
+/* ============================ pdf ============================ */
+html[data-nxt-app="pdf"] {
+  --nxt-accent: #F59E0B;
+  --nxt-accent-hover: #D97706;
+  --nxt-accent-2: #FCD34D;
+  --nxt-accent-soft: #FEF3C7;
+  --nxt-accent-ink: #FFFFFF;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #F59E0B, #FCD34D);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="pdf"],
+html[data-theme="contrast"][data-nxt-app="pdf"] {
+  --nxt-app-surface: #171209;
+}
+
+/* ============================ hub ============================ */
+html[data-nxt-app="hub"] {
+  --nxt-accent: #3B82F6;
+  --nxt-accent-hover: #1D4ED8;
+  --nxt-accent-2: #93C5FD;
+  --nxt-accent-soft: #DBEAFE;
+  --nxt-accent-ink: #FFFFFF;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #3B82F6, #93C5FD);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="hub"],
+html[data-theme="contrast"][data-nxt-app="hub"] {
+  --nxt-app-surface: #0B1120;
+}
+
+/* ============================ vector ============================ */
+html[data-nxt-app="vector"] {
+  --nxt-accent: #84CC16;
+  --nxt-accent-hover: #65A30D;
+  --nxt-accent-2: #BEF264;
+  --nxt-accent-soft: #ECFCCB;
+  --nxt-accent-ink: #FFFFFF;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #84CC16, #BEF264);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="vector"],
+html[data-theme="contrast"][data-nxt-app="vector"] {
+  --nxt-app-surface: #11160B;
+}
+
+/* ============================ pixel ============================ */
+html[data-nxt-app="pixel"] {
+  --nxt-accent: #EC4899;
+  --nxt-accent-hover: #DB2777;
+  --nxt-accent-2: #F9A8D4;
+  --nxt-accent-soft: #FCE7F3;
+  --nxt-accent-ink: #FFFFFF;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #EC4899, #F9A8D4);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="pixel"],
+html[data-theme="contrast"][data-nxt-app="pixel"] {
+  --nxt-app-surface: #140B12;
+}
+
+/* ===================== shared hooks (additive) =====================
+   Scoped to html[data-nxt-app] so they only take effect once the theme
+   module runs; existing themes keep their styles until then. Rules here
+   win over the hardcoded backgrounds they override (higher specificity
+   or later stylesheet), and never touch unrelated themes. */
+html[data-nxt-app] .nxt-studio-badge {
+  background: var(--nxt-accent-soft);
+  color: var(--nxt-accent);
+}
+html[data-nxt-app] .nxt-tile-badge {
+  background: var(--nxt-accent);
+  color: var(--nxt-accent-ink);
+}
+html[data-nxt-app] .nxt-mini-badge {
+  background: var(--nxt-accent);
+  color: var(--nxt-accent-ink);
+}
+html[data-nxt-app] .eco-home-head .app-badge {
+  background: var(--nxt-accent);
+  color: var(--nxt-accent-ink);
+}
+html[data-nxt-app] ::selection {
+  background: var(--nxt-accent);
+  color: var(--nxt-accent-ink);
+}
+/* per-app topbar badges that currently hardcode their color */
+html[data-nxt-app="grd"] .grd-appbadge {
+  background: var(--nxt-accent);
+  color: var(--nxt-accent-ink);
+}
+html[data-nxt-app="mem"] #view-mem .mem-appbadge {
+  background: var(--nxt-accent);
+  color: var(--nxt-accent-ink);
+}
+html[data-nxt-app="pdf"] .pdf-app-badge {
+  background: var(--nxt-accent);
+  color: var(--nxt-accent-ink);
+}
+html[data-nxt-app="dck"] .dck-topbar .app-badge {
+  background: var(--nxt-accent);
+  color: var(--nxt-accent-ink);
+}
+
+/* NXT OS per-app status-bar credit (Phase 1 Identity fix-up):
+   right-aligned "NXT [APP] • Developed by H3NZ" rendered in the app's
+   H3NZ signature palette accent (bridged --accent). */
+.nxt-statusbar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  flex: 0 0 auto; width: 100%; box-sizing: border-box;
+  padding: 6px 12px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; line-height: 1.85;
+  white-space: nowrap;
+  color: var(--muted, #8a8a93);
+  background: var(--surface, transparent);
+  border-top: 1px solid var(--line, rgba(128, 128, 128, 0.28));
+}
+.nxt-statusbar .nxt-sb-brand { color: var(--accent, #8a8a93); }
+/* HUB dashboard footer: credit sits right-aligned beside the legal links. */
+.hub-foot-credit { margin-left: auto; color: var(--accent, #8a8a93); font-weight: 700; }
