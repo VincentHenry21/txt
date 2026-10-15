@@ -86,17 +86,17 @@
     T.vector._vid = id;
     try {
       T.store.emit("txt:insert-svg", { id: id, svg: T.vector.getSVG() });
-      T.toast("Artwork sent to the Word document.");
+      T.toast("Artwork sent to the TXT document.");
     } catch (e) { T.toast("Could not send artwork.", "error"); }
   }
   function buildCTA() {
     var wrap = h("div", "vp-cta");
     var btn = document.createElement("button");
     btn.type = "button"; btn.className = "vp-btn primary";
-    btn.innerHTML = T.icon("i-export") + "<span>Insert / Update in Word Document</span>";
+    btn.innerHTML = T.icon("i-export") + "<span>Insert / Update in TXT Document</span>";
     btn.addEventListener("click", sendToWord);
     wrap.appendChild(btn);
-    wrap.appendChild(h("div", "vp-cta-note", "Sends the artwork to the Word document as an editable figure. Sending again updates the same figure."));
+    wrap.appendChild(h("div", "vp-cta-note", "Sends the artwork to the TXT document as an editable figure. Sending again updates the same figure."));
     return wrap;
   }
 
@@ -778,7 +778,7 @@
     });
     T.register("vector.distribute.x", function () { if (ops()) ops().distribute(sel(), "x"); }, { title: "Vector: Distribute horizontally", cat: "Vector", icon: "i-align-c" });
     T.register("vector.distribute.y", function () { if (ops()) ops().distribute(sel(), "y"); }, { title: "Vector: Distribute vertically", cat: "Vector", icon: "i-align-c" });
-    T.register("vector.sendToWord", function () { sendToWord(); }, { title: "Vector: Send to Word document", cat: "Vector", icon: "i-export" });
+    T.register("vector.sendToWord", function () { sendToWord(); }, { title: "Vector: Send to TXT document", cat: "Vector", icon: "i-export" });
   }
 
   T.vectorPanels = { init: init, refresh: refresh, sendToWord: sendToWord };
