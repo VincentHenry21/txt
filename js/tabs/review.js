@@ -29,8 +29,7 @@
 
   function trackToggle() {
     if (!svc("changes", "toggle")) { missing("Track changes"); return; }
-    T.changes.toggle();
-    T.bus.emit("changes:update");
+    T.changes.toggle(); // T.changes.set() already emits changes:update with the new state
   }
   /* Toggle-button state function, evaluated by the ribbon at render time. */
   function trackState() {

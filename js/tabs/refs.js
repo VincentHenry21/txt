@@ -45,12 +45,14 @@
     return true;
   }
 
-  /* Direct-child H1/H2/H3 blocks in document order. */
+  /* H1/H2/H3 in document order, excluding the TOC block itself and empties. */
   function docHeadings(s) {
-    var out = [], kids = s.children, i, tg;
-    for (i = 0; i < kids.length; i++) {
-      tg = kids[i].tagName;
-      if (tg === "H1" || tg === "H2" || tg === "H3") out.push(kids[i]);
+    var out = [], all = s.querySelectorAll("h1,h2,h3"), i, el;
+    for (i = 0; i < all.length; i++) {
+      el = all[i];
+      if (el.closest && el.closest(".toc-block")) continue;
+      if (!el.textContent.trim()) continue;
+      out.push(el);
     }
     return out;
   }
@@ -79,7 +81,7 @@
       var a = document.createElement("a");
       a.href = "#";
       a.setAttribute("data-target", hd.getAttribute("data-bid") || "");
-      a.textContent = hd.textContent.trim() || ("Heading " + lvl);
+      a.textContent = hd.textContent.trim();
       var dots = document.createElement("span");
       dots.className = "dots";
       dots.setAttribute("aria-hidden", "true");

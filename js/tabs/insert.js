@@ -25,7 +25,7 @@
   function insertNodeAtCaret(node) {
     var sh = sheet();
     if (!sh) return null;
-    sh.focus();
+    T.sel.focusSheet();
     var r = caretRange();
     if (!r && T.sel.restore()) r = caretRange();
     if (r) {
@@ -39,12 +39,46 @@
     return node;
   }
 
+  /* Insert a block-level node AFTER the current block (splitting it at the
+     caret when necessary), never nested inside a heading or paragraph. */
+  function insertBlockNodeAtCaret(node) {
+    var sh = sheet();
+    if (!sh) return null;
+    T.sel.focusSheet();
+    var r = caretRange();
+    if (!r && T.sel.restore()) r = caretRange();
+    var blk = r ? T.sel.block() : null;
+    if (!blk || blk === sh || blk.parentNode !== sh) {
+      if (r) { r.deleteContents(); r.insertNode(node); }
+      else sh.appendChild(node);
+    } else {
+      var tail = document.createRange();
+      tail.setStart(r.startContainer, r.startOffset);
+      tail.setEndAfter(blk.lastChild || blk);
+      var frag = tail.extractContents();
+      var hasContent = frag.textContent.trim() || frag.querySelector("img,table,hr,ul,ol");
+      insertAfter(blk, node);
+      if (hasContent) {
+        var tag = /^(P|DIV)$/.test(blk.tagName) ? blk.tagName.toLowerCase() : "p";
+        var nb = document.createElement(tag);
+        nb.appendChild(frag);
+        insertAfter(node, nb);
+      } else if (!blk.textContent.trim() && !blk.querySelector("img,table,hr")) {
+        blk.innerHTML = "<br>";
+      }
+    }
+    placeCaretAfter(node);
+    T.editor.markDirty();
+    T.editor.ensureBlockIds(sh);
+    return node;
+  }
+
   /* Insert an HTML string at the caret. Uses execCommand insertHTML first,
      then a DOM fallback. */
   function insertHtmlAtCaret(html) {
     var sh = sheet();
     if (!sh) return;
-    sh.focus();
+    T.sel.focusSheet();
     var r = caretRange();
     if (!r && T.sel.restore()) r = caretRange();
     var done = false;
@@ -77,7 +111,7 @@
   function insertTextAtCaret(text) {
     var sh = sheet();
     if (!sh) return;
-    sh.focus();
+    T.sel.focusSheet();
     var r = caretRange();
     if (!r && T.sel.restore()) r = caretRange();
     var done = false;
@@ -102,7 +136,7 @@
     var s = window.getSelection();
     s.removeAllRanges();
     s.addRange(r);
-    sh.focus();
+    T.sel.focusSheet();
   }
 
   function placeCaretIn(node) {
@@ -114,7 +148,7 @@
     var s = window.getSelection();
     s.removeAllRanges();
     s.addRange(r);
-    sh.focus();
+    T.sel.focusSheet();
   }
 
   function insertAfter(ref, node) {
@@ -190,7 +224,7 @@
 
   function insertBuiltTable(r, c) {
     var t = buildTable(r, c);
-    insertNodeAtCaret(t);
+    insertBlockNodeAtCaret(t);
     var first = t.querySelector("td, th");
     if (first) placeCaretIn(first);
     T.toast("Table inserted: " + t.rows.length + " x " + t.rows[0].cells.length);
@@ -303,7 +337,7 @@
   reg("insert.blankPage", function () {
     var sh = sheet();
     if (!sh) return;
-    sh.focus();
+    T.sel.focusSheet();
     if (!caretRange()) T.sel.restore();
     var blk = T.sel.block();
     var brk = document.createElement("div");
@@ -329,6 +363,7 @@
   /* ---- Tables ---- */
 
   reg("table.insert", function (r, c) {
+    if (r && typeof r === "object") { c = r.c; r = r.r; } // mobile tile / slash menu pass {r,c}
     insertBuiltTable(r, c);
   }, "Insert table", "i-table");
 
@@ -495,8 +530,7 @@
         '<rect x="6" y="6" width="588" height="128" rx="20" fill="#2563EB"/>' +
         '<text x="300" y="84" text-anchor="middle" fill="#FFFFFF" font-size="34" font-weight="700" font-family="inherit">' +
         T.esc(v.title) + "</text></svg>";
-      insertNodeAtCaret(d);
-      placeCaretAfter(d);
+      insertBlockNodeAtCaret(d);
       touchDoc();
     });
   }, "Shape banner", "i-shapes");
@@ -507,7 +541,7 @@
     d.setAttribute("data-tid", T.uid());
     d.innerHTML = '<div class="cmp-col"><h4>Option A</h4><p>Type here.</p></div>' +
       '<div class="cmp-col"><h4>Option B</h4><p>Type here.</p></div>';
-    insertNodeAtCaret(d);
+    insertBlockNodeAtCaret(d);
     var first = d.querySelector(".cmp-col p");
     if (first) placeCaretIn(first);
     touchDoc();
@@ -520,7 +554,7 @@
     d.className = "callout " + kind;
     d.setAttribute("data-tid", T.uid());
     d.innerHTML = "<p>Type your " + T.esc(label.toLowerCase()) + " note here.</p>";
-    insertNodeAtCaret(d);
+    insertBlockNodeAtCaret(d);
     var p = d.querySelector("p");
     if (p) placeCaretIn(p);
     touchDoc();
@@ -543,13 +577,13 @@
     pre.appendChild(code);
     wrap.appendChild(btn);
     wrap.appendChild(pre);
-    insertNodeAtCaret(wrap);
-    placeCaretAfter(wrap);
+    insertBlockNodeAtCaret(wrap);
     touchDoc();
   }, "Code block", "i-code");
 
   reg("insert.hr", function () {
-    insertHtmlAtCaret("<hr>");
+    var hr = document.createElement("hr");
+    insertBlockNodeAtCaret(hr);
     touchDoc();
   }, "Horizontal rule", "i-hr");
 

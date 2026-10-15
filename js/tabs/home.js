@@ -76,8 +76,8 @@
     var sel = window.getSelection();
     var live = sel.rangeCount ? sel.getRangeAt(0) : null;
     var inSheet = !!(live && (sh === live.commonAncestorContainer || sh.contains(live.commonAncestorContainer)));
-    sh.focus();
     if (!inSheet) T.sel.restore();
+    else T.sel.focusSheet();
     fn();
     T.editor.markDirty();
   }
@@ -114,16 +114,40 @@
     }
     try {
       r.surroundContents(el);
-      return true;
     } catch (e) {
       try {
         var frag = r.extractContents();
         el.appendChild(frag);
         r.insertNode(el);
-        return true;
       } catch (e2) {
         return false;
       }
+    }
+    mergeWithSiblings(el);
+    return true;
+  }
+
+  /* Merge a newly wrapped span with adjacent spans carrying the identical
+     tag + style so repeated formatting does not nest spans per operation. */
+  function mergeWithSiblings(el) {
+    if (!el || !el.parentNode) return;
+    var key = function (n) {
+      return n.tagName + "|" + (n.getAttribute("style") || "") + "|" + (n.className || "");
+    };
+    var k = key(el), p = el.parentNode, sib;
+    sib = el.previousSibling;
+    while (sib && sib.nodeType === 1 && key(sib) === k) {
+      var ps = sib.previousSibling;
+      while (sib.firstChild) el.insertBefore(sib.firstChild, el.firstChild);
+      sib.remove();
+      sib = ps;
+    }
+    sib = el.nextSibling;
+    while (sib && sib.nodeType === 1 && key(sib) === k) {
+      var ns = sib.nextSibling;
+      while (sib.firstChild) el.appendChild(sib.firstChild);
+      sib.remove();
+      sib = ns;
     }
   }
 
@@ -251,30 +275,56 @@
     return null;
   }
 
+  /* Restyle the selection: if it exactly covers a single span, update that
+     span in place instead of nesting a new one. */
+  function restyleSelection(styleObj) {
+    var sh = sheet();
+    var r = T.sel.range();
+    if (!sh || !r || r.collapsed || !sh.contains(r.commonAncestorContainer)) return false;
+    var anc = r.commonAncestorContainer;
+    if (anc.nodeType === 3) anc = anc.parentNode;
+    if (anc && anc.tagName === "SPAN") {
+      try {
+        var rr = document.createRange();
+        rr.selectNodeContents(anc);
+        if (r.compareBoundaryPoints(Range.START_TO_START, rr) <= 0 &&
+            r.compareBoundaryPoints(Range.END_TO_END, rr) >= 0) {
+          var k;
+          for (k in styleObj) {
+            if (Object.prototype.hasOwnProperty.call(styleObj, k)) anc.style[k] = styleObj[k];
+          }
+          mergeWithSiblings(anc);
+          return true;
+        }
+      } catch (e) { /* fall through to wrap */ }
+    }
+    return wrapSelection("span", styleObj);
+  }
+
   T.register("fmt.fontFamily", function (stack) {
     if (!stack || !needText()) return;
     var f = fontByStack(stack);
     if (f) T.fonts.ensure(f.name);
-    withSel(function () { wrapSelection("span", { fontFamily: stack }); });
+    withSel(function () { restyleSelection({ fontFamily: stack }); });
   }, { title: "Font", cat: "Home", icon: "i-case" });
 
   T.register("fmt.fontSize", function (pt) {
     pt = parseFloat(pt);
     if (!pt || !needText()) return;
     var px = Math.round(pt * 96 / 72);
-    withSel(function () { wrapSelection("span", { fontSize: px + "px" }); });
+    withSel(function () { restyleSelection({ fontSize: px + "px" }); });
   }, { title: "Font Size", cat: "Home", icon: "i-case" });
 
   T.register("fmt.fontGrow", function () {
     if (!needText()) return;
     var next = T.clamp(Math.round(selFontPx()) + 2, 6, 400);
-    withSel(function () { wrapSelection("span", { fontSize: next + "px" }); });
+    withSel(function () { restyleSelection({ fontSize: next + "px" }); });
   }, { title: "Grow Font", cat: "Home", icon: "i-plus" });
 
   T.register("fmt.fontShrink", function () {
     if (!needText()) return;
     var next = T.clamp(Math.round(selFontPx()) - 2, 6, 400);
-    withSel(function () { wrapSelection("span", { fontSize: next + "px" }); });
+    withSel(function () { restyleSelection({ fontSize: next + "px" }); });
   }, { title: "Shrink Font", cat: "Home", icon: "i-minus" });
 
   T.register("fmt.letterSpacing", function (v) {
