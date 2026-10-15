@@ -533,6 +533,11 @@
       if (!IN.isActive()) return;
       if (e.button !== 0 && !e.altKey) return;
       var p = IN.toDoc(e);
+      /* NXT phase 1 setting: clicking the canvas selects the topmost opaque layer */
+      try {
+        var st = (typeof IN.pxSettings === "function") ? IN.pxSettings() : null;
+        if (st && st.autoSelectLayer && typeof IN.pickLayerAt === "function") { IN.pickLayerAt(p); }
+      } catch (err2) { /* selection is best-effort */ }
       try { cv.setPointerCapture(e.pointerId); } catch (err) {}
       var t = TOOLS[active];
       drawing = t.down(p, e) === true;
@@ -588,6 +593,9 @@
   bindCanvas();
   IN.toolCursorSize = TOOLS[active].cursorSize;
   T.bus.on("pixel:open", function () { bindCanvas(); });
+  /* NXT phase 1: rebuild the options bar when studio settings change
+     (e.g. the default brush size set in Pixel settings). */
+  T.bus.on("pixel:settings", function () { buildOptions(); });
 
   /* palette commands */
   ORDER.forEach(function (id) {

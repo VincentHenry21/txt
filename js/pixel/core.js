@@ -36,6 +36,16 @@
     return d;
   }
 
+  /* shared chrome icons for the per-app topbar (NXT phase 1) */
+  var GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+  var DOTS9 = "<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>";
+  function fileIco() {
+    return (T.icon && typeof T.icon === "function") ? T.icon("i-file") : "";
+  }
+  function xIco() {
+    return (T.icon && typeof T.icon === "function") ? T.icon("i-x") : "";
+  }
+
   function build() {
     if (S.built) return;
     var host = document.getElementById("view-pixel");
@@ -52,6 +62,21 @@
     /* top options bar */
     var top = el("div", "px-topbar");
     top.id = "pTopbar";
+    /* per-app chrome: studio badge + name, app launcher, settings, files (NXT phase 1) */
+    var left = el("div", "px-topleft");
+    left.innerHTML =
+      '<span class="px-studio"><span class="px-badge">Ps</span><span class="px-sname">Pixel</span></span>' +
+      '<button type="button" id="pxLauncher" class="icon-btn waffle-btn px-tbtn" title="App launcher" aria-label="Open app launcher"><span class="waffle-dots">' + DOTS9 + "</span></button>" +
+      '<button type="button" id="pxSettingsBtn" class="icon-btn px-tbtn" title="Pixel settings" aria-label="Pixel settings">' + GEAR_SVG + "</button>" +
+      '<button type="button" id="pxFilesBtn" class="icon-btn px-tbtn" title="Image files" aria-label="Image files">' + fileIco() + "</button>";
+    top.appendChild(left);
+    left.querySelector("#pxLauncher").addEventListener("click", function () {
+      if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") {
+        try { T.ecosystem.toggleLauncher(); } catch (e) { /* ignore */ }
+      }
+    });
+    left.querySelector("#pxSettingsBtn").addEventListener("click", function () { togglePxDrawer("settings"); });
+    left.querySelector("#pxFilesBtn").addEventListener("click", function () { togglePxDrawer("files"); });
     var opts = el("div", "px-toolopts");
     opts.id = "pToolOpts";
     top.appendChild(opts);
@@ -100,6 +125,8 @@
 
     root.appendChild(main);
     host.appendChild(root);
+    host.appendChild(buildPxSettingsDrawer());
+    host.appendChild(buildPxFilesDrawer());
 
     cctx = comp.getContext("2d");
     octx = over.getContext("2d");
@@ -118,6 +145,10 @@
     wrapEl.addEventListener("pointerleave", function () { S.mouse = null; });
 
     S.built = true;
+    loadPxSettings();
+    applyPxSettings();
+    pxFilesLoad();
+    renderPxFilesList();
     newDoc(1200, 900);
     startAnts();
   }
@@ -137,6 +168,7 @@
     h = Math.max(1, Math.min(8000, Math.round(h) || 900));
     S.w = w; S.h = h;
     S.layers = []; S.activeId = null; S.seq = 0;
+    pxCurFileId = null; // a fresh doc is detached: it can never overwrite a saved file
     S.mask = mkCanvas(w, h); S.mctx = S.mask.getContext("2d");
     S.selection = null; S.crop = null;
     comp.width = w; comp.height = h;
@@ -520,6 +552,328 @@
     }
   }
 
+  /* ================= per-app settings (NXT phase 1) =================
+     Persisted in T.store under the 'pixel' namespace, key 'settings'.
+     brushSize drives new brush strokes (S.brush.size is the single source of
+     truth, so the tool options bar follows automatically); checkerboard
+     toggles the transparency background; autoSelectLayer makes a canvas
+     click select the topmost opaque layer under the cursor. */
+  var PSET = { brushSize: 28, checkerboard: true, autoSelectLayer: false };
+  function pxSettingsCopy() {
+    return { brushSize: PSET.brushSize, checkerboard: PSET.checkerboard, autoSelectLayer: PSET.autoSelectLayer };
+  }
+  function loadPxSettings() {
+    var s = null;
+    try { s = T.store ? T.store.get("pixel", "settings") : null; } catch (e) { s = null; }
+    if (s && typeof s === "object") {
+      if (isFinite(+s.brushSize) && +s.brushSize >= 1) {
+        PSET.brushSize = Math.min(200, Math.max(1, Math.round(+s.brushSize)));
+      }
+      PSET.checkerboard = s.checkerboard !== false;
+      PSET.autoSelectLayer = !!s.autoSelectLayer;
+    }
+  }
+  function savePxSettings() {
+    try { if (T.store) { T.store.set("pixel", "settings", pxSettingsCopy()); } } catch (e) { /* ignore */ }
+  }
+  function syncPxSettingsUI() {
+    var b = document.getElementById("pxSetBrush"),
+        c = document.getElementById("pxSetChecker"),
+        a = document.getElementById("pxSetAuto");
+    if (b) { b.value = String(PSET.brushSize); }
+    if (c) { c.checked = PSET.checkerboard; }
+    if (a) { a.checked = PSET.autoSelectLayer; }
+  }
+  function applyPxSettings() {
+    S.brush.size = PSET.brushSize;
+    if (wrapEl) { wrapEl.classList.toggle("px-checker-off", !PSET.checkerboard); }
+    syncPxSettingsUI();
+    T.bus.emit("pixel:settings", { settings: pxSettingsCopy() });
+  }
+  function updatePxSettings(patch) {
+    patch = patch || {};
+    if (patch.brushSize !== undefined && isFinite(+patch.brushSize)) {
+      PSET.brushSize = Math.min(200, Math.max(1, Math.round(+patch.brushSize)));
+    }
+    if (patch.checkerboard !== undefined) { PSET.checkerboard = !!patch.checkerboard; }
+    if (patch.autoSelectLayer !== undefined) { PSET.autoSelectLayer = !!patch.autoSelectLayer; }
+    savePxSettings();
+    applyPxSettings();
+  }
+
+  /* Topmost visible layer with an opaque pixel at p (doc coords), or null. */
+  function pickLayerAt(p) {
+    if (!S.layers.length || !S.w) { return null; }
+    var x = Math.max(0, Math.min(S.w - 1, Math.round(p.x)));
+    var y = Math.max(0, Math.min(S.h - 1, Math.round(p.y)));
+    for (var i = S.layers.length - 1; i >= 0; i--) {
+      var L = S.layers[i];
+      if (!L.visible) { continue; }
+      try {
+        var d = L.canvas.getContext("2d").getImageData(x, y, 1, 1).data;
+        if (d[3] > 8) { setActive(L.id); return L; }
+      } catch (e) { /* unreadable layer: skip */ }
+    }
+    return null;
+  }
+
+  /* ================= per-app files (NXT phase 1) =================
+     Named image records {id, name, updatedAt, dataUrl}, persisted in
+     T.store under the 'pixel' namespace, key 'files'.
+     The open file auto-saves (debounced) on every pixel:change;
+     create/duplicate snapshot the composite immediately.
+     _persist verifies with a read-back because the store swallows quota
+     errors: on failure it toasts honestly and keeps the in-memory doc. */
+  var pxFiles = [], pxCurFileId = null, pxSaveTimer = null;
+  function pxFilesLoad() {
+    var arr = null;
+    try { arr = T.store ? T.store.get("pixel", "files") : null; } catch (e) { arr = null; }
+    pxFiles = Array.isArray(arr) ? arr.filter(function (rec) { return rec && rec.id; }) : [];
+  }
+  function pxFilesSave() {
+    try { if (T.store) { T.store.set("pixel", "files", pxFiles); } } catch (e) { /* ignore */ }
+    var ok = true;
+    try {
+      var back = T.store ? T.store.get("pixel", "files") : null;
+      ok = !!(back && back.length === pxFiles.length);
+    } catch (e2) { ok = false; }
+    if (!ok && typeof T.toast === "function") {
+      T.toast("Storage is full: the file list was not saved. Your open image is kept in memory.", "error");
+    }
+    return ok;
+  }
+  function pxFind(id) {
+    for (var i = 0; i < pxFiles.length; i++) { if (pxFiles[i].id === id) { return pxFiles[i]; } }
+    return null;
+  }
+  function pxNewId() {
+    return "pf" + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+  }
+  function pxFlushSave() {
+    if (!pxCurFileId) { return; }
+    var rec = pxFind(pxCurFileId);
+    if (!rec) { return; }
+    try { rec.dataUrl = getDataURL(); } catch (e) { return; }
+    rec.updatedAt = Date.now();
+    pxFilesSave();
+  }
+  var pixelFiles = {
+    list: function () {
+      return pxFiles.map(function (r) {
+        return { id: r.id, name: r.name, updatedAt: r.updatedAt, dataUrl: r.dataUrl };
+      });
+    },
+    create: function (name) {
+      build();
+      pxFilesLoad();
+      pxFlushSave(); // keep current work inside the previously open file
+      var dw = S.w || 1200, dh = S.h || 900;
+      newDoc(dw, dh); // newDoc detaches from any file (pxCurFileId reset below)
+      pxCurFileId = null;
+      var url = "";
+      try { url = getDataURL(); } catch (e) { url = ""; }
+      var nm = (name || "").trim() || ("Image " + (pxFiles.length + 1));
+      var rec = { id: pxNewId(), name: nm, updatedAt: Date.now(), dataUrl: url };
+      pxFiles.unshift(rec);
+      pxCurFileId = rec.id;
+      pxFilesSave();
+      renderPxFilesList();
+      return rec.id;
+    },
+    rename: function (id, name) {
+      pxFilesLoad();
+      var rec = pxFind(id);
+      if (!rec) { return false; }
+      var nm = (name || "").trim();
+      if (!nm) { return false; }
+      rec.name = nm;
+      rec.updatedAt = Date.now();
+      pxFilesSave();
+      renderPxFilesList();
+      return true;
+    },
+    duplicate: function (id) {
+      pxFilesLoad();
+      var rec = pxFind(id);
+      if (!rec) { return null; }
+      var copy = { id: pxNewId(), name: rec.name + " copy", updatedAt: Date.now(), dataUrl: rec.dataUrl };
+      pxFiles.unshift(copy);
+      pxFilesSave();
+      renderPxFilesList();
+      return copy.id;
+    },
+    remove: function (id) {
+      var rec = pxFind(id);
+      if (!rec) { return Promise.resolve(false); }
+      function doRemove() {
+        pxFilesLoad();
+        pxFiles = pxFiles.filter(function (r) { return r.id !== id; });
+        if (pxCurFileId === id) { pxCurFileId = null; }
+        pxFilesSave();
+        renderPxFilesList();
+        if (typeof T.toast === "function") { T.toast("Image deleted."); }
+        return true;
+      }
+      if (T.modal && typeof T.modal === "function") {
+        return T.modal({
+          title: "Delete image",
+          sub: "Delete \"" + rec.name + "\"? This cannot be undone.",
+          okText: "Delete",
+          danger: true
+        }).then(function (res) { return res ? doRemove() : false; });
+      }
+      doRemove();
+      return Promise.resolve(true);
+    },
+    open: function (id) {
+      build();
+      pxFilesLoad();
+      var rec = pxFind(id);
+      if (!rec || !rec.dataUrl) { return Promise.resolve(false); }
+      pxFlushSave();
+      return new Promise(function (resolve) {
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var w = img.naturalWidth || 800, h = img.naturalHeight || 600;
+            newDoc(Math.min(8000, w), Math.min(8000, h));
+            pxCurFileId = id;
+            loadDataURL(rec.dataUrl).then(function () {
+              renderPxFilesList();
+              resolve(true);
+            }, function () { resolve(false); });
+          } catch (e) { resolve(false); }
+        };
+        img.onerror = function () {
+          if (typeof T.toast === "function") { T.toast("Could not open the saved image.", "error"); }
+          resolve(false);
+        };
+        img.src = rec.dataUrl;
+      });
+    },
+    currentId: function () { return pxCurFileId; }
+  };
+
+  /* ================= settings + files drawers ================= */
+  function buildPxSettingsDrawer() {
+    var d = el("div", "px-drawer hidden");
+    d.id = "pxSettingsDrawer";
+    d.setAttribute("role", "dialog");
+    d.setAttribute("aria-label", "Pixel settings");
+    d.innerHTML =
+      '<div class="px-drawer-head"><span>Pixel settings</span>' +
+      '<button type="button" class="icon-btn px-dclose" data-x="close" title="Close" aria-label="Close settings">' + xIco() + "</button></div>" +
+      '<div class="px-drawer-body">' +
+      '<div class="px-set-row"><label for="pxSetBrush">Default brush size<span class="px-set-sub">Px for new brush strokes</span></label>' +
+      '<input id="pxSetBrush" type="number" min="1" max="200" step="1"></div>' +
+      '<div class="px-set-row"><label for="pxSetChecker">Checkerboard background<span class="px-set-sub">Show transparency as a checkerboard</span></label>' +
+      '<input id="pxSetChecker" type="checkbox" class="px-toggle"></div>' +
+      '<div class="px-set-row"><label for="pxSetAuto">Auto-select layer<span class="px-set-sub">Clicking the canvas selects the topmost opaque layer</span></label>' +
+      '<input id="pxSetAuto" type="checkbox" class="px-toggle"></div>' +
+      '<div class="px-set-about"><span class="px-about-title">About</span>' +
+      "<span>Pixel Studio is part of the NXT Ecosystem. Settings are saved on this device.</span></div>" +
+      "</div>";
+    d.querySelector('[data-x="close"]').addEventListener("click", function () { d.classList.add("hidden"); });
+    d.querySelector("#pxSetBrush").addEventListener("change", function (e) {
+      updatePxSettings({ brushSize: parseInt(e.target.value, 10) });
+    });
+    d.querySelector("#pxSetChecker").addEventListener("change", function (e) {
+      updatePxSettings({ checkerboard: e.target.checked });
+    });
+    d.querySelector("#pxSetAuto").addEventListener("change", function (e) {
+      updatePxSettings({ autoSelectLayer: e.target.checked });
+    });
+    return d;
+  }
+  function buildPxFilesDrawer() {
+    var d = el("div", "px-drawer hidden");
+    d.id = "pxFilesDrawer";
+    d.setAttribute("role", "dialog");
+    d.setAttribute("aria-label", "Image files");
+    d.innerHTML =
+      '<div class="px-drawer-head"><span>Image files</span>' +
+      '<button type="button" class="px-new" id="pxFileNew">New</button>' +
+      '<button type="button" class="icon-btn px-dclose" data-x="close" title="Close" aria-label="Close files">' + xIco() + "</button></div>" +
+      '<div class="px-drawer-body"><div id="pxFilesList" class="px-files-list"></div></div>';
+    d.querySelector('[data-x="close"]').addEventListener("click", function () { d.classList.add("hidden"); });
+    d.querySelector("#pxFileNew").addEventListener("click", function () {
+      if (!(T.modal && typeof T.modal === "function")) { pixelFiles.create(""); return; }
+      T.modal({
+        title: "New image",
+        fields: [{ key: "name", label: "Name", value: "Image " + (pxFiles.length + 1) }],
+        okText: "Create"
+      }).then(function (res) {
+        pixelFiles.create(res && res.name ? res.name : "");
+      });
+    });
+    return d;
+  }
+  function togglePxDrawer(which) {
+    var s = document.getElementById("pxSettingsDrawer"),
+        f = document.getElementById("pxFilesDrawer");
+    if (!s || !f) { return; }
+    if (which === "settings") {
+      var willShow = s.classList.contains("hidden");
+      s.classList.toggle("hidden");
+      if (willShow) { f.classList.add("hidden"); }
+    } else {
+      var willShowF = f.classList.contains("hidden");
+      f.classList.toggle("hidden");
+      if (willShowF) { s.classList.add("hidden"); renderPxFilesList(); }
+    }
+  }
+  function fmtPxDate(ts) {
+    try { return new Date(ts).toLocaleString(); } catch (e) { return ""; }
+  }
+  function renderPxFilesList() {
+    var host = document.getElementById("pxFilesList");
+    if (!host) { return; }
+    host.innerHTML = "";
+    pxFilesLoad();
+    if (!pxFiles.length) {
+      host.innerHTML = '<div class="px-files-empty">No saved images yet. Create one to keep named versions of this canvas.</div>';
+      return;
+    }
+    pxFiles.forEach(function (rec) {
+      var row = el("div", "px-file-row" + (rec.id === pxCurFileId ? " current" : ""));
+      var thumb = document.createElement("img");
+      thumb.className = "px-file-thumb";
+      thumb.alt = "";
+      if (rec.dataUrl) { thumb.src = rec.dataUrl; }
+      row.appendChild(thumb);
+      var open = el("button", "px-file-open");
+      open.type = "button";
+      open.title = "Open " + rec.name;
+      open.innerHTML = '<span class="px-file-name">' + T.esc(rec.name) + "</span>" +
+        '<span class="px-file-meta">' + T.esc(fmtPxDate(rec.updatedAt)) +
+        (rec.id === pxCurFileId ? " · open" : "") + "</span>";
+      open.addEventListener("click", function () { pixelFiles.open(rec.id); });
+      row.appendChild(open);
+      function act(iconId, title, fn) {
+        var b = el("button", "px-fact");
+        b.type = "button";
+        b.title = title;
+        b.setAttribute("aria-label", title);
+        b.innerHTML = (T.icon && typeof T.icon === "function") ? T.icon(iconId) : title;
+        b.addEventListener("click", function (e) { e.stopPropagation(); fn(); });
+        row.appendChild(b);
+      }
+      act("i-pen", "Rename", function () {
+        if (!(T.modal && typeof T.modal === "function")) { return; }
+        T.modal({
+          title: "Rename image",
+          fields: [{ key: "name", label: "Name", value: rec.name }],
+          okText: "Rename"
+        }).then(function (res) {
+          if (res && res.name) { pixelFiles.rename(rec.id, res.name); }
+        });
+      });
+      act("i-copy", "Duplicate", function () { pixelFiles.duplicate(rec.id); });
+      act("i-trash", "Delete", function () { pixelFiles.remove(rec.id); });
+      host.appendChild(row);
+    });
+  }
+
   /* ---------------- open / close ---------------- */
 
   function open() {
@@ -560,6 +914,9 @@
     setLocked: setLocked,
     moveLayer: moveLayer,
     BLENDS: BLENDS,
+    /* NXT phase 1: per-app settings + named image files */
+    files: pixelFiles,
+    settings: pxSettingsCopy, setSettings: updatePxSettings,
     /* view */
     open: open,
     close: close,
@@ -600,6 +957,8 @@
       getCrop: function () { return S.crop; },
       applyCrop: applyCrop,
       toolCursorSize: function () { return 0; }, /* overridden by tools.js */
+      pickLayerAt: pickLayerAt,
+      pxSettings: pxSettingsCopy,
       optsEl: function () { return document.getElementById("pToolOpts"); },
       dockEl: function () { return document.getElementById("pTools"); },
       compEl: function () { return comp; },
@@ -631,5 +990,12 @@
       x.restore();
       T.pixel.internal.changed();
     }
+  });
+
+  /* NXT phase 1: auto-save the open image file (debounced) on every change.
+     No-op when no file is open, so untitled docs stay in memory. */
+  T.bus.on("pixel:change", function () {
+    if (pxSaveTimer) { clearTimeout(pxSaveTimer); }
+    pxSaveTimer = setTimeout(function () { pxSaveTimer = null; pxFlushSave(); }, 1200);
   });
 })();
