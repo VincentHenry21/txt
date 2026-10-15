@@ -119,6 +119,28 @@
     if (exportBtn && exportBtn.parentNode === tbRight) {
       tbRight.insertBefore(wb, exportBtn.nextSibling);
     } else tbRight.appendChild(wb);
+
+    /* mobile topbar: the desktop topbar is hidden on phones, so the
+       launcher needs its own entry point there */
+    var mt = document.getElementById("mTopbar");
+    var mMore = document.getElementById("mMore");
+    if (mt && mMore && !document.getElementById("waffleBtnM")) {
+      var wm = document.createElement("button");
+      wm.type = "button";
+      wm.id = "waffleBtnM";
+      wm.className = "icon-btn waffle-btn";
+      wm.title = "App launcher";
+      wm.setAttribute("aria-label", "App launcher");
+      wm.setAttribute("aria-haspopup", "true");
+      wm.setAttribute("aria-expanded", "false");
+      var dotsm = document.createElement("span");
+      dotsm.className = "waffle-dots";
+      dotsm.setAttribute("aria-hidden", "true");
+      for (var j = 0; j < 9; j++) dotsm.appendChild(document.createElement("i"));
+      wm.appendChild(dotsm);
+      wm.addEventListener("click", function (e) { e.stopPropagation(); toggleLauncher(); });
+      mt.insertBefore(wm, mMore);
+    }
   }
 
   function syncPersonaSwitch() {
@@ -140,8 +162,29 @@
     la.innerHTML = "";
     var head = document.createElement("div");
     head.className = "launcher-head";
-    head.textContent = "Apps";
+    head.textContent = "Studio";
     la.appendChild(head);
+    var pRow = document.createElement("div");
+    pRow.className = "launcher-personas";
+    [["word", "W", "Word"], ["vector", "Ai", "Vector"], ["pixel", "Ps", "Pixel"]].forEach(function (d) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "launcher-persona" + ((eco.persona === d[0] && eco.app === "txt") ? " active" : "");
+      b.setAttribute("aria-label", d[2] + " studio");
+      var pb = document.createElement("span");
+      pb.className = "persona-badge";
+      pb.textContent = d[1];
+      pb.setAttribute("aria-hidden", "true");
+      b.appendChild(pb);
+      b.appendChild(document.createTextNode(" " + d[2]));
+      b.addEventListener("click", function () { hideLauncher(); setPersona(d[0]); });
+      pRow.appendChild(b);
+    });
+    la.appendChild(pRow);
+    var head2 = document.createElement("div");
+    head2.className = "launcher-head";
+    head2.textContent = "Apps";
+    la.appendChild(head2);
     var grid = document.createElement("div");
     grid.className = "launcher-grid";
     APPS_META.forEach(function (m) {
@@ -189,16 +232,21 @@
     var la = document.getElementById("appLauncher");
     if (!la) return;
     var willShow = la.classList.contains("hidden");
+    if (willShow) buildLauncher(); // refresh active states
     la.classList.toggle("hidden", !willShow);
-    var wb = document.getElementById("waffleBtn");
-    if (wb) wb.setAttribute("aria-expanded", willShow ? "true" : "false");
+    ["waffleBtn", "waffleBtnM"].forEach(function (id) {
+      var wb = document.getElementById(id);
+      if (wb) wb.setAttribute("aria-expanded", willShow ? "true" : "false");
+    });
   }
   function hideLauncher() {
     var la = document.getElementById("appLauncher");
     if (la && !la.classList.contains("hidden")) {
       la.classList.add("hidden");
-      var wb = document.getElementById("waffleBtn");
-      if (wb) wb.setAttribute("aria-expanded", "false");
+      ["waffleBtn", "waffleBtnM"].forEach(function (id) {
+        var wb = document.getElementById(id);
+        if (wb) wb.setAttribute("aria-expanded", "false");
+      });
     }
   }
 
