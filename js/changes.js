@@ -141,6 +141,31 @@
     while ((n = tw.nextNode())) out.push(n);
     return out;
   }
+  function insideTrackedDel(n) {
+    var p = n.parentNode;
+    while (p) {
+      if (p.nodeType === 1 && p.classList && p.classList.contains("tracked-delete")) return true;
+      p = p.parentNode;
+    }
+    return false;
+  }
+  // Live (not yet deleted) non-empty text nodes under n. A TreeWalker never
+  // yields its own root, so a bare text-node child is included by hand;
+  // without that, caretTextNode misses plain text at element boundaries.
+  // Text already wrapped in del.tracked-delete is skipped: it is deleted
+  // already and must not be deleted a second time.
+  function liveTexts(n) {
+    if (n.nodeType === 3) {
+      return (n.nodeValue.length && !insideTrackedDel(n)) ? [n] : [];
+    }
+    var out = [];
+    var t;
+    var tw = document.createTreeWalker(n, NodeFilter.SHOW_TEXT);
+    while ((t = tw.nextNode())) {
+      if (t.nodeValue.length && !insideTrackedDel(t)) out.push(t);
+    }
+    return out;
+  }
   function prevText(tn, sheet) {
     var all = textNodesOf(sheet), i = all.indexOf(tn);
     for (var k = i - 1; k >= 0; k--) if (all[k].nodeValue.length) return all[k];
@@ -154,21 +179,19 @@
   // normalize caret (container, offset) to a text node + offset
   function caretTextNode(sc, so, dir, sheet) {
     if (sc.nodeType === 3) return { node: sc, offset: Math.min(so, sc.nodeValue.length) };
-    var kids = sc.childNodes;
+    var kids = sc.childNodes, i, t;
     if (dir === "backward") {
-      for (var i = Math.min(so, kids.length) - 1; i >= 0; i--) {
-        var t = textNodesOf(kids[i]);
+      for (i = Math.min(so, kids.length) - 1; i >= 0; i--) {
+        t = liveTexts(kids[i]);
         if (t.length) { var last = t[t.length - 1]; return { node: last, offset: last.nodeValue.length }; }
       }
-      var p = prevText(null, sheet);
-      return p ? { node: p, offset: p.nodeValue.length } : null;
+      return null; // block boundary: leave it to the native engine
     }
-    for (var j = Math.max(so, 0); j < kids.length; j++) {
-      var t2 = textNodesOf(kids[j]);
-      if (t2.length) return { node: t2[0], offset: 0 };
+    for (i = Math.max(so, 0); i < kids.length; i++) {
+      t = liveTexts(kids[i]);
+      if (t.length) return { node: t[0], offset: 0 };
     }
-    var nx = nextText(null, sheet);
-    return nx ? { node: nx, offset: 0 } : null;
+    return null; // block boundary: leave it to the native engine
   }
 
   function wordEdge(text, off, dir) {
@@ -220,6 +243,38 @@
     return nr;
   }
 
+  function mergeableDel(n) {
+    return !!n && n.nodeType === 1 && n.classList.contains("tracked-delete") &&
+      n.getAttribute("data-author") === authorName();
+  }
+  function skipEmptyText(n, dir) {
+    while (n && n.nodeType === 3 && !n.nodeValue.length) n = dir < 0 ? n.previousSibling : n.nextSibling;
+    return n;
+  }
+  // Merge a fresh del into an adjacent del by the same author so consecutive
+  // deletions become one wrapper. Backward deletions land before the previous
+  // del, forward deletions after it; empty text nodes left behind by the
+  // split performed on insert are skipped when looking for the neighbor.
+  function mergeAdjacentDel(del) {
+    var prev = skipEmptyText(del.previousSibling, -1);
+    if (mergeableDel(prev)) {
+      while (del.firstChild) prev.appendChild(del.firstChild);
+      prev.setAttribute("data-ts", String(Date.now()));
+      prev.setAttribute("title", authorTitle());
+      del.remove();
+      return prev;
+    }
+    var next = skipEmptyText(del.nextSibling, 1);
+    if (mergeableDel(next)) {
+      while (del.firstChild) next.insertBefore(del.firstChild, next.firstChild);
+      next.setAttribute("data-ts", String(Date.now()));
+      next.setAttribute("title", authorTitle());
+      del.remove();
+      return next;
+    }
+    return del;
+  }
+
   function handleDelete(e, dir, byWord) {
     var r = T.sel.range();
     if (!r || !inSheet(r)) return;
@@ -230,14 +285,7 @@
     var del = makeDel();
     del.appendChild(frag);
     delR.insertNode(del);
-    // merge with adjacent del by same author
-    var sib = del.previousSibling;
-    if (sib && sib.nodeType === 1 && sib.classList.contains("tracked-delete") &&
-        sib.getAttribute("data-author") === authorName()) {
-      while (del.firstChild) sib.appendChild(del.firstChild);
-      del.remove();
-      del = sib;
-    }
+    del = mergeAdjacentDel(del);
     var s = window.getSelection();
     s.removeAllRanges();
     var cr = document.createRange();

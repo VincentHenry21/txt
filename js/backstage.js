@@ -399,7 +399,7 @@
   T.bus.on("history:open", function () { open("history"); });
   T.bus.on("overlay:escape", function () { if (isOpen()) close(); });
 
-  T.backstage = { open: open, close: close, isOpen: isOpen };
+  T.backstage = { open: open, close: close, isOpen: isOpen, openLocal: openLocalFile };
 
   T.register("backstage.open", function (view) { open(view || "new"); }, {
     title: "Open file menu",

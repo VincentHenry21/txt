@@ -575,7 +575,7 @@
   function wireMTopbar() {
     var back = $("#mBack");
     if (back) back.addEventListener("click", function () {
-      if (T.backstage && T.backstage.open) T.backstage.open("new");
+      if (T.homescreen) T.homescreen.show();
     });
 
     var mt = $("#mTitle");
