@@ -160,6 +160,10 @@
     var la = document.getElementById("appLauncher");
     if (!la) return;
     la.innerHTML = "";
+    var brand = document.createElement("div");
+    brand.className = "launcher-brand";
+    brand.textContent = "NXT Ecosystem";
+    la.appendChild(brand);
     var head = document.createElement("div");
     head.className = "launcher-head";
     head.textContent = "Studio";
@@ -420,24 +424,24 @@
 
   /* ---------- commands ---------- */
   T.register("persona.word", function () { setPersona("word"); },
-    { title: "Word persona", cat: "Ecosystem", icon: "i-file", keys: "Ctrl+1", match: "word document" });
+    { title: "Word persona", cat: "NXT", icon: "i-file", keys: "Ctrl+1", match: "word document" });
   T.register("persona.vector", function () { setPersona("vector"); },
-    { title: "Vector persona", cat: "Ecosystem", icon: "i-shapes", keys: "Ctrl+2", match: "vector illustrator svg" });
+    { title: "Vector persona", cat: "NXT", icon: "i-shapes", keys: "Ctrl+2", match: "vector illustrator svg" });
   T.register("persona.pixel", function () { setPersona("pixel"); },
-    { title: "Pixel persona", cat: "Ecosystem", icon: "i-image", keys: "Ctrl+3", match: "pixel photoshop raster" });
+    { title: "Pixel persona", cat: "NXT", icon: "i-image", keys: "Ctrl+3", match: "pixel photoshop raster" });
   APPS_META.forEach(function (m) {
     T.register("app." + m.id, (function (id) {
       return function () { openApp(id); };
-    })(m.id), { title: "Open " + m.code + " app", cat: "Ecosystem", icon: "i-grid", match: m.code.toLowerCase() + " app open" });
+    })(m.id), { title: "Open " + m.code + " app", cat: "NXT", icon: "i-grid", match: m.code.toLowerCase() + " app open" });
   });
   T.register("theme.carbon", function () { applyCarbon(); },
     { title: "Adobe Pro Carbon theme", cat: "View", icon: "i-moon", match: "carbon adobe pro dark" });
   T.register("ecosystem.split", function () {
     if (splitState) setSplit(null);
     else setSplit(lastSplitApp);
-  }, { title: "Toggle split view", cat: "Ecosystem", icon: "i-split", match: "split screen side by side" });
+  }, { title: "Toggle split view", cat: "NXT", icon: "i-split", match: "split screen side by side" });
   T.register("ecosystem.launcher", function () { toggleLauncher(); },
-    { title: "App launcher", cat: "Ecosystem", icon: "i-grid", match: "launcher apps waffle" });
+    { title: "App launcher", cat: "NXT", icon: "i-grid", match: "launcher apps waffle" });
 
   /* ---------- public API ---------- */
   T.ecosystem = {};
