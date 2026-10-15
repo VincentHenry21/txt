@@ -30,7 +30,9 @@
     minus: '<path d="M5 12h14"/>',
     check: '<path d="M4 12.5l5 5L20 6.5"/>',
     x: '<path d="M6 6l12 12M18 6L6 18"/>',
-    send: '<path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/>'
+    send: '<path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/>',
+    more: '<circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/>',
+    chevUp: '<path d="M6 14l6-6 6 6"/>'
   };
   function vIcon(name, cls) {
     return '<svg class="vico ' + (cls || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -96,12 +98,18 @@
           '<span id="vZoomPct" class="v-status" title="Zoom level">100%</span>' +
           '<button type="button" id="vZoomIn" class="vbtn" title="Zoom in">' + vIcon("plus") + "</button>" +
           '<button type="button" id="vZoomFit" class="vbtn" title="Fit artboard">' + vIcon("fit") + "</button>" +
+          '<button type="button" id="vPropsBtn" class="vbtn v-props-btn" title="Properties panel" aria-label="Toggle properties panel" aria-expanded="false">' + vIcon("chevUp") + "<span>Properties</span></button>" +
+          '<button type="button" id="vOverflowBtn" class="vbtn v-overflow-btn" title="More actions" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">' + vIcon("more") + "</button>" +
+        "</div>" +
+        '<div id="vOverflow" class="hidden" role="menu" aria-label="Vector actions">' +
+          '<button type="button" id="vWordCta" class="v-menu-item" role="menuitem">' + vIcon("send") + "<span>Insert / Update in Word Document</span></button>" +
         "</div>" +
       "</div>" +
       '<div id="vMain">' +
         '<div id="vTools" role="toolbar" aria-label="Vector tools"></div>' +
         '<div id="vCanvasWrap"><input id="vTextEdit" class="hidden" spellcheck="false" autocomplete="off"></div>' +
-        '<div id="vPanels"></div>' +
+        '<div id="vToolOptsBar" aria-label="Tool options"></div>' +
+        '<div id="vPanels" class="nxt-sheet"></div>' +
       "</div>";
 
     vTopbar = view.querySelector("#vTopbar");
@@ -168,6 +176,8 @@
     // panels.js builds at script load, but the innerHTML above wipes those
     // nodes; rebuild the panels into the fresh #vPanels container.
     try { if (T.vectorPanels && T.vectorPanels.init) T.vectorPanels.init(); } catch (e) {}
+    watchToolOptions();
+    placeToolOptions();
     built = true;
   }
 
@@ -185,6 +195,26 @@
     });
     view.querySelector("#vSettingsBtn").addEventListener("click", function () { toggleDrawer("settings"); });
     view.querySelector("#vFilesBtn").addEventListener("click", function () { toggleDrawer("files"); });
+    view.querySelector("#vPropsBtn").addEventListener("click", function () { toggleSheet(); });
+    var ovBtn = view.querySelector("#vOverflowBtn");
+    var ovMenu = view.querySelector("#vOverflow");
+    ovBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      toggleOverflow();
+    });
+    view.querySelector("#vWordCta").addEventListener("click", function () {
+      toggleOverflow(false);
+      if (T.vectorPanels && typeof T.vectorPanels.sendToWord === "function") {
+        T.vectorPanels.sendToWord();
+      } else if (typeof T.toast === "function") {
+        T.toast("Panels are still loading.", "error");
+      }
+    });
+    document.addEventListener("pointerdown", function (e) {
+      if (!ovMenu || ovMenu.classList.contains("hidden")) { return; }
+      if (ovMenu.contains(e.target) || ovBtn.contains(e.target)) { return; }
+      toggleOverflow(false);
+    });
     function artResize() {
       var w = T.clamp(parseInt(vArtW.value, 10) || artW, 1, 5000);
       var h = T.clamp(parseInt(vArtH.value, 10) || artH, 1, 5000);
@@ -564,6 +594,17 @@
     curToolId = id;
     renderDock();
     renderOptions();
+    // collapse the mobile tool overflow so the strip returns to its 6+More shape
+    if (vTools && vTools.classList.contains("show-all")) {
+      vTools.classList.remove("show-all");
+      var mb = view.querySelector("#vToolsMore");
+      if (mb) {
+        mb.classList.remove("active");
+        mb.setAttribute("aria-expanded", "false");
+        mb.title = "More tools";
+        mb.setAttribute("aria-label", "More tools");
+      }
+    }
     var t = tools[id];
     if (vCanvas) { vCanvas.style.cursor = t.cursor || "default"; }
     if (t.activate) { try { t.activate(); } catch (e) { /* ignore */ } }
@@ -584,6 +625,24 @@
       b.addEventListener("click", function () { setTool(id); });
       vTools.appendChild(b);
     });
+    // "More" overflow: on mobile (<=900px) only the first 6 tools show and this
+    // button reveals the rest (CSS hides tools 7+ until #vTools.show-all).
+    var more = document.createElement("button");
+    more.type = "button";
+    more.id = "vToolsMore";
+    more.className = "vtool v-more";
+    more.title = "More tools";
+    more.setAttribute("aria-label", "More tools");
+    more.setAttribute("aria-expanded", "false");
+    more.innerHTML = vIcon("more");
+    more.addEventListener("click", function () {
+      var open = vTools.classList.toggle("show-all");
+      more.classList.toggle("active", open);
+      more.setAttribute("aria-expanded", String(open));
+      more.title = open ? "Fewer tools" : "More tools";
+      more.setAttribute("aria-label", more.title);
+    });
+    vTools.appendChild(more);
     // fill/stroke stack at dock bottom
     var stack = document.createElement("div");
     stack.id = "vPaintStack";
@@ -768,6 +827,7 @@
       e.preventDefault(); deleteSelection(); return;
     }
     if (e.key === "Escape") {
+      if (closeOverflowMenu()) { return; }
       var t = currentTool();
       if (t && t.cancel && t.cancel()) { return; }
       clearSel(); return;
@@ -1000,6 +1060,56 @@
     }
   }
 
+  /* ================= mobile: properties sheet + overflow menu ================= */
+  function toggleSheet(force) {
+    if (!view) { return; }
+    var p = view.querySelector("#vPanels");
+    if (!p) { return; }
+    var open = force !== undefined ? !!force : !p.classList.contains("open");
+    p.classList.toggle("open", open);
+    var b = view.querySelector("#vPropsBtn");
+    if (b) { b.setAttribute("aria-expanded", String(open)); }
+  }
+  function toggleOverflow(force) {
+    if (!view) { return; }
+    var m = view.querySelector("#vOverflow");
+    var b = view.querySelector("#vOverflowBtn");
+    if (!m) { return; }
+    var show = force !== undefined ? !!force : m.classList.contains("hidden");
+    m.classList.toggle("hidden", !show);
+    if (b) { b.setAttribute("aria-expanded", String(show)); }
+  }
+  function closeOverflowMenu() {
+    if (!view) { return false; }
+    var m = view.querySelector("#vOverflow");
+    if (!m || m.classList.contains("hidden")) { return false; }
+    toggleOverflow(false);
+    return true;
+  }
+  /* On mobile (<=900px) the tool options bar relocates out of the topbar into
+     #vToolOptsBar, a scrollable row above the bottom tool strip. */
+  var toolOptsMQ = null;
+  function placeToolOptions() {
+    if (!view || !vToolOptions) { return; }
+    var bar = view.querySelector("#vToolOptsBar");
+    var mobile = !!(window.matchMedia && window.matchMedia("(max-width: 900px)").matches);
+    if (mobile && bar) {
+      if (vToolOptions.parentNode !== bar) { bar.appendChild(vToolOptions); }
+    } else {
+      var right = vTopbar.querySelector(".vt-right");
+      if (vToolOptions.parentNode !== vTopbar || (right && vToolOptions.nextSibling !== right)) {
+        vTopbar.insertBefore(vToolOptions, right);
+      }
+    }
+  }
+  function watchToolOptions() {
+    if (toolOptsMQ || !window.matchMedia) { return; }
+    toolOptsMQ = window.matchMedia("(max-width: 900px)");
+    var fn = function () { placeToolOptions(); };
+    if (toolOptsMQ.addEventListener) { toolOptsMQ.addEventListener("change", fn); }
+    else if (toolOptsMQ.addListener) { toolOptsMQ.addListener(fn); }
+  }
+
   /* ================= per-app files (NXT phase 1) =================
      Named artwork records {id, name, updatedAt, svg}, persisted in
      T.store under the 'vector' namespace, key 'files'.
@@ -1216,6 +1326,7 @@
   }
   function hide() {
     if (built) { view.classList.add("hidden"); }
+    closeOverflowMenu();
     endTextEdit(false);
   }
   function isActive() { return built && !view.classList.contains("hidden"); }

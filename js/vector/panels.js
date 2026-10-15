@@ -558,6 +558,19 @@
   function refreshLayers() {
     var p = PAN.layers; if (!p) return;
     var body = p._body;
+    if (!layersPrimed) {
+      // first population: shimmer skeletons while the list builds, then fill in
+      layersPrimed = true;
+      body.innerHTML = "";
+      for (var i = 0; i < 3; i++) {
+        var sk = h("div", "nxt-skeleton");
+        sk.style.height = "34px";
+        sk.style.marginBottom = "6px";
+        body.appendChild(sk);
+      }
+      setTimeout(refreshLayers, 40);
+      return;
+    }
     body.innerHTML = "";
     var groups = layerGroups();
     var list = h("div", "vp-layers");
@@ -681,11 +694,46 @@
   /* ================= assembly ================= */
   var PAN = {};
   var busBound = false;
+  var layersPrimed = false; /* first layers population shows skeletons, then fills in */
   function refresh() {
     if (!T.vector || !T.vectorOps) return;
     refreshTransform();
     refreshStroke();
     refreshLayers();
+  }
+  /* Mobile sheet chrome: drag handle + Properties title + 44px close button.
+     Hidden on desktop via CSS (.v-sheet-chrome). */
+  function buildSheetChrome() {
+    function closeSheet() {
+      var p = document.getElementById("vPanels");
+      if (p) { p.classList.remove("open"); }
+      var b = document.getElementById("vPropsBtn");
+      if (b) { b.setAttribute("aria-expanded", "false"); }
+    }
+    var c = h("div", "v-sheet-chrome");
+    var handle = h("div", "nxt-sheet-handle");
+    handle.title = "Close properties";
+    handle.setAttribute("role", "button");
+    handle.setAttribute("tabindex", "0");
+    handle.setAttribute("aria-label", "Close properties panel");
+    handle.addEventListener("click", closeSheet);
+    handle.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); closeSheet(); }
+    });
+    var head = h("div", "v-sheet-head");
+    head.appendChild(h("span", "v-sheet-title", "Properties"));
+    var x = document.createElement("button");
+    x.type = "button";
+    x.id = "vSheetClose";
+    x.className = "vbtn v-sheet-close";
+    x.title = "Close properties";
+    x.setAttribute("aria-label", "Close properties");
+    x.innerHTML = T.icon("i-x");
+    x.addEventListener("click", closeSheet);
+    head.appendChild(x);
+    c.appendChild(handle);
+    c.appendChild(head);
+    return c;
   }
   function init() {
     if (!T.vector || !T.vectorOps) return false;
@@ -696,8 +744,10 @@
       host.id = "vPanels";
       vv.appendChild(host);
     }
+    host.classList.add("nxt-sheet"); /* mobile: fixed bottom sheet (see vector-panels.css) */
     if (host.getAttribute("data-vp") === "1") return true;
     host.setAttribute("data-vp", "1");
+    host.appendChild(buildSheetChrome());
     host.appendChild(buildCTA());
     PAN.transform = buildTransform(); host.appendChild(PAN.transform);
     PAN.pathfinder = buildPathfinder(); host.appendChild(PAN.pathfinder);
