@@ -150,6 +150,8 @@
     if (pm) pm.value = s.pageMode;
     syncSwatches("pdf-set-hl", s.highlight);
     syncSwatches("pdf-set-ink", s.ink);
+    var zlab = $("pdf-zoom-label");
+    if (zlab) zlab.textContent = ZOOM_LABELS[s.zoom] || s.zoom;
     if (doc && s.pageMode === "single") refreshSinglePage();
   }
 
@@ -367,8 +369,7 @@
     singlePage = 0;
     ensureView();
     showStudio();
-    renderPages();
-    renderSide();
+    renderDocAsync();
     persistDoc();
     T.bus.emit("pdf:opened", { id: doc.id, title: doc.title });
     return doc;
@@ -383,8 +384,7 @@
     singlePage = 0;
     ensureView();
     showStudio();
-    renderPages();
-    renderSide();
+    renderDocAsync();
     pushRecent({ id: doc.id, title: doc.title, source: doc.source, updatedAt: Date.now() });
     return true;
   }
@@ -494,6 +494,17 @@
     var name = el("span", "pdf-topbar-name");
     name.textContent = "PDF Studio";
     var spacer = el("span", "pdf-topbar-spacer");
+    var signBtn = el("button", "pdf-sign-btn");
+    signBtn.type = "button";
+    signBtn.id = "pdf-sign-btn";
+    signBtn.textContent = "Sign";
+    signBtn.setAttribute("aria-label", "Sign this document");
+    signBtn.addEventListener("click", function () {
+      ensureView();
+      if (!doc) { toast("Open a document first, then sign it."); return; }
+      showStudio();
+      openSigModal();
+    });
     var waffle = el("button", "icon-btn waffle-btn");
     waffle.type = "button";
     waffle.id = "pdf-launcher-btn";
@@ -517,6 +528,7 @@
     bar.appendChild(badge);
     bar.appendChild(name);
     bar.appendChild(spacer);
+    bar.appendChild(signBtn);
     bar.appendChild(waffle);
     bar.appendChild(gear);
     view.insertBefore(bar, view.firstChild);
@@ -529,7 +541,7 @@
 
     var head = el("div", "eco-home-head");
     var badge = el("span", "app-badge");
-    badge.style.background = "#E11D48";
+    badge.style.background = "var(--pdf-brand)";
     badge.textContent = "PDF";
     var titles = el("div");
     var h1 = el("h1"); h1.textContent = "PDF Studio";
@@ -647,19 +659,39 @@
     });
   }
 
-  /* ---------------- settings drawer ---------------- */
-  function openSettings() {
-    ensureView();
-    applySettings();
-    var scrim = $("pdf-settings-scrim"), dr = $("pdf-settings-drawer");
+  /* ---------------- unified drawer pattern ----------------
+     Every drawer in this app uses the same classes (.pdf-scrim overlay +
+     .pdf-drawer panel with .pdf-drawer-head/.pdf-drawer-body), the same
+     open/close helpers, and the same overlay handling (scrim click and
+     Escape both close). */
+  function openPdfDrawer(dr, scrim) {
     if (scrim) scrim.classList.remove("hidden");
     if (dr) dr.classList.remove("hidden");
   }
 
-  function closeSettings() {
-    var scrim = $("pdf-settings-scrim"), dr = $("pdf-settings-drawer");
+  function closePdfDrawer(dr, scrim) {
     if (scrim) scrim.classList.add("hidden");
     if (dr) dr.classList.add("hidden");
+  }
+
+  function closeOpenDrawers() {
+    var open = document.querySelectorAll("#view-pdf .pdf-drawer:not(.hidden)");
+    Array.prototype.forEach.call(open, function (dr) {
+      var scrim = dr.previousElementSibling;
+      if (scrim && scrim.classList && scrim.classList.contains("pdf-scrim")) scrim.classList.add("hidden");
+      dr.classList.add("hidden");
+    });
+  }
+
+  /* ---------------- settings drawer ---------------- */
+  function openSettings() {
+    ensureView();
+    applySettings();
+    openPdfDrawer($("pdf-settings-drawer"), $("pdf-settings-scrim"));
+  }
+
+  function closeSettings() {
+    closePdfDrawer($("pdf-settings-drawer"), $("pdf-settings-scrim"));
   }
 
   function swatchRow(containerId, colors, label) {
@@ -795,6 +827,61 @@
     return b;
   }
 
+  /* ---------------- toolbar overflow ("More" sheet) ---------------- */
+  function openMore() {
+    var w = $("pdf-more-wrap"), s = $("pdf-more-scrim"), b = $("pdf-more-btn");
+    if (!w) return;
+    w.classList.add("open");
+    if (s) s.classList.remove("hidden");
+    if (b) b.setAttribute("aria-expanded", "true");
+  }
+
+  function closeMore() {
+    var w = $("pdf-more-wrap"), s = $("pdf-more-scrim"), b = $("pdf-more-btn");
+    if (w) w.classList.remove("open");
+    if (s) s.classList.add("hidden");
+    if (b) b.setAttribute("aria-expanded", "false");
+  }
+
+  function toggleMore() {
+    var w = $("pdf-more-wrap");
+    if (w && w.classList.contains("open")) closeMore();
+    else openMore();
+  }
+
+  /* ---------------- zoom stepper ---------------- */
+  var ZOOM_LEVELS = ["fit", "100", "150"];
+  var ZOOM_LABELS = { fit: "Fit", "100": "100%", "150": "150%" };
+
+  function zoomStep(dir) {
+    var cur = getSettings().zoom;
+    var i = ZOOM_LEVELS.indexOf(cur);
+    if (i < 0) i = 0;
+    var n = clamp(i + dir, 0, ZOOM_LEVELS.length - 1);
+    if (n === i) { toast(dir > 0 ? "Already at maximum zoom." : "Already at minimum zoom."); return; }
+    setSettings({ zoom: ZOOM_LEVELS[n] });
+  }
+
+  /* ---------------- render pipeline ---------------- */
+  function nextFrame(fn) {
+    if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(function () { fn(); });
+    } else { setTimeout(fn, 16); }
+  }
+
+  /* Skeleton page placeholders shown while a document renders. */
+  function showStageSkeletons() {
+    var stage = $("pdf-stage");
+    if (!stage) return;
+    stage.innerHTML = "";
+    for (var i = 0; i < 3; i++) stage.appendChild(el("div", "nxt-skeleton pdf-page-skel"));
+  }
+
+  function renderDocAsync() {
+    showStageSkeletons();
+    nextFrame(function () { renderPages(); renderSide(); });
+  }
+
   function buildStudio(view) {
     var studio = el("div", "pdf-studio hidden");
     studio.id = "pdf-studio";
@@ -804,25 +891,38 @@
     tb.setAttribute("role", "toolbar");
     tb.setAttribute("aria-label", "PDF tools");
 
-    tb.appendChild(actionButton("pdf-back", "Home", "i-home", function () {
+    /* Overflow "More" sheet: rarely-used tools live in moreWrap. On desktop
+       the wrap is display:contents (tools lay out inline, More button hidden);
+       on <=640px it becomes a bottom sheet toggled by the More button. */
+    var moreWrap = el("div", "pdf-more-wrap nxt-sheet");
+    moreWrap.id = "pdf-more-wrap";
+    var moreHandle = el("div", "nxt-sheet-handle");
+    moreHandle.setAttribute("aria-hidden", "true");
+    moreWrap.appendChild(moreHandle);
+    function tbAdd(node, overflow) {
+      if (overflow) moreWrap.appendChild(node);
+      else tb.appendChild(node);
+    }
+
+    tbAdd(actionButton("pdf-back", "Home", "i-home", function () {
       var home = $("pdf-home"); if (home) home.classList.remove("hidden");
       studio.classList.add("hidden");
       renderRecent();
     }));
     var titleWrap = el("span", "pdf-doc-title");
     titleWrap.id = "pdf-doc-title";
-    tb.appendChild(titleWrap);
+    tbAdd(titleWrap, false);
 
-    tb.appendChild(toolButton("pdf-tool-select", "select", "Select", "i-cursor"));
-    tb.appendChild(toolButton("pdf-tool-highlight", "highlight", "Highlight", "i-highlight"));
-    tb.appendChild(toolButton("pdf-tool-note", "note", "Note", "i-note"));
-    tb.appendChild(toolButton("pdf-tool-shape", "shape", "Shape", "i-shapes"));
-    tb.appendChild(toolButton("pdf-tool-redact", "redact", "Redact", "i-redact"));
-    tb.appendChild(toolButton("pdf-tool-sign", "sign", "Sign", "i-sign"));
+    tbAdd(toolButton("pdf-tool-select", "select", "Select", "i-cursor"), false);
+    tbAdd(toolButton("pdf-tool-highlight", "highlight", "Highlight", "i-highlight"), false);
+    tbAdd(toolButton("pdf-tool-note", "note", "Note", "i-note"), false);
+    tbAdd(toolButton("pdf-tool-shape", "shape", "Shape", "i-shapes"), true);
+    tbAdd(toolButton("pdf-tool-redact", "redact", "Redact", "i-redact"), true);
+    tbAdd(toolButton("pdf-tool-sign", "sign", "Sign", "i-sign"), true);
 
     var hlWrap = el("label", "pdf-color-wrap");
     hlWrap.title = "Highlight color";
-    hlWrap.innerHTML = "<span>Hi</span>";
+    hlWrap.innerHTML = "<span>Highlight</span>";
     var hl = el("input", "pdf-color");
     hl.id = "pdf-hl-color";
     hl.type = "color";
@@ -830,11 +930,11 @@
     hl.setAttribute("aria-label", "Highlight color");
     hl.addEventListener("input", function () { setSettings({ highlight: hl.value }); });
     hlWrap.appendChild(hl);
-    tb.appendChild(hlWrap);
+    tbAdd(hlWrap, true);
 
     var shWrap = el("label", "pdf-color-wrap");
     shWrap.title = "Shape and redaction color";
-    shWrap.innerHTML = "<span>Sh</span>";
+    shWrap.innerHTML = "<span>Shape</span>";
     var sh = el("input", "pdf-color");
     sh.id = "pdf-shape-color";
     sh.type = "color";
@@ -842,7 +942,7 @@
     sh.setAttribute("aria-label", "Shape color");
     sh.addEventListener("input", function () { shapeColor = sh.value; });
     shWrap.appendChild(sh);
-    tb.appendChild(shWrap);
+    tbAdd(shWrap, true);
 
     var kind = el("select", "pdf-select");
     kind.id = "pdf-shape-kind";
@@ -852,14 +952,34 @@
       kind.appendChild(op);
     });
     kind.addEventListener("change", function () { shapeKind = kind.value; setTool("shape"); });
-    tb.appendChild(kind);
+    tbAdd(kind, true);
 
-    tb.appendChild(actionButton("pdf-undo", "Undo", "i-undo", undo));
-    tb.appendChild(actionButton("pdf-apply-redact", "Apply redactions", "i-lock", function () { applyRedactions(); }));
-    tb.appendChild(actionButton("pdf-sig-new", "New signature", "i-sign", openSigModal));
-    tb.appendChild(actionButton("pdf-export-html", "Export HTML", "i-export", downloadHTML));
-    tb.appendChild(actionButton("pdf-export-txt", "Export TXT", "i-export", downloadTXT));
-    tb.appendChild(actionButton("pdf-print", "Export / Print", "i-print", doPrint));
+    tbAdd(actionButton("pdf-undo", "Undo", "i-undo", undo), false);
+    tbAdd(actionButton("pdf-apply-redact", "Apply redactions", "i-lock", function () { applyRedactions(); }), true);
+    tbAdd(actionButton("pdf-sig-new", "New signature", "i-sign", openSigModal), true);
+    tbAdd(actionButton("pdf-export-html", "Export HTML", "i-export", downloadHTML), true);
+    tbAdd(actionButton("pdf-export-txt", "Export TXT", "i-export", downloadTXT), true);
+    tbAdd(actionButton("pdf-print", "Export / Print", "i-print", doPrint), true);
+
+    var moreBtn = el("button", "pdf-more-btn");
+    moreBtn.type = "button";
+    moreBtn.id = "pdf-more-btn";
+    moreBtn.setAttribute("aria-expanded", "false");
+    moreBtn.setAttribute("aria-controls", "pdf-more-wrap");
+    moreBtn.innerHTML = "<span>More</span>" + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    moreBtn.addEventListener("click", toggleMore);
+    tb.appendChild(moreBtn);
+    tb.appendChild(moreWrap);
+    /* choosing a tool from the sheet activates it and closes the sheet */
+    moreWrap.addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest("button") : null;
+      if (b && b.classList.contains("pdf-tool")) closeMore();
+    });
+    var moreScrim = el("div", "pdf-more-scrim hidden");
+    moreScrim.id = "pdf-more-scrim";
+    moreScrim.setAttribute("aria-hidden", "true");
+    moreScrim.addEventListener("click", closeMore);
+    view.appendChild(moreScrim);
 
     var main = el("div", "pdf-main");
     var stage = el("div", "pdf-stage");
@@ -869,6 +989,30 @@
     buildSide(side);
     main.appendChild(stage);
     main.appendChild(side);
+
+    var zc = el("div", "pdf-zoomctl");
+    zc.id = "pdf-zoomctl";
+    zc.setAttribute("role", "group");
+    zc.setAttribute("aria-label", "Zoom controls");
+    var zOut = el("button", "pdf-zoom-btn");
+    zOut.type = "button";
+    zOut.id = "pdf-zoom-out";
+    zOut.textContent = "\u2212";
+    zOut.setAttribute("aria-label", "Zoom out");
+    zOut.addEventListener("click", function () { zoomStep(-1); });
+    var zLab = el("span", "pdf-zoom-label");
+    zLab.id = "pdf-zoom-label";
+    zLab.textContent = "Fit";
+    var zIn = el("button", "pdf-zoom-btn");
+    zIn.type = "button";
+    zIn.id = "pdf-zoom-in";
+    zIn.textContent = "+";
+    zIn.setAttribute("aria-label", "Zoom in");
+    zIn.addEventListener("click", function () { zoomStep(1); });
+    zc.appendChild(zOut);
+    zc.appendChild(zLab);
+    zc.appendChild(zIn);
+    main.appendChild(zc);
 
     var pager = el("div", "pdf-pager hidden");
     pager.id = "pdf-pager";
@@ -1393,6 +1537,27 @@
         else openSigModal();
       }
     });
+    /* swipe left/right changes pages on touch devices (single-page mode,
+       select tool only, so it never fights annotation gestures) */
+    var swipeStart = null;
+    stage.addEventListener("touchstart", function (e) {
+      if (e.touches && e.touches.length === 1) {
+        swipeStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+      } else { swipeStart = null; }
+    }, { passive: true });
+    stage.addEventListener("touchend", function (e) {
+      var s0 = swipeStart;
+      swipeStart = null;
+      if (!s0 || !doc) return;
+      if (tool !== "select" || getSettings().pageMode !== "single") return;
+      var t = e.changedTouches && e.changedTouches[0];
+      if (!t) return;
+      var dx = t.clientX - s0.x, dy = t.clientY - s0.y;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - s0.t < 900) {
+        if (dx < 0) singlePage++; else singlePage--;
+        refreshSinglePage();
+      }
+    }, { passive: true });
   }
 
   /* ---------------- highlight ---------------- */
@@ -1896,8 +2061,8 @@
     window.addEventListener("afterprint", function () { document.body.classList.remove("pdf-printing"); });
     document.addEventListener("keydown", function (e) {
       if (e && e.key === "Escape") {
-        var dr = document.getElementById("pdf-settings-drawer");
-        if (dr && !dr.classList.contains("hidden")) closeSettings();
+        closeMore();
+        closeOpenDrawers();
       }
     });
   }
