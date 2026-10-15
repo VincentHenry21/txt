@@ -98,7 +98,7 @@
     for (var i = 0; i < kids.length; i++) {
       var k = kids[i];
       if (k.nodeType === 3) {
-        var t = k.nodeValue;
+        var t = k.nodeValue.replace(/\u200b/g, "");
         if (t) runs.push(Object.assign({ t: t }, props));
       } else if (k.nodeType === 1) {
         var tag = k.tagName;
