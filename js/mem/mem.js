@@ -153,7 +153,7 @@
     opts = opts || {};
     var n = {
       id: uid(), kind: kind || "note", title: opts.title || "", html: opts.html || "",
-      tags: [], color: opts.color || NOTE_COLORS[0].v,
+      tags: [], color: opts.color || memSettings().noteColor || NOTE_COLORS[0].v,
       items: (kind === "checklist") ? [{ id: uid(), text: "", done: false }] : [],
       audioUrl: null, audioMs: 0,
       createdAt: now(), updatedAt: now()
@@ -179,6 +179,189 @@
     saveNote(c);
     refreshCurrent();
     return c;
+  }
+
+  /* ================= MEM settings (per-app, persisted in the mem namespace) ================= */
+  var MEM_SETTINGS_DEF = { noteColor: "#FFFFFF", dotGrid: true, snapGrid: false, sort: "newest" };
+  var MEM_SNAP = 20;
+  function memSettings() {
+    var s = T.store.get("mem", "settings");
+    var out = {}, k;
+    for (k in MEM_SETTINGS_DEF) out[k] = MEM_SETTINGS_DEF[k];
+    if (s && typeof s === "object") for (k in MEM_SETTINGS_DEF) {
+      if (s[k] !== undefined) out[k] = s[k];
+    }
+    var ok = false;
+    for (var i = 0; i < NOTE_COLORS.length; i++) if (NOTE_COLORS[i].v === out.noteColor) { ok = true; break; }
+    if (!ok) out.noteColor = MEM_SETTINGS_DEF.noteColor;
+    if (out.sort !== "newest" && out.sort !== "oldest" && out.sort !== "name") out.sort = "newest";
+    out.dotGrid = !!out.dotGrid;
+    out.snapGrid = !!out.snapGrid;
+    return out;
+  }
+  function saveMemSettings(patch) {
+    var s = memSettings();
+    if (patch && typeof patch === "object") {
+      var k;
+      for (k in MEM_SETTINGS_DEF) if (patch[k] !== undefined) s[k] = patch[k];
+    }
+    T.store.set("mem", "settings", s);
+    applySettings();
+    syncSettingsUI();
+    refreshCurrent();
+    return s;
+  }
+  function applySettings() {
+    var s = memSettings();
+    var vp = document.getElementById("mem-boardViewport");
+    if (vp) vp.classList.toggle("mem-nodots", !s.dotGrid);
+  }
+  function snapPoint(x, y) {
+    if (!memSettings().snapGrid) return { x: x, y: y };
+    return { x: Math.round(x / MEM_SNAP) * MEM_SNAP, y: Math.round(y / MEM_SNAP) * MEM_SNAP };
+  }
+  function cmpId(a, b) { return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; }
+  function sortNotes(list) {
+    var s = memSettings().sort;
+    var arr = list.slice();
+    arr.sort(function (a, b) {
+      if (s === "oldest") return (a.createdAt || 0) - (b.createdAt || 0) || cmpId(a, b);
+      if (s === "name") {
+        var x = noteTitle(a).toLowerCase(), y = noteTitle(b).toLowerCase();
+        return x < y ? -1 : x > y ? 1 : cmpId(a, b);
+      }
+      return (b.updatedAt || 0) - (a.updatedAt || 0) || (b.createdAt || 0) - (a.createdAt || 0) || cmpId(a, b);
+    });
+    return arr;
+  }
+  function sortFiles(list) {
+    var s = memSettings().sort;
+    var arr = list.slice();
+    arr.sort(function (a, b) {
+      if (s === "oldest") return (a.updatedAt || 0) - (b.updatedAt || 0) || cmpId(a, b);
+      if (s === "name") {
+        var x = (a.name || "").toLowerCase(), y = (b.name || "").toLowerCase();
+        return x < y ? -1 : x > y ? 1 : cmpId(a, b);
+      }
+      return (b.updatedAt || 0) - (a.updatedAt || 0) || cmpId(a, b);
+    });
+    return arr;
+  }
+
+  /* ================= per-app files: notes + boards in the mem namespace ================= */
+  function fileRecNote(n) {
+    return { id: n.id, name: noteTitle(n), kind: "note", updatedAt: n.updatedAt || 0 };
+  }
+  function fileRecBoard(b) {
+    return { id: b.id, name: b.title || "Untitled board", kind: "board", updatedAt: b.updatedAt || 0 };
+  }
+  function findFile(id) {
+    var ns = getNotes();
+    for (var i = 0; i < ns.length; i++) if (ns[i].id === id) return { rec: fileRecNote(ns[i]), kind: "note" };
+    var b = getBoard(id);
+    if (b) return { rec: fileRecBoard(b), kind: "board" };
+    return null;
+  }
+  function duplicateBoard(id) {
+    var src = getBoard(id);
+    if (!src) return null;
+    var idMap = {};
+    var c = JSON.parse(JSON.stringify(src));
+    c.id = uid();
+    c.title = (c.title || "Untitled board") + " (copy)";
+    c.createdAt = now(); c.updatedAt = now();
+    (c.elements || []).forEach(function (e) { var nid = uid(); idMap[e.id] = nid; e.id = nid; });
+    (c.elements || []).forEach(function (e) {
+      if (e.type === "arrow") {
+        if (idMap[e.from]) e.from = idMap[e.from];
+        if (idMap[e.to]) e.to = idMap[e.to];
+      }
+    });
+    saveBoard(c);
+    refreshCurrent();
+    return c;
+  }
+  function doRemoveFile(f) {
+    if (f.kind === "note") {
+      deleteNote(f.rec.id);
+    } else {
+      var cur = ui.board && ui.board.id === f.rec.id;
+      deleteBoard(f.rec.id);
+      if (cur) { ui.board = null; ui.boardId = null; }
+    }
+    toast("Deleted");
+    if (ui.boardId == null && ui.screen === "board") goHome();
+    else refreshCurrent();
+    return true;
+  }
+  var memFiles = {
+    list: function () {
+      var out = [];
+      getNotes().forEach(function (n) { out.push(fileRecNote(n)); });
+      getBoards().forEach(function (b) { out.push(fileRecBoard(b)); });
+      return sortFiles(out);
+    },
+    create: function (name, kind) {
+      var nm = (typeof name === "string" && name.trim()) ? name.trim() : null;
+      if (kind === "board") {
+        var b = addBoard(nm || "Untitled board");
+        return fileRecBoard(b);
+      }
+      var n = addNote("note", { title: nm || "Untitled note" });
+      return fileRecNote(n);
+    },
+    rename: function (id, name) {
+      var nm = (typeof name === "string" && name.trim()) ? name.trim() : null;
+      if (!nm) return null;
+      var ns = getNotes();
+      for (var i = 0; i < ns.length; i++) if (ns[i].id === id) {
+        ns[i].title = nm; saveNote(ns[i]); refreshCurrent(); return fileRecNote(ns[i]);
+      }
+      var b = getBoard(id);
+      if (b) { b.title = nm; saveBoard(b); refreshCurrent(); return fileRecBoard(b); }
+      return null;
+    },
+    duplicate: function (id) {
+      var n = duplicateNote(id);
+      if (n) {
+        n.title = (n.title || "Untitled note") + " (copy)";
+        saveNote(n); refreshCurrent();
+        return fileRecNote(n);
+      }
+      var b = duplicateBoard(id);
+      if (b) return fileRecBoard(b);
+      return null;
+    },
+    remove: function (id) {
+      var f = findFile(id);
+      if (!f) return Promise.resolve(false);
+      if (typeof T.modal !== "function") { doRemoveFile(f); return Promise.resolve(true); }
+      return T.modal({
+        title: "Delete " + f.kind,
+        sub: 'Delete "' + f.rec.name + '"? This cannot be undone.',
+        okText: "Delete", danger: true
+      }).then(function (ok) { return ok ? doRemoveFile(f) : false; });
+    },
+    open: function (id) {
+      var f = findFile(id);
+      if (!f) return null;
+      if (f.kind === "board") openBoard(id);
+      else { goMasonry(); focusNoteCard(id); }
+      return f.rec;
+    }
+  };
+  function promptRenameFile(id) {
+    var f = findFile(id);
+    if (!f || typeof T.modal !== "function") return;
+    T.modal({
+      title: "Rename file",
+      fields: [{ label: "Name", key: "name", value: f.rec.name, ph: "File name" }],
+      okText: "Rename"
+    }).then(function (r) {
+      if (r && typeof r.name === "string" && r.name.trim()) {
+        memFiles.rename(id, r.name.trim());
+      }
+    });
   }
 
   /* voice memo blobs are session-only (blob URLs cannot persist to the store) */
@@ -356,7 +539,155 @@
     stop.addEventListener("click", function () { stopRecording(); });
     rec.appendChild(lbl); rec.appendChild(stop);
     root.appendChild(rec);
+    root.appendChild(buildSettingsDrawer());
     ui.built = true;
+    applySettings();
+  }
+  /* ---------- per-app topbar chrome: MEM badge + 9-dot launcher + settings gear ----------
+     One shared builder, called from both the notes topbar and the board topbar. */
+  var MEM_GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/>' +
+    '<path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 ' +
+    '1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.04-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 ' +
+    '1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 ' +
+    '1.56-1.04 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01a1.7 1.7 0 ' +
+    '0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 ' +
+    '2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>';
+  function memTopbarChrome(bar, tag) {
+    var badge = mk("span", "mem-appbadge");
+    badge.textContent = "MEM";
+    badge.setAttribute("aria-hidden", "true");
+    bar.insertBefore(badge, bar.firstChild);
+    var launch = btn("mem-launcher-" + tag, "App launcher", null, "icon-btn waffle-btn mem-topbtn");
+    launch.setAttribute("aria-haspopup", "true");
+    var dots = mk("span", "waffle-dots");
+    dots.setAttribute("aria-hidden", "true");
+    for (var i = 0; i < 9; i++) dots.appendChild(document.createElement("i"));
+    launch.appendChild(dots);
+    launch.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") T.ecosystem.toggleLauncher();
+    });
+    var gear = btn("mem-settings-" + tag, "MEM settings", MEM_GEAR_SVG, "icon-btn mem-topbtn");
+    gear.addEventListener("click", openSettings);
+    bar.appendChild(launch);
+    bar.appendChild(gear);
+  }
+  /* ---------- per-app settings drawer (built inside #view-mem) ---------- */
+  function buildSettingsDrawer() {
+    var wrap = mk("div", "mem-settings-wrap hidden", "mem-settingsWrap");
+    wrap.setAttribute("aria-hidden", "true");
+    var panel = mk("div", "mem-settings");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "MEM settings");
+    var head = mk("div", "mem-settings-head");
+    var h = mk("h2"); h.textContent = "MEM settings";
+    var close = btn("mem-settingsClose", "Close settings", icon("i-x"), "icon-btn mem-topbtn");
+    close.addEventListener("click", closeSettings);
+    head.appendChild(h); head.appendChild(close);
+    panel.appendChild(head);
+    var body = mk("div", "mem-settings-body");
+
+    var r1 = mk("div", "mem-set-row mem-set-stack");
+    var l1 = mk("div", "mem-set-label");
+    l1.innerHTML = "<strong>Default note color</strong><span>Used for newly created notes</span>";
+    var colors = mk("div", "mem-set-colors", "mem-setColors");
+    colors.setAttribute("role", "radiogroup");
+    colors.setAttribute("aria-label", "Default note color");
+    NOTE_COLORS.forEach(function (c) {
+      var sw = btn(null, c.n, null, "mem-swatch");
+      sw.style.background = c.v;
+      sw.setAttribute("role", "radio");
+      sw.setAttribute("data-v", c.v);
+      sw.addEventListener("click", function () { saveMemSettings({ noteColor: c.v }); });
+      colors.appendChild(sw);
+    });
+    r1.appendChild(l1); r1.appendChild(colors);
+    body.appendChild(r1);
+
+    body.appendChild(setToggleRow("mem-setDots", "Dot grid", "Show the dot grid on the whiteboard",
+      function () { return memSettings().dotGrid; },
+      function (v) { saveMemSettings({ dotGrid: v }); }));
+    body.appendChild(setToggleRow("mem-setSnap", "Snap to grid", "Sticky notes snap to a 20px grid while dragging",
+      function () { return memSettings().snapGrid; },
+      function (v) { saveMemSettings({ snapGrid: v }); }));
+
+    var r4 = mk("div", "mem-set-row mem-set-stack");
+    var l4 = mk("div", "mem-set-label");
+    l4.innerHTML = "<strong>Default sort</strong><span>Order of the notes list and file list</span>";
+    var seg = mk("div", "mem-seg mem-set-sort", "mem-setSort");
+    seg.setAttribute("role", "radiogroup");
+    seg.setAttribute("aria-label", "Default sort");
+    [["newest", "Newest"], ["oldest", "Oldest"], ["name", "Name"]].forEach(function (o) {
+      var b = btn(null, "Sort by " + o[1].toLowerCase(), "<span>" + o[1] + "</span>", null);
+      b.setAttribute("role", "radio");
+      b.setAttribute("data-v", o[0]);
+      b.addEventListener("click", function () { saveMemSettings({ sort: o[0] }); });
+      seg.appendChild(b);
+    });
+    r4.appendChild(l4); r4.appendChild(seg);
+    body.appendChild(r4);
+
+    panel.appendChild(body);
+    var about = mk("div", "mem-settings-about", "mem-settingsAbout");
+    about.innerHTML = "<strong>MEM</strong> · Part of NXT Ecosystem<br>Notes and whiteboards that clip straight into TXT.";
+    panel.appendChild(about);
+    wrap.appendChild(panel);
+    wrap.addEventListener("mousedown", function (e) { if (e.target === wrap) closeSettings(); });
+    return wrap;
+  }
+  function setToggleRow(id, label, desc, get, set) {
+    var row = mk("div", "mem-set-row");
+    var l = mk("div", "mem-set-label");
+    l.innerHTML = "<strong>" + esc(label) + "</strong><span>" + esc(desc) + "</span>";
+    var sw = btn(id, label, null, "mem-switch");
+    sw.setAttribute("role", "switch");
+    var track = mk("span", "mem-track"); track.setAttribute("aria-hidden", "true");
+    var knob = mk("span", "mem-knob"); knob.setAttribute("aria-hidden", "true");
+    sw.appendChild(track); sw.appendChild(knob);
+    sw.addEventListener("click", function () { set(!get()); });
+    row.appendChild(l); row.appendChild(sw);
+    return row;
+  }
+  function syncSettingsUI() {
+    var s = memSettings();
+    var colors = document.getElementById("mem-setColors");
+    if (colors) {
+      $all(".mem-swatch", colors).forEach(function (sw) {
+        var on = sw.getAttribute("data-v") === s.noteColor;
+        sw.classList.toggle("active", on);
+        sw.setAttribute("aria-checked", on ? "true" : "false");
+      });
+    }
+    var dots = document.getElementById("mem-setDots");
+    if (dots) dots.setAttribute("aria-pressed", s.dotGrid ? "true" : "false");
+    var snap = document.getElementById("mem-setSnap");
+    if (snap) snap.setAttribute("aria-pressed", s.snapGrid ? "true" : "false");
+    var seg = document.getElementById("mem-setSort");
+    if (seg) {
+      $all("button", seg).forEach(function (b) {
+        var on = b.getAttribute("data-v") === s.sort;
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-checked", on ? "true" : "false");
+      });
+    }
+  }
+  function onSettingsKey(e) { if (e.key === "Escape") closeSettings(); }
+  function openSettings() {
+    if (!ui.built) buildView();
+    var wrap = document.getElementById("mem-settingsWrap");
+    if (!wrap) return;
+    syncSettingsUI();
+    wrap.classList.remove("hidden");
+    wrap.setAttribute("aria-hidden", "false");
+    document.addEventListener("keydown", onSettingsKey);
+    var c = document.getElementById("mem-settingsClose");
+    if (c) c.focus();
+  }
+  function closeSettings() {
+    var wrap = document.getElementById("mem-settingsWrap");
+    if (wrap) { wrap.classList.add("hidden"); wrap.setAttribute("aria-hidden", "true"); }
+    document.removeEventListener("keydown", onSettingsKey);
   }
   function setScreen(name) {
     ui.screen = name;
@@ -369,7 +700,7 @@
   function refreshCurrent() {
     if (!ui.built) return;
     if (ui.screen === "masonry") renderMasonry();
-    else if (ui.screen === "home") renderRecent();
+    else if (ui.screen === "home") renderFiles();
     else if (ui.screen === "board" && ui.board) renderBoard();
     renderRecordingBar();
   }
@@ -417,7 +748,7 @@
     search.type = "search";
     search.placeholder = "Search boards and notes";
     search.setAttribute("aria-label", "Search boards and notes");
-    search.addEventListener("input", function () { ui.homeQuery = search.value; renderRecent(); });
+    search.addEventListener("input", function () { ui.homeQuery = search.value; renderFiles(); });
     home.appendChild(search);
 
     var secNew = mk("div", "eco-home-sec");
@@ -432,50 +763,56 @@
     home.appendChild(secNew);
 
     var secRec = mk("div", "eco-home-sec");
-    var hRec = mk("h2"); hRec.textContent = "Recent";
+    var hRec = mk("h2"); hRec.textContent = "Files";
     var grid = mk("div", "eco-home-grid", "mem-recentGrid");
     var empty = mk("div", "eco-home-empty hidden", "mem-homeEmpty");
     empty.textContent = "No boards or notes yet. Start with a new board or a new note above.";
     secRec.appendChild(hRec); secRec.appendChild(grid); secRec.appendChild(empty);
     home.appendChild(secRec);
+    var foot = mk("div", "mem-home-footer", "mem-homeFooter");
+    foot.textContent = "Part of NXT Ecosystem";
+    home.appendChild(foot);
     return home;
   }
   function goHome() {
     if (!ui.built) buildView();
     setScreen("home");
-    renderRecent();
+    renderFiles();
   }
-  function renderRecent() {
+  function renderFiles() {
     var grid = document.getElementById("mem-recentGrid");
     var empty = document.getElementById("mem-homeEmpty");
     if (!grid) return;
     grid.innerHTML = "";
     var q = (ui.homeQuery || "").trim().toLowerCase();
-    var rec = T.store.get("mem", "recent");
-    if (!Array.isArray(rec)) rec = [];
-    var shown = 0;
-    rec.forEach(function (r) {
-      if (!r || !r.id) return;
-      var title = r.title || "Untitled";
-      if (q && title.toLowerCase().indexOf(q) < 0) return;
-      var exists = r.kind === "board" ? !!getBoard(r.id) :
-        getNotes().some(function (n) { return n.id === r.id; });
-      if (!exists) return;
-      var card = btn(null, "Open " + title, null, "eco-home-card");
-      var h3 = mk("h3"); h3.textContent = title; markMy(h3);
-      var meta = mk("div", "meta");
-      meta.textContent = (r.kind === "board" ? "Board" : "Note") + " · " + relTime(r.updatedAt);
-      var row = mk("div", "row");
-      var open = btn(null, "Open", icon("i-chev-r") + "<span>Open</span>", "mem-mini");
-      row.appendChild(open);
-      card.appendChild(h3); card.appendChild(meta); card.appendChild(row);
-      card.addEventListener("click", function () {
-        if (r.kind === "board") openBoard(r.id); else { goMasonry(); focusNoteCard(r.id); }
-      });
-      grid.appendChild(card);
-      shown++;
+    var files = memFiles.list().filter(function (f) {
+      return !q || (f.name || "").toLowerCase().indexOf(q) >= 0;
     });
-    if (empty) empty.classList.toggle("hidden", shown > 0);
+    files.forEach(function (f) {
+      var card = btn(null, "Open " + f.name, null, "eco-home-card mem-file-card");
+      var h3 = mk("h3"); h3.textContent = f.name; markMy(h3);
+      var meta = mk("div", "meta");
+      meta.textContent = (f.kind === "board" ? "Board" : "Note") + " · " + relTime(f.updatedAt);
+      var row = mk("div", "row mem-file-actions");
+      var open = btn(null, "Open", icon("i-chev-r") + "<span>Open</span>", "mem-mini");
+      var rn = btn(null, "Rename", icon("i-pen") + "<span>Rename</span>", "mem-mini");
+      var dup = btn(null, "Duplicate", icon("i-copy") + "<span>Duplicate</span>", "mem-mini");
+      var del = btn(null, "Delete", icon("i-trash") + "<span>Delete</span>", "mem-mini mem-danger");
+      open.addEventListener("click", function (e) { e.stopPropagation(); memFiles.open(f.id); });
+      rn.addEventListener("click", function (e) { e.stopPropagation(); promptRenameFile(f.id); });
+      dup.addEventListener("click", function (e) {
+        e.stopPropagation(); memFiles.duplicate(f.id); renderFiles(); toast("Duplicated");
+      });
+      del.addEventListener("click", function (e) {
+        e.stopPropagation();
+        memFiles.remove(f.id).then(function (ok) { if (ok) renderFiles(); });
+      });
+      row.appendChild(open); row.appendChild(rn); row.appendChild(dup); row.appendChild(del);
+      card.appendChild(h3); card.appendChild(meta); card.appendChild(row);
+      card.addEventListener("click", function () { memFiles.open(f.id); });
+      grid.appendChild(card);
+    });
+    if (empty) empty.classList.toggle("hidden", files.length > 0);
   }
 
   /* ================= masonry ================= */
@@ -496,6 +833,7 @@
     add.addEventListener("click", function () { var n = addNote("note"); renderMasonry(); focusNoteCard(n.id); });
     bar.appendChild(back); bar.appendChild(title); bar.appendChild(segWrap);
     bar.appendChild(spacer); bar.appendChild(search); bar.appendChild(add);
+    memTopbarChrome(bar, "masonry");
     wrap.appendChild(bar);
     var chips = mk("div", "mem-chips", "mem-tagChips");
     chips.setAttribute("aria-label", "Filter by tag");
@@ -528,7 +866,7 @@
     if (!grid) return;
     renderTagChips(chips);
     grid.innerHTML = "";
-    var notes = visibleNotes();
+    var notes = sortNotes(visibleNotes());
     if (!notes.length) {
       var e = mk("div", "eco-home-empty");
       e.textContent = getNotes().length ? "No notes match this filter." : "No notes yet. Create your first note.";
@@ -567,7 +905,7 @@
   function focusNoteCard(id) {
     var card = document.getElementById("mem-card-" + id);
     if (!card) return;
-    card.scrollIntoView({ block: "nearest" });
+    if (typeof card.scrollIntoView === "function") card.scrollIntoView({ block: "nearest" });
     var body = card.querySelector(".mem-card-body, .mem-card-title");
     if (body) { try { body.focus(); } catch (e) {} }
   }
@@ -853,6 +1191,7 @@
     });
     bar.appendChild(back); bar.appendChild(title); bar.appendChild(segWrap); bar.appendChild(spacer);
     bar.appendChild(zOut); bar.appendChild(zPct); bar.appendChild(zIn); bar.appendChild(fit); bar.appendChild(del);
+    memTopbarChrome(bar, "board");
     wrap.appendChild(bar);
 
     var tools = mk("div", "mem-tools", "mem-boardTools");
@@ -1278,7 +1617,8 @@
     var ox = modelEl.x, oy = modelEl.y;
     function onMove(e) {
       var dx = (e.clientX - sx) / v.zoom, dy = (e.clientY - sy) / v.zoom;
-      modelEl.x = Math.round(ox + dx); modelEl.y = Math.round(oy + dy);
+      var p = snapPoint(ox + dx, oy + dy);
+      modelEl.x = Math.round(p.x); modelEl.y = Math.round(p.y);
       node.style.left = modelEl.x + "px"; node.style.top = modelEl.y + "px";
       if (kind === "sticky") paintArrows();
     }
@@ -1498,21 +1838,21 @@
   }
   if (typeof T.register === "function") {
     T.register("mem.open", function () { openMemApp(); },
-      { title: "Open MEM notes", cat: "Ecosystem", icon: "i-file", match: "mem notes whiteboard open" });
+      { title: "Open MEM notes", cat: "NXT", icon: "i-file", match: "mem notes whiteboard open" });
     T.register("mem.home", function () { openMemApp(); goHome(); },
-      { title: "MEM home", cat: "Ecosystem", icon: "i-grid", match: "mem home start" });
+      { title: "MEM home", cat: "NXT", icon: "i-grid", match: "mem home start" });
     T.register("mem.new", function () {
       openMemApp(); goMasonry();
       var n = addNote("note"); renderMasonry(); focusNoteCard(n.id);
-    }, { title: "New MEM note", cat: "Ecosystem", icon: "i-plus", match: "mem new note create" });
+    }, { title: "New MEM note", cat: "NXT", icon: "i-plus", match: "mem new note create" });
     T.register("mem.new-checklist", function () {
       openMemApp(); goMasonry();
       var n = addNote("checklist"); renderMasonry(); focusNoteCard(n.id);
-    }, { title: "New MEM checklist", cat: "Ecosystem", icon: "i-checklist", match: "mem checklist todo" });
+    }, { title: "New MEM checklist", cat: "NXT", icon: "i-checklist", match: "mem checklist todo" });
     T.register("mem.new-board", function () {
       openMemApp();
       var b = addBoard(); openBoard(b.id);
-    }, { title: "New MEM whiteboard", cat: "Ecosystem", icon: "i-shapes", match: "mem new board whiteboard" });
+    }, { title: "New MEM whiteboard", cat: "NXT", icon: "i-shapes", match: "mem new board whiteboard" });
   }
 
   /* ================= bus ================= */
@@ -1533,6 +1873,9 @@
     setTagFilter: setTagFilter, setTool: setTool,
     getNotes: getNotes, getBoards: getBoards, getBoard: getBoard,
     zoomBy: zoomBy, fitBoard: fitBoard,
+    settings: memSettings, setSettings: saveMemSettings,
+    files: memFiles, snapPoint: snapPoint, duplicateBoard: duplicateBoard,
+    openSettings: openSettings, closeSettings: closeSettings,
     isBuilt: function () { return ui.built; },
     visible: function () { return ui.visible; },
     screen: function () { return ui.screen; },
