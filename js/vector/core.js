@@ -321,7 +321,8 @@
   function isArtwork(el) {
     return el && el.nodeType === 1 && vCanvas.contains(el) &&
       el !== vCanvas && el !== vViewport && el !== vOverlay && el !== vArtboard &&
-      el !== vPasteboard && !vOverlay.contains(el);
+      el !== vPasteboard && !vOverlay.contains(el) &&
+      !(el.closest && el.closest("[data-artboard]"));
   }
   function selection() { return sel.slice(); }
   function select(els) {

@@ -94,6 +94,7 @@
       }
       var t = artTarget(e);
       if (t) {
+        if (t.closest && t.closest("[data-locked]")) { T.toast("That object is locked. Unlock it in the Layers panel first."); return; }
         var cur = V.selection();
         if (e.shiftKey) {
           var i = cur.indexOf(t);
@@ -118,10 +119,16 @@
       var st = selectState, i;
       if (st.mode === "move") {
         var dx = p.x - st.start.x, dy = p.y - st.start.y;
+        var gd = null;
+        if (T.vectorGuides && T.vectorGuides.enabled()) {
+          gd = T.vectorGuides.snapMove(st.items.map(function (it) { return it.el; }), dx, dy);
+          dx = gd.dx; dy = gd.dy;
+        }
         for (i = 0; i < st.items.length; i++) {
           setM(st.items[i].el, new DOMMatrix().translate(dx, dy).multiply(st.items[i].base));
         }
         V.refresh();
+        if (gd && gd.guides && gd.guides.length) { T.vectorGuides.draw(gd.guides); }
       } else if (st.mode === "marquee") {
         var x = Math.min(st.start.x, p.x), y = Math.min(st.start.y, p.y);
         var w = Math.abs(p.x - st.start.x), h = Math.abs(p.y - st.start.y);
@@ -129,6 +136,7 @@
         V.layers().forEach(function (g) {
           Array.prototype.forEach.call(g.childNodes, function (n) {
             if (n.nodeType !== 1) { return; }
+            if (n.closest && n.closest("[data-locked]")) { return; }
             var b = X.xformBox(n);
             if (b && b.x < x + w && b.x + b.w > x && b.y < y + h && b.y + b.h > y) { hits.push(n); }
           });
@@ -137,21 +145,29 @@
         var s = 1 / X.zoom();
         X.ovEl("rect", { x: x, y: y, width: w, height: h, fill: "rgba(49,168,255,0.12)", stroke: "#31A8FF", "stroke-width": 1 * s, "stroke-dasharray": (4 * s) + " " + (3 * s) });
       } else if (st.mode === "handle") {
-        applyHandle(st, p, e.shiftKey);
+        applyHandle(st, p, e);
         V.refresh();
       }
     },
     up: function () {
       if (selectState) { selectState = null; V.commit(); }
+      if (T.vectorGuides) { T.vectorGuides.clear(); }
     },
     dblclick: function (e, p) {
       var t = artTarget(e);
       if (t && t.tagName === "text") { editText(t); }
     },
-    cancel: function () { var had = !!selectState; selectState = null; X.clearOv(); X.drawSelBox(); return had; }
+    cancel: function () {
+      var had = !!selectState; selectState = null; X.clearOv(); X.drawSelBox();
+      if (T.vectorGuides) { T.vectorGuides.clear(); }
+      return had;
+    }
   });
 
-  function applyHandle(st, p, uniform) {
+  /* Scale/rotate via the 8 selection handles.
+     e.shiftKey = uniform scale, e.altKey = scale from the center. */
+  function applyHandle(st, p, e) {
+    var uniform = !!(e && e.shiftKey), fromCenter = !!(e && e.altKey);
     var u = st.u, nub;
     if (st.handle === "rot") {
       var a1 = Math.atan2(p.y - st.cy, p.x - st.cx);
@@ -161,19 +177,38 @@
       st.items.forEach(function (it) { setM(it.el, M.multiply(it.base)); });
       return;
     }
-    var nx = u.x, ny = u.y, nw = u.w, nh = u.h;
     var id = st.handle;
-    if (id.indexOf("e") >= 0) { nw = Math.max(2, p.x - u.x); }
-    if (id.indexOf("w") >= 0) { nx = Math.min(p.x, u.x + u.w - 2); nw = Math.max(2, u.x + u.w - nx); }
-    if (id.indexOf("s") >= 0) { nh = Math.max(2, p.y - u.y); }
-    if (id.indexOf("n") >= 0) { ny = Math.min(p.y, u.y + u.h - 2); nh = Math.max(2, u.y + u.h - ny); }
-    if (uniform) {
-      var sc = Math.max(nw / u.w, nh / u.h);
-      if (id === "n" || id === "s") { nw = u.w * sc; nx = u.x + (u.w - nw) / 2; }
-      else if (id === "e" || id === "w") { nh = u.h * sc; ny = u.y + (u.h - nh) / 2; }
-      else { nw = u.w * sc; nh = u.h * sc; }
-      if (id.indexOf("w") >= 0) { nx = u.x + u.w - nw; }
-      if (id.indexOf("n") >= 0) { ny = u.y + u.h - nh; }
+    var cx = u.x + u.w / 2, cy = u.y + u.h / 2;
+    // fixed point: opposite edge/corner, or the center with Alt
+    var fx = id.indexOf("e") >= 0 ? u.x : (id.indexOf("w") >= 0 ? u.x + u.w : cx);
+    var fy = id.indexOf("s") >= 0 ? u.y : (id.indexOf("n") >= 0 ? u.y + u.h : cy);
+    if (fromCenter) { fx = cx; fy = cy; }
+    var nx, ny, nw, nh;
+    var isCorner = (id === "nw" || id === "ne" || id === "se" || id === "sw");
+    if (isCorner) {
+      var ext = fromCenter ? 2 : 1;
+      nw = Math.max(2, Math.abs(p.x - fx) * ext);
+      nh = Math.max(2, Math.abs(p.y - fy) * ext);
+      if (uniform) {
+        var sc = Math.max(nw / u.w, nh / u.h);
+        nw = u.w * sc; nh = u.h * sc;
+      }
+      nx = fromCenter ? cx - nw / 2 : Math.min(fx, p.x);
+      ny = fromCenter ? cy - nh / 2 : Math.min(fy, p.y);
+      if (uniform && !fromCenter) {
+        if (fx >= u.x + u.w - 0.01) { nx = fx - nw; }
+        if (fy >= u.y + u.h - 0.01) { ny = fy - nh; }
+      }
+    } else if (id === "e" || id === "w") {
+      nw = Math.max(2, Math.abs(p.x - fx) * (fromCenter ? 2 : 1));
+      nx = fromCenter ? cx - nw / 2 : Math.min(fx, p.x);
+      ny = u.y; nh = u.h;
+      if (uniform) { var k = nw / u.w; nh = u.h * k; ny = cy - nh / 2; }
+    } else { // n / s
+      nh = Math.max(2, Math.abs(p.y - fy) * (fromCenter ? 2 : 1));
+      ny = fromCenter ? cy - nh / 2 : Math.min(fy, p.y);
+      nx = u.x; nw = u.w;
+      if (uniform) { var k2 = nh / u.h; nw = u.w * k2; nx = cx - nw / 2; }
     }
     nub = { x: nx, y: ny, w: nw, h: nh };
     var M2 = mapBox(u, nub);
@@ -326,6 +361,7 @@
       }
       var t = artTarget(e);
       if (t) {
+        if (t.closest && t.closest("[data-locked]")) { T.toast("That object is locked. Unlock it in the Layers panel first."); return; }
         V.select([t]);
         refreshNodeTarget();
       } else { V.select([]); nodeState = null; X.clearOv(); }
@@ -337,9 +373,17 @@
     up: function () {
       if (nodeState && nodeState.drag) { nodeState.drag = null; V.commit(); }
     },
+    dblclick: function (e) {
+      var nn = e.target && e.target.getAttribute ? e.target.getAttribute("data-node") : null;
+      if (nn === "anchor" && nodeState) {
+        toggleAnchorSmooth(parseInt(e.target.getAttribute("data-seg"), 10),
+          parseInt(e.target.getAttribute("data-idx"), 10));
+      }
+    },
     cancel: function () { if (nodeState) { nodeState.drag = null; } return false; },
     options: function (host) {
-      optRow(host, '<span class="v-hint">Drag points to reshape. Works on paths and basic shapes.</span>');
+      optRow(host, '<span class="v-hint">Drag points to reshape. Double-click an anchor to switch it between smooth and corner.</span>');
+      btnOpt(host, "Smooth/Corner", "node", function () { convertAllAnchors(); }, "Convert every anchor of the selected path between smooth and corner");
     }
   });
   function refreshNodeTarget() {
@@ -350,6 +394,134 @@
     if (!tgt) { X.clearOv(); X.drawSelBox(); return; }
     nodeState = { el: sels[0], target: tgt, rel: X.relMatrix(sels[0]), drag: null };
     drawNodes();
+  }
+  /* ---- smooth / corner anchor conversion (direct select) ---- */
+  function collectAnchors(segs) {
+    var out = [];
+    segs.forEach(function (sg, si) {
+      var n = sg.pts.length;
+      if (n >= 2) { out.push({ si: si, x: sg.pts[n - 2], y: sg.pts[n - 1] }); }
+    });
+    return out;
+  }
+  function isClosedPath(segs) {
+    return segs.some(function (s) { return s.c === "Z"; });
+  }
+  function anchorIsSmooth(segs, a) {
+    var incoming = segs[a.si], next = segs[a.si + 1];
+    return (incoming && incoming.c === "C") || (next && next.c === "C");
+  }
+  function setAnchorSmooth(segs, anchors, ai, smooth) {
+    var a = anchors[ai];
+    if (!a) { return; }
+    var closed = isClosedPath(segs);
+    var prevA = anchors[ai - 1] || (closed ? anchors[anchors.length - 1] : null);
+    var nextA = anchors[ai + 1] || (closed ? anchors[0] : null);
+    var incoming = segs[a.si], next = segs[a.si + 1];
+    if (smooth) {
+      var dx, dy;
+      if (prevA && nextA) { dx = nextA.x - prevA.x; dy = nextA.y - prevA.y; }
+      else if (nextA) { dx = nextA.x - a.x; dy = nextA.y - a.y; }
+      else if (prevA) { dx = a.x - prevA.x; dy = a.y - prevA.y; }
+      else { return; }
+      var len = Math.hypot(dx, dy);
+      if (len < 1e-9) { return; }
+      dx /= len; dy /= len;
+      var l1 = prevA ? Math.hypot(a.x - prevA.x, a.y - prevA.y) / 3 : 1e9;
+      var l2 = nextA ? Math.hypot(nextA.x - a.x, nextA.y - a.y) / 3 : 1e9;
+      var L = Math.max(4, Math.min(l1, l2));
+      if (incoming && incoming.c === "L") {
+        segs[a.si] = { c: "C", pts: [fmt(a.x - dx * L), fmt(a.y - dy * L), fmt(a.x - dx * L), fmt(a.y - dy * L), a.x, a.y] };
+      } else if (incoming && incoming.c === "C") {
+        incoming.pts[2] = fmt(a.x - dx * L); incoming.pts[3] = fmt(a.y - dy * L);
+      }
+      if (next && next.c === "L") {
+        var ex = next.pts[0], ey = next.pts[1];
+        segs[a.si + 1] = { c: "C", pts: [fmt(a.x + dx * L), fmt(a.y + dy * L), fmt(ex), fmt(ey), fmt(ex), fmt(ey)] };
+      } else if (next && next.c === "C") {
+        next.pts[0] = fmt(a.x + dx * L); next.pts[1] = fmt(a.y + dy * L);
+      }
+    } else {
+      if (incoming && incoming.c === "C") { segs[a.si] = { c: "L", pts: [a.x, a.y] }; }
+      if (next && next.c === "C") {
+        next.pts[0] = a.x; next.pts[1] = a.y;
+        if (next.pts[2] === a.x && next.pts[3] === a.y) {
+          segs[a.si + 1] = { c: "L", pts: [next.pts[4], next.pts[5]] };
+        }
+      }
+    }
+  }
+  function toggleAnchorSmooth(si, ai) {
+    var st = nodeState;
+    if (!st) { return; }
+    if (st.target.kind !== "path") {
+      V.checkpoint();
+      var np = elToPath(st.el);
+      if (!np) { T.toast("This object cannot be converted to a path."); return; }
+      V.select([np]);
+      refreshNodeTarget();
+      T.toast("Converted to a path. Double-click an anchor again to smooth it.");
+      return;
+    }
+    var segs = st.target.segs;
+    var anchors = collectAnchors(segs);
+    if (ai < 0 || ai >= anchors.length) { return; }
+    V.checkpoint();
+    setAnchorSmooth(segs, anchors, ai, !anchorIsSmooth(segs, anchors[ai]));
+    st.el.setAttribute("d", segsToD(segs));
+    drawNodes();
+    V.commit();
+  }
+  function convertAllAnchors() {
+    if (!nodeState || nodeState.target.kind !== "path") { T.toast("Select a path first."); return; }
+    var st = nodeState, segs = st.target.segs;
+    var anchors = collectAnchors(segs);
+    if (!anchors.length) { return; }
+    var anyCorner = anchors.some(function (a) { return !anchorIsSmooth(segs, a); });
+    V.checkpoint();
+    anchors.forEach(function (a, ai) { setAnchorSmooth(segs, anchors, ai, anyCorner); });
+    st.el.setAttribute("d", segsToD(segs));
+    drawNodes();
+    V.commit();
+    T.toast(anyCorner ? "All anchors smoothed." : "All anchors converted to corners.");
+  }
+  /* Convert a basic shape element into an equivalent <path>, preserving
+     paint and transform. Used before anchor conversion on primitives. */
+  function elToPath(elm) {
+    if (!elm || !elm.parentNode) { return null; }
+    var tag = elm.tagName, d = "";
+    function n(k) { return parseFloat(elm.getAttribute(k) || "0"); }
+    if (tag === "rect") {
+      var x = n("x"), y = n("y"), w = n("width"), hh = n("height");
+      d = "M" + fmt(x) + " " + fmt(y) + "L" + fmt(x + w) + " " + fmt(y) +
+          "L" + fmt(x + w) + " " + fmt(y + hh) + "L" + fmt(x) + " " + fmt(y + hh) + "Z";
+    } else if (tag === "ellipse" || tag === "circle") {
+      var cx = n("cx"), cy = n("cy");
+      var rx = tag === "circle" ? n("r") : n("rx"), ry = tag === "circle" ? n("r") : n("ry");
+      if (rx <= 0 || ry <= 0) { return null; }
+      var k = 0.5523;
+      d = "M" + fmt(cx - rx) + " " + fmt(cy) +
+        "C" + fmt(cx - rx) + " " + fmt(cy - k * ry) + " " + fmt(cx - k * rx) + " " + fmt(cy - ry) + " " + fmt(cx) + " " + fmt(cy - ry) +
+        "C" + fmt(cx + k * rx) + " " + fmt(cy - ry) + " " + fmt(cx + rx) + " " + fmt(cy - k * ry) + " " + fmt(cx + rx) + " " + fmt(cy) +
+        "C" + fmt(cx + rx) + " " + fmt(cy + k * ry) + " " + fmt(cx + k * rx) + " " + fmt(cy + ry) + " " + fmt(cx) + " " + fmt(cy + ry) +
+        "C" + fmt(cx - k * rx) + " " + fmt(cy + ry) + " " + fmt(cx - rx) + " " + fmt(cy + k * ry) + " " + fmt(cx - rx) + " " + fmt(cy) + "Z";
+    } else if (tag === "polygon" || tag === "polyline") {
+      var pts = (elm.getAttribute("points") || "").trim().split(/[\s,]+/).map(parseFloat);
+      for (var i = 0; i + 1 < pts.length; i += 2) { d += (i === 0 ? "M" : "L") + fmt(pts[i]) + " " + fmt(pts[i + 1]); }
+      if (!d) { return null; }
+      if (tag === "polygon") { d += "Z"; }
+    } else if (tag === "line") {
+      d = "M" + fmt(n("x1")) + " " + fmt(n("y1")) + "L" + fmt(n("x2")) + " " + fmt(n("y2"));
+    } else { return null; }
+    var np = document.createElementNS(SVGNS, "path");
+    np.setAttribute("d", d);
+    ["fill", "fill-opacity", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin",
+     "stroke-dasharray", "stroke-opacity", "opacity", "transform", "data-vgrad", "data-vsw"].forEach(function (at) {
+      var v = elm.getAttribute(at);
+      if (v !== null) { np.setAttribute(at, v); }
+    });
+    elm.parentNode.replaceChild(np, elm);
+    return np;
   }
   T.bus.on("vector:selection", function () {
     if (V.tool() && V.tool().id === "node") { refreshNodeTarget(); }
@@ -421,6 +593,13 @@
       });
       var last = penPts[penPts.length - 1];
       X.ovEl("line", { x1: last.x, y1: last.y, x2: p.x, y2: p.y, stroke: "#31A8FF", "stroke-width": 1 * s, "stroke-dasharray": (4 * s) + " " + (3 * s) });
+      // close badge: ring on the start point when hovering it
+      if (penPts.length >= 2 && dist(p, penPts[0]) < 10 / X.zoom()) {
+        X.ovEl("circle", {
+          cx: penPts[0].x, cy: penPts[0].y, r: 7 * s,
+          fill: "none", stroke: "#84CC16", "stroke-width": 2 * s
+        });
+      }
     }
   }
   function penFinish(closed) {
@@ -429,6 +608,8 @@
     for (var i = 1; i < penPts.length; i++) {
       var a = penPts[i - 1], b = penPts[i];
       if (a.h2 && b.h1) { d += " C" + fmt(a.h2.x) + " " + fmt(a.h2.y) + " " + fmt(b.h1.x) + " " + fmt(b.h1.y) + " " + fmt(b.x) + " " + fmt(b.y); }
+      else if (a.h2) { d += " C" + fmt(a.h2.x) + " " + fmt(a.h2.y) + " " + fmt(b.x) + " " + fmt(b.y) + " " + fmt(b.x) + " " + fmt(b.y); }
+      else if (b.h1) { d += " C" + fmt(a.x) + " " + fmt(a.y) + " " + fmt(b.h1.x) + " " + fmt(b.h1.y) + " " + fmt(b.x) + " " + fmt(b.y); }
       else { d += " L" + fmt(b.x) + " " + fmt(b.y); }
     }
     if (closed) { d += " Z"; }
@@ -455,7 +636,8 @@
         var a = penPts[penPts.length - 1];
         if (dist(p, a) > 4 / X.zoom()) {
           a.h2 = { x: p.x, y: p.y };
-          a.h1 = { x: 2 * a.x - p.x, y: 2 * a.y - p.y };
+          if (e.altKey) { a.h1 = null; a.cusp = true; } // Alt-drag: cusp, no mirrored handle
+          else { a.h1 = { x: 2 * a.x - p.x, y: 2 * a.y - p.y }; a.cusp = false; }
         }
       }
       if (penPts) { penPreview(p); }
@@ -465,7 +647,7 @@
     toolKey: function (e) { if (e.key === "Enter") { penFinish(false); } },
     cancel: function () { var had = !!penPts; penPts = null; X.clearOv(); X.drawSelBox(); return had; },
     options: function (host) {
-      optRow(host, '<span class="v-hint">Click to place anchors, drag for curves. Click the first point to close. Enter finishes.</span>');
+      optRow(host, '<span class="v-hint">Click to place anchors, drag for curves, Alt+drag for cusp points. Click the first point to close. Enter finishes.</span>');
     }
   });
 

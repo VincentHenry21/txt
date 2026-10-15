@@ -318,12 +318,22 @@
   }
   function buildAlign() {
     var p = makePanel("align", "Align and Distribute"), b = p._body;
+    var toArt = document.createElement("input");
+    toArt.type = "checkbox"; toArt.className = "v-toggle";
+    toArt.title = "Align to the active artboard instead of the selection";
+    function alignRef() {
+      if (toArt.checked && T.vecEngine && typeof T.vecEngine.activeArtboard === "function") {
+        var ab = T.vecEngine.activeArtboard();
+        if (ab) { return { x: ab.x, y: ab.y, w: ab.w, h: ab.h }; }
+      }
+      return null;
+    }
     var r1 = h("div", "vp-arow");
     [["left", "Align left"], ["centerX", "Align center"], ["right", "Align right"], ["top", "Align top"], ["centerY", "Align middle"], ["bottom", "Align bottom"]].forEach(function (d) {
       var btn = document.createElement("button");
       btn.type = "button"; btn.className = "vp-abtn"; btn.title = d[1];
       btn.innerHTML = alGlyph(d[0]);
-      btn.addEventListener("click", function () { ops().align(sel(), d[0]); });
+      btn.addEventListener("click", function () { ops().align(sel(), d[0], alignRef()); });
       r1.appendChild(btn);
     });
     var r2 = h("div", "vp-arow");
@@ -335,6 +345,26 @@
       r2.appendChild(btn);
     });
     b.appendChild(r1); b.appendChild(r2);
+    var trow = h("div", "vp-row");
+    var tlab = h("label", "vp-field");
+    tlab.appendChild(h("span", "vp-flab", "Align to artboard"));
+    tlab.appendChild(toArt);
+    trow.appendChild(tlab);
+    b.appendChild(trow);
+    [["x", "Gap X (px)"], ["y", "Gap Y (px)"]].forEach(function (d) {
+      var row = h("div", "vp-row");
+      var inp = numInput(0, 2000, 1, 20);
+      row.appendChild(fieldRow(d[1], inp));
+      var go = document.createElement("button");
+      go.type = "button"; go.className = "vp-btn";
+      go.innerHTML = "<span>Distribute</span>";
+      go.title = "Distribute with an exact gap between edges";
+      go.addEventListener("click", function () {
+        if (ops()) { ops().distributeSpacing(sel(), d[0], parseFloat(inp.value) || 0); }
+      });
+      row.appendChild(go);
+      b.appendChild(row);
+    });
     return p;
   }
 
@@ -533,158 +563,241 @@
   }
 
   /* ================= 6. Layers ================= */
+  /* Layer groups live inside the viewport <g> (see core.js makeLayer), so
+     resolve them through the T.vector contract instead of scanning the
+     svg root (which previously found nothing and created stray layers). */
   function layerGroups() {
-    var s = svg(); if (!s) return [];
-    return Array.prototype.filter.call(s.children, function (c) {
-      return c.tagName && c.tagName.toLowerCase() === "g" && c.hasAttribute("data-name");
-    });
+    try {
+      return (T.vector && typeof T.vector.layers === "function") ? (T.vector.layers() || []) : [];
+    } catch (e) { return []; }
   }
   function ensureLayer() {
-    var s = svg(); if (!s) return null;
     var groups = layerGroups();
-    if (groups.length) return groups[0];
-    var g = document.createElementNS(SVGNS, "g");
-    g.setAttribute("data-name", "Layer 1");
-    // adopt orphan top-level artwork (but leave defs alone)
-    var orphans = [];
-    Array.prototype.forEach.call(s.children, function (c) {
-      var t = (c.tagName || "").toLowerCase();
-      if (t !== "defs" && t !== "g") orphans.push(c);
-    });
-    orphans.forEach(function (c) { g.appendChild(c); });
-    s.appendChild(g);
-    return g;
+    if (groups.length) return groups[groups.length - 1];
+    try {
+      if (T.vector && typeof T.vector.makeLayer === "function") return T.vector.makeLayer("Layer 1");
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+  var dragShapeEl = null;
+  function shapeLabel(el, idx) {
+    var tag = (el.tagName || "").toLowerCase();
+    var id = el.getAttribute("id");
+    if (id) return id;
+    if (tag === "g") return "Group " + (idx + 1);
+    return tag.charAt(0).toUpperCase() + tag.slice(1) + " " + (idx + 1);
   }
   function refreshLayers() {
     var p = PAN.layers; if (!p) return;
     var body = p._body;
-    if (!layersPrimed) {
-      // first population: shimmer skeletons while the list builds, then fill in
-      layersPrimed = true;
-      body.innerHTML = "";
-      for (var i = 0; i < 3; i++) {
-        var sk = h("div", "nxt-skeleton");
-        sk.style.height = "34px";
-        sk.style.marginBottom = "6px";
-        body.appendChild(sk);
-      }
-      setTimeout(refreshLayers, 40);
-      return;
-    }
     body.innerHTML = "";
-    var groups = layerGroups();
-    var list = h("div", "vp-layers");
-    if (!groups.length) {
-      list.appendChild(h("div", "vp-lempty", "No layers yet."));
-    }
+    var VE = T.vecEngine || null;
     var selection = sel();
-    groups.forEach(function (g) {
-      var row = h("div", "vp-lrow");
-      var kids = Array.prototype.slice.call(g.children);
-      var anySel = kids.some(function (k) { return selection.indexOf(k) >= 0; });
-      if (anySel) row.classList.add("active");
-      var eye = document.createElement("button");
-      eye.type = "button"; eye.className = "vp-icobtn"; eye.title = "Toggle visibility";
-      eye.innerHTML = T.icon("i-eye");
-      eye.classList.toggle("off", g.style.display === "none");
-      eye.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var isHidden = g.style.display === "none";
-        g.style.display = isHidden ? "" : "none";
-        eye.classList.toggle("off", !isHidden);
-        if (ops()) ops().changed(); else refreshLayers();
-      });
-      var lock = document.createElement("button");
-      lock.type = "button"; lock.className = "vp-icobtn"; lock.title = "Lock layer";
-      lock.innerHTML = '<svg viewBox="0 0 16 16" class="vp-lock" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="7" width="9" height="6.5" rx="1.2"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/></svg>';
-      lock.classList.toggle("off", g.getAttribute("data-locked") !== "1");
-      lock.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var now = g.getAttribute("data-locked") !== "1";
-        if (now) { g.setAttribute("data-locked", "1"); g.style.pointerEvents = "none"; }
-        else { g.removeAttribute("data-locked"); g.style.removeProperty("pointer-events"); }
-        lock.classList.toggle("off", !now);
-        if (ops()) ops().changed(); else refreshLayers();
-      });
-      var nm = h("span", "vp-lname", T.esc(g.getAttribute("data-name") || "Layer"));
-      nm.title = "Double-click to rename";
-      nm.addEventListener("dblclick", function (e) {
-        e.stopPropagation();
-        var inp = document.createElement("input");
-        inp.type = "text"; inp.className = "vp-text"; inp.value = g.getAttribute("data-name") || "";
-        nm.replaceWith(inp);
-        inp.focus(); inp.select();
-        var done = false;
-        function commit(ok) {
-          if (done) return; done = true;
-          if (ok && inp.value.trim()) g.setAttribute("data-name", inp.value.trim());
-          if (ops()) ops().changed(); else refreshLayers();
-        }
-        inp.addEventListener("keydown", function (ev) {
-          if (ev.key === "Enter") commit(true);
-          else if (ev.key === "Escape") commit(false);
-          ev.stopPropagation();
-        });
-        inp.addEventListener("blur", function () { commit(true); });
-      });
-      var count = h("span", "vp-lcount", String(kids.length));
-      var up = document.createElement("button");
-      up.type = "button"; up.className = "vp-icobtn"; up.title = "Move layer up";
-      up.innerHTML = T.icon("i-chev-u");
-      up.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var prev = g.previousElementSibling;
-        if (prev && prev.tagName && prev.tagName.toLowerCase() === "g") { g.parentNode.insertBefore(g, prev); if (ops()) ops().changed(); }
-      });
-      var down = document.createElement("button");
-      down.type = "button"; down.className = "vp-icobtn"; down.title = "Move layer down";
-      down.innerHTML = T.icon("i-chev-d");
-      down.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var next = g.nextElementSibling;
-        if (next && next.tagName && next.tagName.toLowerCase() === "g") { g.parentNode.insertBefore(next, g); if (ops()) ops().changed(); }
-      });
-      var del = document.createElement("button");
-      del.type = "button"; del.className = "vp-icobtn danger"; del.title = "Delete layer";
-      del.innerHTML = T.icon("i-trash");
-      del.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var n = kids.length;
-        T.modal({
-          title: "Delete layer",
-          sub: "Delete \"" + (g.getAttribute("data-name") || "Layer") + "\"" + (n ? " and its " + n + " object(s)" : "") + "?",
-          okText: "Delete"
-        }).then(function (res) {
-          if (!res) return;
-          if (g.parentNode) g.parentNode.removeChild(g);
-          if (ops()) ops().changed(); else refreshLayers();
-          T.toast("Layer deleted.");
-        });
-      });
-      row.appendChild(eye); row.appendChild(lock); row.appendChild(nm); row.appendChild(count);
-      row.appendChild(up); row.appendChild(down); row.appendChild(del);
-      row.addEventListener("click", function () {
-        if (T.vector && typeof T.vector.select === "function" && kids.length) T.vector.select(kids);
-      });
-      list.appendChild(row);
+    // isolation breadcrumb
+    var iso = (VE && typeof VE.isolated === "function") ? VE.isolated() : null;
+    if (iso) {
+      var crumb = h("div", "ve-crumb");
+      crumb.appendChild(h("span", "", "Isolating: "));
+      var strong = document.createElement("strong");
+      strong.textContent = shapeLabel(iso, 0);
+      crumb.appendChild(strong);
+      var exit = document.createElement("button");
+      exit.type = "button"; exit.className = "vp-btn ghost";
+      exit.innerHTML = "<span>Exit isolation</span>";
+      exit.addEventListener("click", function () { VE.exitIsolation(); refreshLayers(); });
+      crumb.appendChild(exit);
+      body.appendChild(crumb);
+    }
+    var tree = h("div", "ve-ltree");
+    var groups = layerGroups();
+    if (!groups.length) { tree.appendChild(h("div", "vp-lempty", "No layers yet.")); }
+    groups.forEach(function (g, gi) {
+      tree.appendChild(layerHeadRow(g, gi));
+      var kids = Array.prototype.filter.call(g.childNodes, function (n) { return n.nodeType === 1; });
+      kids.forEach(function (n, ki) { tree.appendChild(shapeRow(n, g, gi, ki, selection, VE)); });
     });
-    body.appendChild(list);
+    body.appendChild(tree);
     var addRow = h("div", "vp-row");
     var add = document.createElement("button");
     add.type = "button"; add.className = "vp-btn";
     add.innerHTML = T.icon("i-plus") + "<span>New layer</span>";
     add.addEventListener("click", function () {
-      var s = svg(); if (!s) return;
-      var names = layerGroups().map(function (g) { return g.getAttribute("data-name"); });
+      if (!T.vector || typeof T.vector.makeLayer !== "function") return;
+      var names = layerGroups().map(function (x) { return x.getAttribute("data-name"); });
       var n = 1;
       while (names.indexOf("Layer " + n) >= 0) n++;
-      var g = document.createElementNS(SVGNS, "g");
-      g.setAttribute("data-name", "Layer " + n);
-      s.appendChild(g);
+      T.vector.makeLayer("Layer " + n);
       if (ops()) ops().changed(); else refreshLayers();
     });
     addRow.appendChild(add);
     body.appendChild(addRow);
+  }
+  function eyeBtn(el, isLayer) {
+    var eye = document.createElement("button");
+    eye.type = "button"; eye.className = "vp-icobtn"; eye.title = "Toggle visibility";
+    eye.setAttribute("aria-label", "Toggle visibility");
+    eye.innerHTML = T.icon("i-eye");
+    function sync() { eye.classList.toggle("off", el.style.display === "none"); }
+    sync();
+    eye.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var hidden = el.style.display === "none";
+      el.style.display = hidden ? "" : "none";
+      sync();
+      if (ops()) ops().changed();
+    });
+    return eye;
+  }
+  function lockBtn(el) {
+    var lock = document.createElement("button");
+    lock.type = "button"; lock.className = "vp-icobtn"; lock.title = "Lock (blocks selection and edits)";
+    lock.setAttribute("aria-label", "Lock");
+    lock.innerHTML = '<svg viewBox="0 0 16 16" class="vp-lock" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="7" width="9" height="6.5" rx="1.2"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/></svg>';
+    function sync() { lock.classList.toggle("off", el.getAttribute("data-locked") !== "1"); }
+    sync();
+    lock.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var now = el.getAttribute("data-locked") !== "1";
+      if (now) { el.setAttribute("data-locked", "1"); el.style.pointerEvents = "none"; }
+      else { el.removeAttribute("data-locked"); el.style.removeProperty("pointer-events"); }
+      sync();
+      if (ops()) ops().changed(); else refreshLayers();
+    });
+    return lock;
+  }
+  function layerHeadRow(g, gi) {
+    var row = h("div", "ve-lhead");
+    row.appendChild(eyeBtn(g, true));
+    row.appendChild(lockBtn(g));
+    var nm = h("span", "ve-lname", T.esc(g.getAttribute("data-name") || "Layer"));
+    nm.title = "Double-click to rename";
+    nm.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      var inp = document.createElement("input");
+      inp.type = "text"; inp.className = "vp-text"; inp.value = g.getAttribute("data-name") || "";
+      nm.replaceWith(inp);
+      inp.focus(); inp.select();
+      var done = false;
+      function commit(ok) {
+        if (done) return; done = true;
+        if (ok && inp.value.trim()) g.setAttribute("data-name", inp.value.trim());
+        if (ops()) ops().changed(); else refreshLayers();
+      }
+      inp.addEventListener("keydown", function (ev) {
+        ev.stopPropagation();
+        if (ev.key === "Enter") commit(true);
+        else if (ev.key === "Escape") commit(false);
+      });
+      inp.addEventListener("blur", function () { commit(true); });
+    });
+    var count = h("span", "vp-lcount", String(Array.prototype.filter.call(g.childNodes, function (n) { return n.nodeType === 1; }).length));
+    function mvBtn(icon, title, dir) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "vp-icobtn"; b.title = title;
+      b.setAttribute("aria-label", title);
+      b.innerHTML = T.icon(icon);
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var sib = dir < 0 ? g.previousElementSibling : g.nextElementSibling;
+        if (sib && sib.tagName && sib.tagName.toLowerCase() === "g" && sib.hasAttribute("data-name")) {
+          if (dir < 0) g.parentNode.insertBefore(g, sib);
+          else g.parentNode.insertBefore(sib, g);
+          if (ops()) ops().changed(); else refreshLayers();
+        }
+      });
+      return b;
+    }
+    var del = document.createElement("button");
+    del.type = "button"; del.className = "vp-icobtn danger"; del.title = "Delete layer";
+    del.setAttribute("aria-label", "Delete layer");
+    del.innerHTML = T.icon("i-trash");
+    del.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (typeof T.modal !== "function") return;
+      T.modal({
+        title: "Delete layer",
+        sub: "Delete \"" + (g.getAttribute("data-name") || "Layer") + "\" and its contents?",
+        okText: "Delete", danger: true
+      }).then(function (res) {
+        if (!res) return;
+        if (g.parentNode) g.parentNode.removeChild(g);
+        if (ops()) ops().changed(); else refreshLayers();
+        T.toast("Layer deleted.");
+      });
+    });
+    // drop target: dropping a shape here moves it into this layer
+    row.addEventListener("dragover", function (e) {
+      if (!dragShapeEl) return;
+      e.preventDefault();
+      row.classList.add("ve-drop-target");
+    });
+    row.addEventListener("dragleave", function () { row.classList.remove("ve-drop-target"); });
+    row.addEventListener("drop", function (e) {
+      e.preventDefault();
+      row.classList.remove("ve-drop-target");
+      if (!dragShapeEl || dragShapeEl.parentNode === g) { dragShapeEl = null; return; }
+      if (T.vector && T.vector.checkpoint) T.vector.checkpoint();
+      g.appendChild(dragShapeEl);
+      dragShapeEl = null;
+      if (ops()) ops().changed(); else refreshLayers();
+    });
+    row.appendChild(nm); row.appendChild(count);
+    row.appendChild(mvBtn("i-chev-u", "Move layer up", -1));
+    row.appendChild(mvBtn("i-chev-d", "Move layer down", 1));
+    row.appendChild(del);
+    return row;
+  }
+  function shapeRow(el, layer, gi, ki, selection, VE) {
+    var tag = (el.tagName || "").toLowerCase();
+    var isGroup = tag === "g";
+    var row = h("div", "ve-lrow");
+    row.setAttribute("draggable", "true");
+    if (selection.indexOf(el) >= 0) row.classList.add("sel");
+    if (VE && VE.isolated && VE.isolated() === el) row.classList.add("isolated");
+    row.appendChild(eyeBtn(el, false));
+    row.appendChild(lockBtn(el));
+    row.appendChild(h("span", "ve-ltag", T.esc(tag === "g" ? "grp" : tag)));
+    var nm = h("span", "ve-lname", T.esc(shapeLabel(el, ki)));
+    if (isGroup) nm.title = "Double-click to enter isolation mode";
+    row.appendChild(nm);
+    row.addEventListener("click", function () {
+      if (T.vector && typeof T.vector.select === "function") T.vector.select([el]);
+    });
+    if (isGroup && VE) {
+      row.addEventListener("dblclick", function (e) {
+        e.stopPropagation();
+        VE.isolate(el);
+        refreshLayers();
+      });
+    }
+    // drag to reorder: real z-order change in the SVG DOM
+    row.addEventListener("dragstart", function (e) {
+      dragShapeEl = el;
+      try { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", "vec-shape"); } catch (err) {}
+    });
+    row.addEventListener("dragend", function () {
+      dragShapeEl = null;
+      Array.prototype.forEach.call(document.querySelectorAll(".ve-drop-target"), function (n) { n.classList.remove("ve-drop-target"); });
+    });
+    row.addEventListener("dragover", function (e) {
+      if (!dragShapeEl || dragShapeEl === el) return;
+      e.preventDefault();
+      row.classList.add("ve-drop-target");
+    });
+    row.addEventListener("dragleave", function () { row.classList.remove("ve-drop-target"); });
+    row.addEventListener("drop", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      row.classList.remove("ve-drop-target");
+      var src = dragShapeEl;
+      dragShapeEl = null;
+      if (!src || src === el || src.parentNode !== el.parentNode) return;
+      if (T.vector && T.vector.checkpoint) T.vector.checkpoint();
+      var r = row.getBoundingClientRect();
+      var after = (e.clientY - r.top) > r.height / 2;
+      el.parentNode.insertBefore(src, after ? el.nextSibling : el);
+      if (ops()) ops().changed(); else refreshLayers();
+    });
+    return row;
   }
   function buildLayers() {
     var p = makePanel("layers", "Layers");
@@ -694,7 +807,6 @@
   /* ================= assembly ================= */
   var PAN = {};
   var busBound = false;
-  var layersPrimed = false; /* first layers population shows skeletons, then fills in */
   function refresh() {
     if (!T.vector || !T.vectorOps) return;
     refreshTransform();

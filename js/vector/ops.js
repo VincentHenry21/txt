@@ -20,6 +20,9 @@
   var T = window.TXT;
   var SVGNS = "http://www.w3.org/2000/svg";
   var EPS = 1e-9;
+  /* Adaptive Bezier subdivision from the engine's pure geometry module
+     (loaded before this file). Falls back to fixed subdivision when absent. */
+  var VG = T.vecGeom || null;
 
   function r2(n) { return Math.round(n * 100) / 100; }
   function fnum(v, d) { v = parseFloat(v); return isNaN(v) ? d : v; }
@@ -75,23 +78,33 @@
     function line(nx, ny) { ensure(); cur.push({ x: nx, y: ny }); x = nx; y = ny; }
     function cubicTo(x1, y1, x2, y2, ex, ey) {
       ensure();
-      var p0x = x, p0y = y, n = 16, k, t, mt, px, py;
-      for (k = 1; k <= n; k++) {
-        t = k / n; mt = 1 - t;
-        px = mt * mt * mt * p0x + 3 * mt * mt * t * x1 + 3 * mt * t * t * x2 + t * t * t * ex;
-        py = mt * mt * mt * p0y + 3 * mt * mt * t * y1 + 3 * mt * t * t * y2 + t * t * t * ey;
-        cur.push({ x: px, y: py });
+      if (VG) {
+        var fp = VG.flattenCubic({ x: x, y: y }, { x: x1, y: y1 }, { x: x2, y: y2 }, { x: ex, y: ey }, 0.5);
+        for (var k = 1; k < fp.length; k++) { cur.push(fp[k]); }
+      } else {
+        var p0x = x, p0y = y, n = 16, k2, t, mt, px, py;
+        for (k2 = 1; k2 <= n; k2++) {
+          t = k2 / n; mt = 1 - t;
+          px = mt * mt * mt * p0x + 3 * mt * mt * t * x1 + 3 * mt * t * t * x2 + t * t * t * ex;
+          py = mt * mt * mt * p0y + 3 * mt * mt * t * y1 + 3 * mt * t * t * y2 + t * t * t * ey;
+          cur.push({ x: px, y: py });
+        }
       }
       x = ex; y = ey;
     }
     function quadTo(x1, y1, ex, ey) {
       ensure();
-      var p0x = x, p0y = y, n = 12, k, t, mt, px, py;
-      for (k = 1; k <= n; k++) {
-        t = k / n; mt = 1 - t;
-        px = mt * mt * p0x + 2 * mt * t * x1 + t * t * ex;
-        py = mt * mt * p0y + 2 * mt * t * y1 + t * t * ey;
-        cur.push({ x: px, y: py });
+      if (VG) {
+        var fq = VG.flattenQuad({ x: x, y: y }, { x: x1, y: y1 }, { x: ex, y: ey }, 0.5);
+        for (var k3 = 1; k3 < fq.length; k3++) { cur.push(fq[k3]); }
+      } else {
+        var p0x = x, p0y = y, n = 12, k4, t, mt, px, py;
+        for (k4 = 1; k4 <= n; k4++) {
+          t = k4 / n; mt = 1 - t;
+          px = mt * mt * p0x + 2 * mt * t * x1 + t * t * ex;
+          py = mt * mt * p0y + 2 * mt * t * y1 + t * t * ey;
+          cur.push({ x: px, y: py });
+        }
       }
       x = ex; y = ey;
     }
@@ -328,6 +341,40 @@
     return true;
   }
 
+  /* Degenerate-touch filter for Greiner-Hormann.
+     When an intersection lands exactly on a subject vertex (t ~= 0 or 1),
+     the subject may merely GRAZE the clip boundary instead of crossing it
+     (e.g. a subject corner lying exactly on a clip edge, or arriving along
+     it). Such touches create phantom entry/exit flips that send the tracer
+     into an infinite loop and produce garbage loops. This keeps the hit only
+     when the subject path properly crosses the clip edge's line at the touch
+     vertex, i.e. the two incident subject edges lie on strictly opposite
+     sides of that line. For vertex-on-vertex touches both incident clip
+     edges are tried. Honest limitation: a true crossing exactly through a
+     clip vertex at a grazing angle can be misclassified as a touch; those
+     cases fall back to keeping the input shapes (see runOp). */
+  function touchCrosses(sN, hh) {
+    var t = hh.r.t, V, eInFar, eOutFar;
+    if (t < 1e-7) { V = sN; eInFar = V.prev; eOutFar = V.next; }
+    else { V = sN.next; eInFar = sN; eOutFar = V.next; }
+    if (!eInFar || !eOutFar || eInFar === V || eOutFar === V) { return true; }
+    var cA = hh.c, cB = hh.c.next;
+    if (!cB) { return true; }
+    function side(ax, ay, bx, by, p) {
+      return (bx - ax) * (p.y - ay) - (by - ay) * (p.x - ax);
+    }
+    var s1 = side(cA.x, cA.y, cB.x, cB.y, eInFar);
+    var s2 = side(cA.x, cA.y, cB.x, cB.y, eOutFar);
+    if ((s1 > 1e-9 && s2 < -1e-9) || (s1 < -1e-9 && s2 > 1e-9)) { return true; }
+    var u = hh.r.u;
+    if ((u < 1e-7 || u > 1 - 1e-7) && cA.prev) {
+      var pA = cA.prev;
+      var t1 = side(pA.x, pA.y, cA.x, cA.y, eInFar);
+      var t2 = side(pA.x, pA.y, cA.x, cA.y, eOutFar);
+      if ((t1 > 1e-9 && t2 < -1e-9) || (t1 < -1e-9 && t2 > 1e-9)) { return true; }
+    }
+    return false;
+  }
   function ghBuild(S, C, sPoly, cPoly) {
     // collect original subject edges first (insertions mutate next pointers)
     var edges = [], s0 = S.head;
@@ -344,6 +391,8 @@
       hits.forEach(function (hh) {
         if (hh.r.t - lastT < 1e-9) return; // dedupe coincident hits on this edge
         lastT = hh.r.t;
+        if ((hh.r.t < 1e-7 || hh.r.t > 1 - 1e-7) && !touchCrosses(sN, hh)) { return; } // grazing touch: skip
+
         var sn, cn;
         if (hh.r.t < 1e-7) sn = sN;
         else if (hh.r.t > 1 - 1e-7) sn = sN.next;
@@ -645,13 +694,15 @@
   function intersect(els) { runOp("intersect", els, "Intersect"); }
   function exclude(els) { runOp("exclude", els, "Exclude"); }
 
-  /* Align the selection bbox edges/centers. mode: left|centerX|right|top|centerY|bottom */
-  function align(els, mode) {
+  /* Align the selection bbox edges/centers. mode: left|centerX|right|top|centerY|bottom.
+     refBox (optional): align to this box instead of the selection union
+     (used for align-to-artboard). */
+  function align(els, mode, refBox) {
     var list = collectShapes(els);
     if (list.length < 2) { T.toast("Select two or more shapes to align.", "error"); return; }
     var boxes = list.map(visualBBox).filter(Boolean);
     if (boxes.length < 2) return;
-    var u = unionBox(boxes), tx = 0, ty = 0;
+    var u = refBox || unionBox(boxes), tx = 0, ty = 0;
     list.forEach(function (el, i) {
       var b = visualBBox(el);
       if (!b) return;
@@ -684,13 +735,33 @@
     changed();
   }
 
+  /* Distribute with an exact pixel gap between object edges along an axis.
+     Keeps the first object's leading edge fixed. */
+  function distributeSpacing(els, axis, gap) {
+    var list = collectShapes(els);
+    if (list.length < 3) { T.toast("Select three or more shapes to distribute.", "error"); return; }
+    gap = Math.max(0, parseFloat(gap) || 0);
+    var items = list.map(function (el) { return { el: el, b: visualBBox(el) }; }).filter(function (o) { return o.b; });
+    if (items.length < 3) return;
+    items.sort(function (a, b) { return (axis === "x" ? a.b.x - b.b.x : a.b.y - b.b.y); });
+    var pos = axis === "x" ? items[0].b.x : items[0].b.y;
+    items.forEach(function (o) {
+      var b = visualBBox(o.el);
+      if (!b) return;
+      var d = r2(pos - (axis === "x" ? b.x : b.y));
+      if (axis === "x") { nudge(o.el, d, 0); pos += b.w + gap; }
+      else { nudge(o.el, 0, d); pos += b.h + gap; }
+    });
+    changed();
+  }
+
   T.vectorOps = {
     parseTransform: parseTransform, matPt: matPt,
     shapeToPolygon: shapeToPolygon, polyToD: polyToD,
     localBBox: localBBox, visualBBox: visualBBox, unionBox: unionBox,
     getBase: getBase, getRot: getRot, applyBox: applyBox, nudge: nudge,
     unite: unite, minusFront: minusFront, intersect: intersect, exclude: exclude,
-    align: align, distribute: distribute,
+    align: align, distribute: distribute, distributeSpacing: distributeSpacing,
     changed: changed, r2: r2
   };
 })();
