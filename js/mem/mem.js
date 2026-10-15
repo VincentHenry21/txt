@@ -318,7 +318,12 @@
         ns[i].title = nm; saveNote(ns[i]); refreshCurrent(); return fileRecNote(ns[i]);
       }
       var b = getBoard(id);
-      if (b) { b.title = nm; saveBoard(b); refreshCurrent(); return fileRecBoard(b); }
+      if (b) {
+        b.title = nm; saveBoard(b);
+        /* store.get deserializes, so refresh the live board ref when it is current */
+        if (ui.board && ui.board.id === id) ui.board = b;
+        syncBoardTitle(); refreshCurrent(); return fileRecBoard(b);
+      }
       return null;
     },
     duplicate: function (id) {
@@ -505,7 +510,7 @@
     tool: "select", drawColor: DRAW_COLORS[0], drawWidth: 4,
     masonryQuery: "", tagFilter: null,
     homeQuery: "", selectedEl: null, pendingArrowFrom: null,
-    spaceDown: false, recording: null
+    spaceDown: false, recording: null, firstPaint: false
   };
   var saveBoardSoon = debounce(function () { if (ui.board) saveBoard(ui.board); }, 500);
   var saveNoteSoon = debounce(function (n) { if (n) saveNote(n); }, 500);
@@ -517,6 +522,18 @@
     if (!ui.built) buildView();
     ui.visible = true;
     renderRecordingBar();
+    if (!ui.firstPaint) {
+      /* first paint: leave the skeleton placeholders in the DOM for one frame
+         so the loading state is real, then render the current screen */
+      ui.firstPaint = true;
+      setTimeout(function () {
+        if (!ui.visible) return;
+        if (ui.screen === "board" && ui.boardId) openBoard(ui.boardId, true);
+        else if (ui.screen === "masonry") goMasonry(true);
+        else goHome(true);
+      }, 30);
+      return;
+    }
     if (ui.screen === "board" && ui.boardId) openBoard(ui.boardId, true);
     else if (ui.screen === "masonry") goMasonry(true);
     else goHome(true);
@@ -596,7 +613,7 @@
     colors.setAttribute("aria-label", "Default note color");
     NOTE_COLORS.forEach(function (c) {
       var sw = btn(null, c.n, null, "mem-swatch");
-      sw.style.background = c.v;
+      sw.style.backgroundColor = c.v;
       sw.setAttribute("role", "radio");
       sw.setAttribute("data-v", c.v);
       sw.addEventListener("click", function () { saveMemSettings({ noteColor: c.v }); });
@@ -697,11 +714,17 @@
     });
     syncModeSeg();
   }
+  function syncBoardTitle() {
+    var t = document.getElementById("mem-boardTitle");
+    if (!t || !ui.board) return;
+    t.textContent = ui.board.title || "Untitled board";
+    markMy(t);
+  }
   function refreshCurrent() {
     if (!ui.built) return;
     if (ui.screen === "masonry") renderMasonry();
     else if (ui.screen === "home") renderFiles();
-    else if (ui.screen === "board" && ui.board) renderBoard();
+    else if (ui.screen === "board" && ui.board) { renderBoard(); syncBoardTitle(); }
     renderRecordingBar();
   }
   function modeSegHTML() {
@@ -839,6 +862,12 @@
     chips.setAttribute("aria-label", "Filter by tag");
     wrap.appendChild(chips);
     var grid = mk("div", "mem-masonry-grid", "mem-grid");
+    /* skeleton placeholders: replaced by renderMasonry on the first real paint */
+    for (var gi = 0; gi < 6; gi++) {
+      var gsk = mk("div", "nxt-skeleton mem-card-skel");
+      gsk.setAttribute("aria-hidden", "true");
+      grid.appendChild(gsk);
+    }
     wrap.appendChild(grid);
     return wrap;
   }
@@ -1006,7 +1035,7 @@
     var colors = mk("div", "mem-swatches");
     NOTE_COLORS.forEach(function (c) {
       var s = btn(null, c.n, null, "mem-swatch" + (n.color === c.v ? " active" : ""));
-      s.style.background = c.v;
+      s.style.backgroundColor = c.v;
       s.addEventListener("click", function () {
         n.color = c.v; card.style.background = c.v; saveNoteSoon(n);
         $all(".mem-swatch", colors).forEach(function (x) { x.classList.remove("active"); });
@@ -1165,11 +1194,10 @@
     var bar = mk("div", "mem-topbar");
     var back = btn("mem-boardBack", "Back to MEM home", icon("i-back"), "mem-btn mem-icon");
     back.addEventListener("click", function () { persistView(); goHome(); });
-    var title = mk("input", "mem-board-title", "mem-boardTitle");
-    title.type = "text"; title.placeholder = "Untitled board"; title.setAttribute("aria-label", "Board title");
-    title.addEventListener("input", function () {
-      if (ui.board) { ui.board.title = title.value; markMy(title); saveBoardSoon(); }
-    });
+    /* single canonical board-rename path: this button opens the same rename
+       modal the file list uses (promptRenameFile -> memFiles.rename) */
+    var title = btn("mem-boardTitle", "Rename board", null, "mem-board-title");
+    title.addEventListener("click", function () { if (ui.board) promptRenameFile(ui.board.id); });
     var segWrap = mk("div", null, "mem-modeSegWrap2");
     segWrap.innerHTML = modeSegHTML();
     wireModeSeg(segWrap);
@@ -1232,6 +1260,14 @@
     gPrev.setAttribute("fill", "none"); gPrev.setAttribute("stroke-linecap", "round"); gPrev.setAttribute("stroke-linejoin", "round");
     svg.appendChild(defs); svg.appendChild(gAr); svg.appendChild(gSt); svg.appendChild(gPrev);
     var stickies = mk("div", null, "mem-stickies");
+    /* skeleton placeholders: replaced by renderStickies on the first real paint */
+    for (var ski = 0; ski < 3; ski++) {
+      var ssk = mk("div", "nxt-skeleton mem-stk-skel");
+      ssk.style.left = (40 + ski * 250) + "px";
+      ssk.style.top = "60px";
+      ssk.setAttribute("aria-hidden", "true");
+      stickies.appendChild(ssk);
+    }
     world.appendChild(frames); world.appendChild(svg); world.appendChild(stickies);
     vp.appendChild(world);
     wrap.appendChild(vp);
@@ -1259,8 +1295,7 @@
     T.store.set("mem", "lastBoardId", b.id);
     touchRecent({ id: b.id, title: b.title || "Untitled board", updatedAt: b.updatedAt, kind: "board" });
     setScreen("board");
-    var title = document.getElementById("mem-boardTitle");
-    if (title) { title.value = b.title || ""; markMy(title); }
+    syncBoardTitle();
     ui.selectedEl = null; ui.pendingArrowFrom = null;
     setTool("select", true);
     applyView(); renderBoard();
@@ -1357,7 +1392,7 @@
     if (ui.tool === "draw") {
       DRAW_COLORS.forEach(function (c) {
         var s = btn(null, "Draw color", null, "mem-swatch" + (ui.drawColor === c ? " active" : ""));
-        s.style.background = c;
+        s.style.backgroundColor = c;
         s.addEventListener("click", function () {
           ui.drawColor = c;
           $all(".mem-swatch", opts).forEach(function (x) { x.classList.remove("active"); });
@@ -1426,6 +1461,63 @@
       layer.appendChild(buildStickyEl(e));
     });
   }
+  /* ---------- sticky color: inline popover on desktop, bottom sheet on small screens ---------- */
+  function isNarrow() {
+    return (typeof window.matchMedia === "function") &&
+      window.matchMedia("(max-width: 640px)").matches;
+  }
+  function onColorSheetKey(e) { if (e.key === "Escape") closeColorSheet(); }
+  function onColorSheetResize() { if (!isNarrow()) closeColorSheet(); }
+  function closeColorSheet() {
+    var sh = document.getElementById("mem-colorSheet");
+    if (sh && sh.parentNode) sh.parentNode.removeChild(sh);
+    var bd = document.getElementById("mem-colorSheetBackdrop");
+    if (bd && bd.parentNode) bd.parentNode.removeChild(bd);
+    document.removeEventListener("keydown", onColorSheetKey);
+    if (typeof window.removeEventListener === "function") window.removeEventListener("resize", onColorSheetResize);
+  }
+  function openColorSheet(s, stickyEl) {
+    closeColorSheet();
+    var root = viewEl();
+    if (!root) return;
+    var backdrop = mk("div", "mem-sheet-backdrop", "mem-colorSheetBackdrop");
+    backdrop.addEventListener("click", closeColorSheet);
+    var sheet = mk("div", "nxt-sheet", "mem-colorSheet");
+    sheet.setAttribute("role", "dialog");
+    sheet.setAttribute("aria-label", "Sticky color");
+    var handle = mk("div", "nxt-sheet-handle");
+    handle.setAttribute("aria-hidden", "true");
+    sheet.appendChild(handle);
+    var h = mk("div", "mem-sheet-title");
+    h.textContent = "Sticky color";
+    sheet.appendChild(h);
+    var grid = mk("div", "mem-sheet-swatches");
+    grid.setAttribute("role", "radiogroup");
+    grid.setAttribute("aria-label", "Sticky color");
+    STICKY_COLORS.forEach(function (c) {
+      var b = btn(null, c.n, null, "mem-swatch" + (s.color === c.v ? " active" : ""));
+      b.style.backgroundColor = c.v;
+      b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", s.color === c.v ? "true" : "false");
+      b.addEventListener("click", function () {
+        s.color = c.v;
+        if (stickyEl) stickyEl.style.background = c.v;
+        saveBoardSoon();
+        closeColorSheet();
+        toast("Sticky color updated");
+      });
+      grid.appendChild(b);
+    });
+    sheet.appendChild(grid);
+    var done = btn(null, "Done", "<span>Done</span>", "mem-btn mem-sheet-done");
+    done.addEventListener("click", closeColorSheet);
+    sheet.appendChild(done);
+    root.appendChild(backdrop);
+    root.appendChild(sheet);
+    document.addEventListener("keydown", onColorSheetKey);
+    if (typeof window.addEventListener === "function") window.addEventListener("resize", onColorSheetResize);
+    done.focus();
+  }
   function buildStickyEl(s) {
     var d = mk("div", "mem-sticky" + (ui.selectedEl === s.id ? " selected" : "") +
       (ui.pendingArrowFrom === s.id ? " arrow-src" : ""), "mem-stk-" + s.id);
@@ -1455,7 +1547,7 @@
     var colors = mk("div", "mem-sticky-colors hidden");
     STICKY_COLORS.forEach(function (c) {
       var sw = btn(null, c.n, null, "mem-swatch" + (s.color === c.v ? " active" : ""));
-      sw.style.background = c.v;
+      sw.style.backgroundColor = c.v;
       sw.addEventListener("click", function (ev) {
         ev.stopPropagation();
         s.color = c.v; d.style.background = c.v; saveBoardSoon();
@@ -1466,6 +1558,7 @@
     });
     pal.addEventListener("click", function (ev) {
       ev.stopPropagation();
+      if (isNarrow()) { openColorSheet(s, d); return; }
       colors.classList.toggle("hidden");
     });
     d.appendChild(colors);
