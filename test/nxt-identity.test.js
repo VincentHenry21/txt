@@ -80,12 +80,12 @@ window.addEventListener("load", () => {
       assert(b && b.textContent === "NXT OS", "brand=" + (b && b.textContent));
       return true;
     });
-    check("PXL/VEC naming on studio buttons", () => {
+    check("PXL/VAC naming on studio buttons", () => {
       const names = Array.prototype.map.call(
         $(".nxt-studios").querySelectorAll(".nxt-studio-name"), (e) => e.textContent);
-      assert(names.indexOf("VEC") >= 0, "no VEC: " + names.join(","));
+      assert(names.indexOf("VAC") >= 0, "no VAC: " + names.join(","));
       assert(names.indexOf("PXL") >= 0, "no PXL: " + names.join(","));
-      assert(names.indexOf("Vector") < 0 && names.indexOf("Pixel") < 0, "old names remain");
+      assert(names.indexOf("VEC") < 0 && names.indexOf("Pixel") < 0, "old names remain");
       return true;
     });
     check("H3NZ pill on launcher", () => {
@@ -156,7 +156,7 @@ window.addEventListener("load", () => {
     });
     check("palette bridge drives live --accent per app", () => {
       const css = fs.readFileSync(path.join(ROOT, "css/nxt-palettes.css"), "utf8");
-      ["home", "txt", "grd", "dck", "mem", "pdf", "hub", "vector", "pixel"].forEach((k) => {
+      ["home", "txt", "grd", "dck", "mem", "pdf", "hub", "vac", "pixel"].forEach((k) => {
         const m = css.match(new RegExp('html\\[data-nxt-app="' + k + '"\\]\\s*\\{([\\s\\S]*?)\\n\\}'));
         assert(m, "no block for " + k);
         assert(/--nxt-accent\s*:/.test(m[1]), "no --nxt-accent in " + k);
@@ -168,7 +168,7 @@ window.addEventListener("load", () => {
       const css = fs.readFileSync(path.join(ROOT, "css/nxt-palettes.css"), "utf8");
       assert(css.indexOf("#7C3AED") >= 0, "txt accent missing");
       assert(css.indexOf("#EC4899") >= 0, "pxl accent missing");
-      assert(css.indexOf("#84CC16") >= 0, "vec accent missing");
+      assert(css.indexOf("#84CC16") >= 0, "vac accent missing");
       ["#2563EB", "#F97316", "#E11D48"].forEach((b) => {
         assert(css.indexOf(b) < 0, "banned color " + b + " in palettes");
       });

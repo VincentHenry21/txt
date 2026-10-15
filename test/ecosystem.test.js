@@ -72,13 +72,17 @@ window.addEventListener("load", () => {
       return true;
     });
     check("waffle button injected", () => !!$("#waffleBtn"));
-    check("launcher has 6 tiles", () => {
+    check("launcher has 7 tiles (incl. Ascend)", () => {
       const tiles = $("#appLauncher").querySelectorAll(".launcher-tile");
-      assert(tiles.length === 6, "got " + tiles.length);
+      assert(tiles.length === 7, "got " + tiles.length);
+      const asc = Array.prototype.filter.call(tiles, function (t) {
+        return (t.getAttribute("aria-label") || "").indexOf("ASC") === 0;
+      });
+      assert(asc.length === 1, "Ascend tile missing from launcher");
       return true;
     });
-    check("8 views exist", () => {
-      const ids = ["view-word", "view-vector", "view-pixel", "view-grd", "view-dck", "view-mem", "view-pdf", "view-hub"];
+    check("9 views exist", () => {
+      const ids = ["view-word", "view-vac", "view-pixel", "view-grd", "view-dck", "view-mem", "view-pdf", "view-hub", "view-ascend"];
       assert(ids.every((id) => $("#" + id)), "missing view");
       assert($("#view-word").querySelector("#topbar"), "topbar not inside view-word");
       assert($("#view-word").querySelector("#app"), "#app not inside view-word");
@@ -105,15 +109,15 @@ window.addEventListener("load", () => {
       assert(doc.getElementById("view-home").classList.contains("hidden"), "view-home visible");
       return true;
     });
-    check("setPersona vector -> carbon + view", () => {
-      T.ecosystem.setPersona("vector");
+    check("setPersona vac -> carbon + view", () => {
+      T.ecosystem.setPersona("vac");
       assert(doc.documentElement.getAttribute("data-theme") === "carbon", "theme=" + doc.documentElement.getAttribute("data-theme"));
-      assert(!$("#view-vector").classList.contains("hidden"), "view-vector hidden");
+      assert(!$("#view-vac").classList.contains("hidden"), "view-vac hidden");
       assert($("#view-word").classList.contains("hidden"), "view-word visible");
-      assert(T.ecosystem.persona === "vector", "persona not vector");
+      assert(T.ecosystem.persona === "vac", "persona not vector");
       return true;
     });
-    check("vector panels survive show() (no innerHTML wipe)", () => {
+    check("vac panels survive show() (no innerHTML wipe)", () => {
       const host = doc.getElementById("vPanels");
       assert(host, "no #vPanels");
       assert(host.children.length >= 7, "panels missing after show(), children=" + host.children.length);
@@ -202,7 +206,7 @@ window.addEventListener("load", () => {
       const fig = doc.querySelector('figure.vector-block[data-vid="v1"]');
       assert(fig, "no figure");
       assert(fig.querySelector("svg"), "no svg inside");
-      assert(fig.querySelector(".vec-edit-btn"), "no edit button");
+      assert(fig.querySelector(".vac-edit-btn"), "no edit button");
       T.store.emit("txt:insert-svg", { id: "v1", svg: '<svg viewBox="0 0 10 10"><circle r="5"/></svg>' });
       assert(doc.querySelectorAll('figure.vector-block[data-vid="v1"]').length === 1, "duplicate figures");
       assert(fig.querySelector("circle"), "svg not updated");
@@ -239,21 +243,21 @@ window.addEventListener("load", () => {
       assert(sh.textContent.length === before + 5, "text not inserted");
       return true;
     });
-    check("dblclick figure opens Vector Studio (studios loaded)", () => {
-      assert(typeof T.vector !== "undefined" && typeof T.vector.setSVG === "function", "T.vector should be loaded");
+    check("dblclick figure opens VAC Studio (studios loaded)", () => {
+      assert(typeof T.vac !== "undefined" && typeof T.vac.setSVG === "function", "T.vac should be loaded");
       const fig = doc.querySelector("figure.vector-block");
       assert(fig, "no figure to dblclick");
       const ev = new window.MouseEvent("dblclick", { bubbles: true, cancelable: true });
       fig.dispatchEvent(ev); // must not throw
-      assert(T.ecosystem.persona === "vector", "persona did not switch to vector");
-      assert(!doc.getElementById("view-vector").classList.contains("hidden"), "view-vector not shown");
+      assert(T.ecosystem.persona === "vac", "persona did not switch to vector");
+      assert(!doc.getElementById("view-vac").classList.contains("hidden"), "view-vac not shown");
       T.ecosystem.setPersona("word"); // restore for later tests
       return true;
     });
 
     console.log("-- commands --");
     check("ecosystem commands registered", () => {
-      const names = ["persona.word", "persona.vector", "persona.pixel",
+      const names = ["persona.word", "persona.vac", "persona.pixel",
         "app.txt", "app.grd", "app.dck", "app.mem", "app.pdf", "app.hub",
         "theme.carbon", "ecosystem.split", "ecosystem.launcher"];
       const all = T.listCommands().map((c) => c.name);

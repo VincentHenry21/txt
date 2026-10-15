@@ -100,8 +100,8 @@ window.addEventListener("load", () => {
       assert($(".nxt-recents"), "no recents");
       return true;
     });
-    check("6 app tiles + 3 studio buttons", () => {
-      assert($(".nxt-grid").querySelectorAll(".nxt-tile").length === 6, "tiles != 6");
+    check("7 app tiles + 3 studio buttons", () => {
+      assert($(".nxt-grid").querySelectorAll(".nxt-tile").length === 7, "tiles != 7");
       assert($(".nxt-studios").querySelectorAll(".nxt-studio").length === 3, "studios != 3");
       return true;
     });

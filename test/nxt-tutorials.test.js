@@ -45,7 +45,7 @@ function makeWin() {
 /* ---------- 1. data covers all 8 apps ---------- */
 let w = makeWin();
 const T = w.TXT;
-const EXPECTED = ["txt", "pxl", "vec", "pdf", "grd", "dck", "mem", "hub"];
+const EXPECTED = ["txt", "pxl", "vac", "pdf", "grd", "dck", "mem", "hub"];
 ok("data exposes T.NXT_TUTORIALS", !!T.NXT_TUTORIALS);
 EXPECTED.forEach(function (id) {
   ok("app covered: " + id, !!T.NXT_TUTORIALS[id]);
@@ -85,7 +85,7 @@ EXPECTED.forEach(function (aid) {
   const app = T.NXT_TUTORIALS[aid];
   if (!T.NXT_TUTORIALS[app.open.id] && ["txt", "grd", "dck", "mem", "pdf", "hub"].indexOf(app.open.id) < 0) {
     // persona ids map to tutorial apps
-    if (!{ pixel: "pxl", vector: "vec" }[app.open.id]) refsOk = false;
+    if (!{ pixel: "pxl", vac: "vac" }[app.open.id]) refsOk = false;
   }
 });
 ok("all open targets resolve", refsOk);
