@@ -23,8 +23,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 12px;
-  min-height: 46px;
+  padding: 8px 12px;
+  min-height: 56px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
@@ -51,6 +51,7 @@
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  min-height: 44px;
 }
 
 .px-opt-lb {
@@ -72,6 +73,7 @@
 
 .px-range {
   width: 90px;
+  min-height: 44px;
   accent-color: var(--accent);
 }
 
@@ -81,6 +83,7 @@
   color: var(--ink);
   font-size: 11px;
   padding: 4px 10px;
+  min-height: 44px;
   border-radius: 999px;
   cursor: pointer;
 }
@@ -96,6 +99,8 @@
   align-items: center;
   gap: 10px;
   flex: 0 0 auto;
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 
 .px-docinfo {
@@ -115,11 +120,11 @@
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 13px;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -165,8 +170,8 @@
 
 .px-tool {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
@@ -176,6 +181,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
+  flex: none;
 }
 
 .px-tool svg {
@@ -197,7 +203,7 @@
   position: absolute;
   right: 2px;
   bottom: 1px;
-  font-size: 8px;
+  font-size: 11px;
   opacity: 0.55;
   font-weight: 700;
 }
@@ -293,17 +299,21 @@
 
 /* ---------- responsive ---------- */
 @media (max-width: 900px) {
-  .px-panels { width: 200px; }
   .px-docinfo { display: none; }
   .px-hint { display: none; }
 }
 
 @media (max-width: 640px) {
-  .px-panels { display: none; }
-  .px-tools { width: 48px; }
-  .px-tool { width: 36px; height: 36px; }
+  .px-key { display: none; }
   .px-canvaswrap { padding: 12px; }
   #pComposite, #pOverlay { top: 12px; left: 12px; }
+  /* mobile: two-row topbar so every control stays 44px and reachable */
+  .px-topbar { flex-wrap: wrap; row-gap: 4px; padding: 6px 8px; }
+  .px-topleft { flex: 1 1 auto; min-width: 0; }
+  .px-sname { display: none; }
+  #pToolOpts { display: none; }
+  .px-topright { flex: 1 1 100%; justify-content: flex-start; gap: 8px; }
+  #pPanelsBtn { display: inline-flex; }
 }
 
 /* ---------- per-app topbar: studio badge, launcher, settings, files ---------- */
@@ -320,11 +330,22 @@
 .px-studio { display: flex; align-items: center; gap: 8px; }
 .px-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border-radius: 8px;
+  width: 44px; height: 44px; border-radius: 10px;
   background: var(--accent); color: #161616;
-  font-size: 12px; font-weight: 800; letter-spacing: 0.02em;
+  font-size: 13px; font-weight: 800; letter-spacing: 0.02em;
+  flex: none;
 }
-.px-sname { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.px-sname { font-size: 15px; font-weight: 800; color: var(--ink); white-space: nowrap; }
+/* mobile panels toggle: hidden on desktop, shown in the mobile toolbar */
+#pPanelsBtn { display: none; }
+
+/* large touch-friendly tool options rendered inside the mobile bottom sheet */
+.px-sheet-opts .px-opt { min-height: 44px; }
+.px-sheet-opts .px-opt-lb { font-size: 13px; }
+.px-sheet-opts .px-opt-v { font-size: 13px; min-width: 38px; }
+.px-sheet-opts .px-range { min-height: 44px; }
+.px-sheet-opts .px-seg { min-height: 44px; font-size: 13px; }
+.px-sheet-opts .px-toolname { font-size: 15px; }
 
 /* checkerboard off: plain workspace background behind the canvas */
 #pCanvasWrap.px-checker-off { background: var(--ws-bg); }
@@ -342,13 +363,13 @@
 .px-drawer-head {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--line);
-  font-size: 13px; font-weight: 700;
+  font-size: 15px; font-weight: 700;
 }
 .px-drawer-head .px-dclose { margin-left: auto; width: 44px; height: 44px; color: var(--ink); flex: none; }
 .px-drawer-head .px-dclose svg { width: 18px; height: 18px; }
 .px-drawer-head .px-new {
   margin-left: auto; min-height: 44px; padding: 0 16px;
-  border: 1px solid var(--line); border-radius: 9px;
+  border: 1px solid var(--line); border-radius: 10px;
   background: var(--surface); color: var(--ink);
   font-size: 13px; font-weight: 700; cursor: pointer;
 }
@@ -363,20 +384,20 @@
 .px-set-sub { display: block; font-size: 11px; font-weight: 400; color: var(--muted); }
 .px-set-row input[type="number"] {
   width: 88px; min-height: 44px; box-sizing: border-box;
-  background: var(--ws-bg); border: 1px solid var(--line); border-radius: 8px;
-  color: var(--ink); font-size: 14px; padding: 6px 10px; text-align: right;
+  background: var(--ws-bg); border: 1px solid var(--line); border-radius: 6px;
+  color: var(--ink); font-size: 13px; padding: 6px 10px; text-align: right;
 }
 .px-set-row input[type="number"]:focus { outline: none; border-color: var(--accent); }
-.px-toggle { width: 30px; height: 30px; accent-color: var(--accent); cursor: pointer; flex: none; }
+.px-toggle { width: 44px; height: 44px; accent-color: var(--accent); cursor: pointer; flex: none; }
 .px-set-about {
-  padding: 12px 14px; font-size: 12px; color: var(--muted);
+  padding: 12px 14px; font-size: 13px; color: var(--muted);
   display: flex; flex-direction: column; gap: 2px;
 }
-.px-about-title { font-weight: 700; color: var(--ink); font-size: 12px; }
+.px-about-title { font-weight: 700; color: var(--ink); font-size: 13px; }
 
 /* files list */
 .px-files-list { display: flex; flex-direction: column; }
-.px-files-empty { padding: 16px 14px; font-size: 12.5px; color: var(--muted); }
+.px-files-empty { padding: 16px 14px; font-size: 13px; color: var(--muted); }
 .px-file-row {
   display: flex; align-items: center; gap: 8px;
   min-height: 60px; padding: 6px 8px 6px 14px;
@@ -385,14 +406,14 @@
 .px-file-row.current { background: var(--accent-soft); }
 .px-file-thumb {
   width: 44px; height: 44px; flex: none;
-  border-radius: 8px; border: 1px solid var(--line);
+  border-radius: 6px; border: 1px solid var(--line);
   object-fit: cover; background: var(--ws-bg);
 }
 .px-file-open {
   flex: 1; min-width: 0; min-height: 48px;
   display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px;
   background: transparent; border: 0; color: var(--ink); cursor: pointer;
-  padding: 4px 6px; border-radius: 8px; text-align: left;
+  padding: 4px 6px; border-radius: 6px; text-align: left;
 }
 .px-file-open:hover { background: var(--accent-soft); }
 .px-file-name {
@@ -403,7 +424,7 @@
 .px-fact {
   width: 44px; height: 44px; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
-  background: transparent; border: 1px solid transparent; border-radius: 9px;
+  background: transparent; border: 1px solid transparent; border-radius: 10px;
   color: var(--muted); cursor: pointer;
 }
 .px-fact:hover { background: var(--accent-soft); color: var(--ink); border-color: var(--line); }

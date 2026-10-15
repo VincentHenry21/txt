@@ -8,10 +8,10 @@
   min-height: 44px;
   padding: 10px 16px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--accent);
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 650;
   cursor: pointer;
   display: inline-flex;
@@ -32,7 +32,7 @@
   min-width: 44px;
   min-height: 44px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--ink-dim);
   cursor: pointer;
@@ -52,7 +52,7 @@
   justify-content: center;
   min-width: 40px;
   padding: 4px 8px;
-  border-radius: 7px;
+  border-radius: 6px;
   color: #fff;
   font-size: 11px;
   font-weight: 800;
@@ -60,7 +60,7 @@
   flex: 0 0 auto;
 }
 .hub-chip {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -72,8 +72,10 @@
 }
 
 /* ---------- omnibox ---------- */
-.hub-omniwrap { position: relative; margin-bottom: 26px; }
-.hub-omni { margin-bottom: 0; }
+/* The omnibox is the primary find flow: it stays full-width and visible at
+   every breakpoint and never collapses. */
+.hub-omniwrap { position: relative; margin-bottom: 26px; display: block; }
+.hub-omni { margin-bottom: 0; min-height: 44px; width: 100%; }
 .hub-results {
   position: absolute;
   top: calc(100% + 6px);
@@ -83,7 +85,7 @@
   overflow-y: auto;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   box-shadow: 0 12px 32px rgba(0,0,0,0.22);
   z-index: 60;
   padding: 6px;
@@ -102,7 +104,7 @@
   gap: 10px;
   align-items: center;
   padding: 10px 12px;
-  border-radius: 9px;
+  border-radius: 6px;
   cursor: pointer;
   min-height: 44px;
 }
@@ -117,7 +119,7 @@
   gap: 12px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 10px 12px;
   cursor: pointer;
   min-height: 44px;
@@ -127,14 +129,14 @@
 .hub-rowinfo { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
 .hub-rowtext { min-width: 0; flex: 1; }
 .hub-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 650;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.hub-meta { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+.hub-meta { font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
 .hub-openbtn { flex: 0 0 auto; }
 
 /* ---------- storage ---------- */
@@ -155,14 +157,14 @@
   transition: width 600ms ease;
 }
 .hub-stolabel {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-dim);
   min-width: 76px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 .hub-stototal { font-size: 13px; color: var(--ink-dim); margin-top: 4px; }
-.hub-note { font-size: 12px; color: var(--ink-dim); margin: 10px 0 0; }
+.hub-note { font-size: 13px; color: var(--ink-dim); margin: 10px 0 0; }
 
 /* ---------- clipboard drawer ---------- */
 .hub-drawerwrap {
@@ -205,7 +207,7 @@
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
 }
-.hub-drawer-head h2 { margin: 0; font-size: 16px; font-weight: 750; }
+.hub-drawer-head h2 { margin: 0; font-size: 17px; font-weight: 750; }
 .hub-addrow {
   display: flex;
   gap: 8px;
@@ -217,11 +219,11 @@
   flex: 1 1 100%;
   min-height: 44px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--ws-bg);
   color: var(--ink);
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
   resize: vertical;
 }
@@ -237,7 +239,7 @@
 .hub-shelfcard {
   background: var(--ws-bg);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -246,11 +248,11 @@
 .hub-shelftop { display: flex; gap: 10px; align-items: flex-start; }
 .hub-shelftop .hub-title { white-space: normal; }
 .hub-preview {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-dim);
   background: var(--surface2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 8px 10px;
   max-height: 96px;
   overflow: hidden;
@@ -259,7 +261,7 @@
 .hub-thumb {
   max-width: 100%;
   max-height: 160px;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid var(--line);
   object-fit: contain;
   align-self: flex-start;
@@ -286,7 +288,7 @@
 .hub-topbar-name { font-size: 15px; font-weight: 800; letter-spacing: 0.8px; }
 .hub-topbar-eco { font-size: 11px; color: var(--ink-dim); font-weight: 600; }
 .hub-spacer { flex: 1; }
-.hub-topbar .icon-btn { min-width: 44px; min-height: 44px; border-radius: 10px; }
+.hub-topbar .icon-btn { min-width: 44px; min-height: 44px; border-radius: var(--radius); }
 .hub-topbar .icon-btn svg { width: 20px; height: 20px; }
 .hub-topbar [lang="my"] { line-height: 1.85; }
 
@@ -302,10 +304,10 @@
   min-height: 44px;
   padding: 8px 18px;
   border: 1px solid transparent;
-  border-radius: 10px 10px 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
   background: transparent;
   color: var(--ink-dim);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -319,7 +321,7 @@
 .hub-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .hub-panel.hidden { display: none; }
 .hub-panel > h2 {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 750;
   margin: 0 0 12px;
   color: var(--ink);
@@ -328,9 +330,9 @@
 /* ---------- cross-app file browser ---------- */
 .hub-filesec { margin-bottom: 22px; }
 .hub-filehead { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; min-height: 44px; }
-.hub-filelabel { font-size: 14px; font-weight: 700; color: var(--ink); }
+.hub-filelabel { font-size: 15px; font-weight: 700; color: var(--ink); }
 .hub-filecount {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink-dim);
   background: var(--surface2);
@@ -350,7 +352,7 @@
   align-items: flex-start;
   background: rgba(225, 29, 72, 0.08);
   border: 1px solid #E11D48;
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 12px 14px;
   margin-bottom: 12px;
   color: var(--ink);
@@ -382,11 +384,11 @@
   min-height: 44px;
   min-width: 120px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--ws-bg);
   color: var(--ink);
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
 }
 .hub-setrow input[type="number"]:focus,
@@ -423,10 +425,51 @@
   margin-top: 8px;
   padding: 18px 4px 8px;
   border-top: 1px solid var(--line);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--ink-dim);
   text-align: center;
   min-height: 44px;
+}
+
+/* ---------- skeleton loaders (NXT shared shimmer pattern) ---------- */
+.nxt-skeleton { position: relative; overflow: hidden; background: var(--surface-2); border-radius: 10px; min-height: 20px; }
+.nxt-skeleton::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.45) 50%, transparent 80%); animation: nxt-shimmer 1.4s infinite; }
+@keyframes nxt-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+/* skeleton row sized like a file/storage row so the layout does not jump */
+.hub-skelrow { min-height: 60px; margin-bottom: 8px; }
+
+/* ---------- "show more" pagination button: always a 44px target ---------- */
+.hub-showmore { width: 100%; min-height: 44px; margin-top: 4px; }
+
+/* ---------- Burmese text: roomy line-height, no overlap ---------- */
+.hub-drawer [lang="my"] { line-height: 1.85; }
+
+/* ---------- unified mobile bottom-sheet pattern (secondary controls) ---------- */
+@media (max-width: 640px) {
+  .nxt-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 350; max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--surface); color: var(--ink); border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 32px rgba(0,0,0,.18); }
+  .nxt-sheet-handle { width: 40px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 12px; }
+}
+
+/* ---------- 820px iPad: two-column dashboard, files and storage side by side ---------- */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .hub-root {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-auto-flow: dense;
+    column-gap: 24px;
+    align-items: start;
+  }
+  .hub-root > .eco-home-head,
+  .hub-root > .hub-omniwrap,
+  .hub-root > .hub-sec-quick,
+  .hub-root > .hub-tabs,
+  .hub-root > .hub-panel-recent,
+  .hub-root > .hub-panel-clipboard,
+  .hub-root > .hub-footer { grid-column: 1 / -1; }
+  .hub-root > .hub-panel-files { grid-column: 1; min-width: 0; }
+  .hub-root > .hub-sec-storage { grid-column: 2; min-width: 0; }
+  /* when the Files panel is not the active tab, storage takes the full width */
+  .hub-root > .hub-panel-files.hidden ~ .hub-sec-storage { grid-column: 1 / -1; }
 }
 
 /* ---------- responsive ---------- */
@@ -435,8 +478,8 @@
   .hub-row { flex-wrap: wrap; }
   .hub-openbtn { width: 100%; }
   .hub-stolabel { min-width: 64px; }
-  .hub-topbar { padding: 4px 8px; gap: 8px; }
-  .hub-topbar-eco { display: none; } /* compact: brand collapses to the HUB badge on mobile */
+  .hub-bar-track { height: 12px; } /* thumb-friendly storage bars on mobile */
+  .hub-topbar { padding: 4px 12px; gap: 8px; }
   .hub-tabs { overflow-x: auto; }
   .hub-tab { padding: 8px 14px; }
   .hub-filerow { flex-wrap: wrap; }
