@@ -153,8 +153,27 @@ html[data-theme="contrast"][data-nxt-app="hub"] {
   --nxt-app-surface: #0B1120;
 }
 
+/* ============================ ascend ============================ */
+html[data-nxt-app="ascend"] {
+  --nxt-accent: #0EA5E9;
+  --nxt-accent-hover: #0284C7;
+  --nxt-accent-2: #7DD3FC;
+  --nxt-accent-soft: #E0F2FE;
+  --nxt-accent-ink: #FFFFFF;
+  --nxt-app-surface: #FFFFFF;
+  --nxt-glow: linear-gradient(135deg, #0EA5E9, #7DD3FC);
+  /* bridge: drive the live UI vars used across the apps */
+  --accent: var(--nxt-accent);
+  --accent-ink: var(--nxt-accent-ink);
+  --accent-soft: var(--nxt-accent-soft);
+}
+html[data-theme="obsidian"][data-nxt-app="ascend"],
+html[data-theme="contrast"][data-nxt-app="ascend"] {
+  --nxt-app-surface: #0A141B;
+}
+
 /* ============================ vector ============================ */
-html[data-nxt-app="vector"] {
+html[data-nxt-app="vac"] {
   --nxt-accent: #84CC16;
   --nxt-accent-hover: #65A30D;
   --nxt-accent-2: #BEF264;
@@ -167,8 +186,8 @@ html[data-nxt-app="vector"] {
   --accent-ink: var(--nxt-accent-ink);
   --accent-soft: var(--nxt-accent-soft);
 }
-html[data-theme="obsidian"][data-nxt-app="vector"],
-html[data-theme="contrast"][data-nxt-app="vector"] {
+html[data-theme="obsidian"][data-nxt-app="vac"],
+html[data-theme="contrast"][data-nxt-app="vac"] {
   --nxt-app-surface: #11160B;
 }
 

@@ -1,0 +1,391 @@
+/* TXT VAC Studio styles (Illustrator persona, v5).
+   Dark carbon-first UI scoped to #view-vac. No emojis, no CSS zoom. */
+
+#view-vac {
+  --v-bg: #1E1E1E;
+  --v-surface: #252526;
+  --v-surface2: #2D2D30;
+  --v-ink: #F3F4F6;
+  --v-dim: #9CA3AF;
+  --v-line: #3E3E42;
+  --v-accent: #84CC16;
+  --v-blue: #31A8FF;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--v-bg);
+  color: var(--v-ink);
+  font: 13px/1.45 "Inter", system-ui, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html[data-theme="carbon"] #view-vac {
+  --v-bg: var(--ws-bg);
+  --v-surface: var(--surface);
+  --v-surface2: var(--surface2);
+  --v-ink: var(--ink);
+  --v-dim: var(--ink-dim);
+  --v-line: var(--line);
+  --v-accent: var(--accent);
+  --v-blue: var(--accent2);
+}
+#view-vac.hidden { display: none !important; }
+#view-vac { position: relative; } /* anchors the settings/files drawers */
+
+/* ---------- per-app topbar: studio badge, launcher, settings, files ---------- */
+#view-vac .v-tbtn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 10px;
+  color: var(--v-ink);
+}
+#view-vac .v-tbtn:hover { background: var(--v-surface2); color: var(--v-ink); }
+#view-vac .v-tbtn svg { width: 20px; height: 20px; }
+.v-studio { display: flex; align-items: center; gap: 8px; flex: none; }
+.v-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--v-accent); color: #161616;
+  font-size: 15px; font-weight: 800; letter-spacing: 0.02em;
+}
+.v-sname { font-size: 15px; font-weight: 800; color: var(--v-ink); white-space: nowrap; }
+
+/* ---------- rulers ---------- */
+#vCanvasWrap .v-ruler-h,
+#vCanvasWrap .v-ruler-v,
+#vCanvasWrap .v-ruler-corner { display: none; }
+#vCanvasWrap.v-show-rulers .v-ruler-h {
+  display: block; position: absolute; top: 0; left: 18px; right: 0; height: 18px; z-index: 30;
+}
+#vCanvasWrap.v-show-rulers .v-ruler-v {
+  display: block; position: absolute; top: 18px; left: 0; bottom: 0; width: 18px; z-index: 30;
+}
+#vCanvasWrap.v-show-rulers .v-ruler-corner {
+  display: block; position: absolute; top: 0; left: 0; width: 18px; height: 18px; z-index: 31;
+  background: var(--v-surface); border-right: 1px solid var(--v-line); border-bottom: 1px solid var(--v-line);
+}
+
+/* ---------- settings + files drawers ---------- */
+.v-drawer {
+  position: absolute; top: 56px; right: 0; bottom: 0;
+  width: 320px; max-width: 88vw; z-index: 60;
+  display: flex; flex-direction: column;
+  background: var(--v-surface); border-left: 1px solid var(--v-line);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.4);
+  line-height: 1.85; color: var(--v-ink);
+}
+.v-drawer.hidden { display: none; }
+.v-drawer-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--v-line);
+  font-size: 15px; font-weight: 700;
+}
+.v-drawer-head .v-dclose { margin-left: auto; width: 44px; height: 44px; color: var(--v-ink); flex: none; }
+.v-drawer-head .v-dclose svg { width: 18px; height: 18px; }
+.v-drawer-head .v-new {
+  margin-left: auto; min-height: 44px; padding: 0 16px;
+  border: 1px solid var(--v-line); border-radius: 6px;
+  background: var(--v-surface2); color: var(--v-ink);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.v-drawer-head .v-new + .v-dclose { margin-left: 0; }
+.v-drawer-head .v-new:hover { border-color: var(--v-accent); }
+.v-drawer-body { flex: 1; overflow-y: auto; }
+.v-set-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 56px; padding: 8px 14px; border-bottom: 1px solid var(--v-line);
+}
+.v-set-row label { font-size: 13px; font-weight: 600; cursor: pointer; }
+.v-set-sub { display: block; font-size: 11px; font-weight: 400; color: var(--v-dim); }
+.v-set-row input[type="number"] {
+  width: 88px; min-height: 44px; box-sizing: border-box;
+  background: var(--v-bg); border: 1px solid var(--v-line); border-radius: 6px;
+  color: var(--v-ink); font-size: 13px; padding: 6px 10px; text-align: right;
+}
+.v-set-row input[type="number"]:focus { outline: none; border-color: var(--v-blue); }
+.v-toggle { width: 44px; height: 44px; accent-color: var(--v-accent); cursor: pointer; flex: none; }
+.v-set-about {
+  padding: 12px 14px; font-size: 11px; color: var(--v-dim);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.v-about-title { font-weight: 700; color: var(--v-ink); font-size: 13px; }
+
+/* files list */
+.v-files-list { display: flex; flex-direction: column; }
+.v-files-empty { padding: 16px 14px; font-size: 13px; color: var(--v-dim); }
+.v-file-row {
+  display: flex; align-items: center; gap: 6px;
+  min-height: 60px; padding: 6px 8px 6px 14px;
+  border-bottom: 1px solid var(--v-line);
+}
+.v-file-row.current { background: rgba(49, 168, 255, 0.08); }
+.v-file-open {
+  flex: 1; min-width: 0; min-height: 48px;
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px;
+  background: transparent; border: 0; color: var(--v-ink); cursor: pointer;
+  padding: 4px 6px; border-radius: 6px; text-align: left;
+}
+.v-file-open:hover { background: var(--v-surface2); }
+.v-file-name {
+  font-size: 13px; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.v-file-meta { font-size: 11px; color: var(--v-dim); }
+.v-fact {
+  width: 44px; height: 44px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid transparent; border-radius: 6px;
+  color: var(--v-dim); cursor: pointer;
+}
+.v-fact:hover { background: var(--v-surface2); color: var(--v-ink); border-color: var(--v-line); }
+.v-fact svg { width: 17px; height: 17px; }
+
+/* ---------- topbar ---------- */
+#vTopbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  flex: none;
+  padding: 0 12px;
+  background: var(--v-surface);
+  border-bottom: 1px solid var(--v-line);
+  z-index: 20;
+  position: relative; /* anchors the overflow menu */
+}
+#vTopbar .vt-left, #vTopbar .vt-right { display: flex; align-items: center; gap: 6px; }
+#vTopbar .vt-center { flex: 1; display: flex; align-items: center; gap: 10px; justify-content: center; min-width: 0; overflow-x: auto; }
+.v-docname {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--v-ink);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 8px;
+  width: 150px;
+}
+.v-docname:hover { border-color: var(--v-line); }
+.v-docname:focus { outline: none; border-color: var(--v-blue); background: var(--v-surface2); }
+.v-dims { display: flex; align-items: center; gap: 4px; color: var(--v-dim); font-size: 11px; font-weight: 600; }
+.v-dims input {
+  width: 58px; min-height: 44px; box-sizing: border-box;
+  background: var(--v-surface2);
+  border: 1px solid var(--v-line);
+  border-radius: 6px;
+  color: var(--v-ink);
+  font-size: 13px;
+  padding: 4px 6px;
+}
+.v-dims input:focus { outline: none; border-color: var(--v-blue); }
+.v-sep { width: 1px; height: 22px; background: var(--v-line); margin: 0 4px; }
+.vbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--v-dim);
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.vbtn:hover { background: var(--v-surface2); color: var(--v-ink); }
+.vbtn:disabled { opacity: 0.35; cursor: default; background: transparent; }
+.vbtn.active { background: var(--v-accent); border-color: var(--v-accent); color: #1a1a1a; }
+.vbtn.sm { height: 44px; font-size: 13px; }
+.vico { width: 18px; height: 18px; flex: 0 0 auto; }
+.v-status { color: var(--v-dim); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#vZoomPct { min-width: 44px; text-align: center; color: var(--v-ink); font-weight: 600; }
+
+/* mobile-only topbar buttons (Properties sheet toggle + overflow menu) */
+.v-props-btn, .v-overflow-btn { display: none; }
+.v-overflow-btn .vico { width: 20px; height: 20px; }
+
+/* topbar overflow menu (mobile): holds the Word CTA */
+#vOverflow {
+  position: absolute; top: calc(100% + 6px); right: 12px; z-index: 400;
+  min-width: 250px; max-width: calc(100vw - 24px);
+  background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); padding: 8px;
+}
+#vOverflow.hidden { display: none; }
+.v-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  min-height: 44px; padding: 8px 12px; box-sizing: border-box;
+  background: transparent; border: 0; border-radius: 6px;
+  color: var(--v-ink); font-size: 13px; font-weight: 600; cursor: pointer; text-align: left;
+  line-height: 1.85;
+}
+.v-menu-item:hover { background: var(--v-surface2); }
+.v-menu-item svg { width: 18px; height: 18px; flex: none; }
+
+/* tool options */
+#vToolOptions .v-opt-row { display: flex; align-items: center; gap: 8px; }
+#vToolOptions label { display: flex; align-items: center; gap: 5px; color: var(--v-dim); font-size: 11px; white-space: nowrap; }
+#vToolOptions input[type="number"] {
+  width: 56px; min-height: 44px; box-sizing: border-box;
+  background: var(--v-surface2);
+  border: 1px solid var(--v-line);
+  border-radius: 6px;
+  color: var(--v-ink);
+  font-size: 13px;
+  padding: 3px 6px;
+}
+#vToolOptions input[type="number"]:focus { outline: none; border-color: var(--v-blue); }
+#vToolOptions select {
+  background: var(--v-surface2);
+  border: 1px solid var(--v-line);
+  border-radius: 6px;
+  color: var(--v-ink);
+  font-size: 13px;
+  padding: 4px 6px;
+  max-width: 150px;
+  min-height: 44px; box-sizing: border-box;
+}
+#vToolOptions input[type="number"]:focus { outline: none; border-color: var(--v-blue); }
+#vToolOptions input[type="color"] {
+  width: 44px; height: 44px; box-sizing: border-box;
+  padding: 4px;
+  background: var(--v-surface2);
+  border: 1px solid var(--v-line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.v-paint-opts { display: flex; align-items: center; gap: 10px; padding-left: 10px; border-left: 1px solid var(--v-line); }
+.v-hint { color: var(--v-dim); font-size: 11px; white-space: nowrap; }
+
+/* ---------- main row ---------- */
+#vMain { flex: 1; display: flex; min-height: 0; }
+
+/* ---------- tool dock ---------- */
+#vTools {
+  flex: 0 0 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 0;
+  background: var(--v-surface);
+  border-right: 1px solid var(--v-line);
+  overflow-y: auto;
+  z-index: 15;
+}
+.vtool {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--v-dim);
+  cursor: pointer;
+  flex: none;
+  box-sizing: border-box;
+}
+.vtool .vico { width: 20px; height: 20px; }
+.vtool:hover { background: var(--v-surface2); color: var(--v-ink); }
+.vtool.active { background: var(--v-accent); color: #1a1a1a; border-color: var(--v-accent); }
+#vTools .v-more { display: none; } /* mobile-only: reveals the overflow tools */
+
+/* fill/stroke stack */
+#vPaintStack { position: relative; width: 44px; height: 44px; margin-top: 8px; cursor: pointer; flex: none; }
+.v-paint-stroke, .v-paint-fill {
+  position: absolute;
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  box-sizing: border-box;
+  transition: box-shadow 0.12s;
+}
+.v-paint-stroke { right: 4px; top: 4px; border: 5px solid #888; background: transparent; }
+.v-paint-fill { left: 4px; bottom: 4px; background: #fff; border: 1px solid #666; }
+.v-paint-stroke.active, .v-paint-fill.active { box-shadow: 0 0 0 2px var(--v-blue); }
+.v-paint-stroke:hover, .v-paint-fill:hover { box-shadow: 0 0 0 2px var(--v-dim); }
+.v-paint-stroke.active:hover, .v-paint-fill.active:hover { box-shadow: 0 0 0 2px var(--v-blue); }
+
+/* ---------- canvas ---------- */
+#vCanvasWrap { flex: 1; position: relative; min-width: 0; overflow: hidden; background: var(--v-bg); }
+#vCanvas { width: 100%; height: 100%; display: block; touch-action: none; }
+#vTextEdit {
+  position: absolute;
+  z-index: 60;
+  min-width: 120px;
+  background: rgba(20, 20, 20, 0.92);
+  border: 1px solid var(--v-blue);
+  border-radius: 6px;
+  color: #fff;
+  padding: 4px 8px;
+  outline: none;
+}
+#vTextEdit.hidden { display: none; }
+
+/* ---------- tool options bar (mobile only; #vToolOptions relocates here) ---------- */
+#vToolOptsBar { display: none; }
+
+/* ---------- panels column (filled by panels worker) ---------- */
+#vPanels {
+  flex: 0 0 280px;
+  background: var(--v-surface);
+  border-left: 1px solid var(--v-line);
+  overflow-y: auto;
+  z-index: 15;
+}
+#vPanels:empty { display: none; }
+
+/* overlay handles get pointer events via inline style; keep overlay itself passive */
+#vOverlay { pointer-events: none; }
+
+/* scrollbars */
+#vTools::-webkit-scrollbar, #vPanels::-webkit-scrollbar { width: 8px; }
+#vTools::-webkit-scrollbar-thumb, #vPanels::-webkit-scrollbar-thumb { background: var(--v-line); border-radius: 6px; }
+
+/* ---------- mobile layout (<=900px): two-row topbar, options bar + tool strip,
+   panels become a swipe-up bottom sheet (see .nxt-sheet in vac-panels.css) ---------- */
+@media (max-width: 900px) {
+  #vTopbar { flex-wrap: wrap; height: auto; row-gap: 6px; padding: 6px 12px; }
+  #vTopbar .vt-left { order: 1; flex: 1 1 100%; }
+  #vTopbar .vt-center { display: none; }
+  #vTopbar .vt-right { order: 2; flex: 1 1 100%; }
+  .v-dims { display: none; }
+  #vCoords, #vTopbar .v-sep, #vZoomOut, #vZoomPct, #vZoomIn, #vZoomFit { display: none; }
+  .v-docname { flex: 1 1 auto; width: auto; min-width: 0; }
+  .v-hint { display: none; }
+  .v-props-btn { display: inline-flex; flex: 1; }
+  .v-overflow-btn { display: inline-flex; }
+
+  #vMain { flex-direction: column; }
+  #vCanvasWrap { order: 1; }
+  #vToolOptsBar {
+    order: 2; display: flex; flex: none;
+    border-top: 1px solid var(--v-line); background: var(--v-surface);
+  }
+  #vToolOptsBar #vToolOptions {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; overflow-x: auto; padding: 6px 12px;
+  }
+  #vTools {
+    order: 3; flex: none; width: 100%;
+    flex-direction: row; align-items: center; justify-content: flex-start;
+    border-right: 0; border-top: 1px solid var(--v-line);
+    overflow-x: auto; overflow-y: hidden; padding: 8px 10px; gap: 6px;
+  }
+  #vTools .vtool { width: 44px; height: 44px; }
+  #vTools .v-more { display: inline-flex; }
+  #vTools:not(.show-all) > button.vtool:not(.v-more):nth-of-type(n+7) { display: none; }
+  #vPaintStack { display: none; }
+
+  /* the side panel is a hidden-until-opened bottom sheet on mobile */
+  #view-vac #vPanels { display: none; flex: none; }
+  #view-vac #vPanels.open { display: flex; }
+}

@@ -20,7 +20,7 @@
 /* the v4 word UI keeps its own 100vh column inside its view */
 #view-word > #app { height: 100%; }
 /* studio/app views get the workspace surface until their workers fill them */
-#view-vector, #view-pixel, #view-grd, #view-dck,
+#view-vac, #view-pixel, #view-grd, #view-dck,
 #view-mem, #view-pdf, #view-hub {
   background: var(--ws-bg);
   color: var(--muted);
@@ -292,7 +292,7 @@ figure.vector-block > svg {
   background: #FFFFFF;
 }
 figure.vector-block figcaption { margin-top: 8px; }
-.vec-edit-btn {
+.vac-edit-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -305,8 +305,8 @@ figure.vector-block figcaption { margin-top: 8px; }
   font-weight: 600;
   cursor: pointer;
 }
-.vec-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
-.vec-edit-btn svg { width: 13px; height: 13px; }
+.vac-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
+.vac-edit-btn svg { width: 13px; height: 13px; }
 
 img.pixel-block {
   display: block;

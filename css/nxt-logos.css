@@ -1,0 +1,97 @@
+/* NXT OS app logo tiles: user-supplied wordmarks presented on clean white
+   rounded squares (like real app icons) so they read in both light and
+   dark mode. No CSS zoom anywhere. */
+
+.app-logo-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* 44px app badges (homescreens + per-app topbars): white tile, logo inside */
+.eco-badge.app-logo-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.app-badge.app-logo-badge,
+.eco-badge.app-logo-badge,
+.grd-appbadge.app-logo-badge,
+.mem-appbadge.app-logo-badge,
+.pdf-app-badge.app-logo-badge,
+.hub-badge.app-logo-badge,
+#dck-topbar-badge.app-logo-badge {
+  background: #ffffff !important;
+  border: 1px solid var(--line);
+  padding: 4px !important;
+  color: inherit;
+}
+.hub-badge.app-logo-badge {
+  height: 40px;
+  min-width: 40px;
+  border-radius: 10px;
+}
+.hub-badge.app-logo-badge .app-logo-img {
+  width: 100%;
+  height: 100%;
+}
+.app-badge.app-logo-badge .app-logo-img,
+.eco-badge.app-logo-badge .app-logo-img,
+.grd-appbadge.app-logo-badge .app-logo-img,
+.mem-appbadge.app-logo-badge .app-logo-img,
+.pdf-app-badge.app-logo-badge .app-logo-img,
+#dck-topbar-badge.app-logo-badge .app-logo-img {
+  width: 100%;
+  height: 100%;
+}
+
+/* Launcher home tiles: bigger white app-icon tile */
+.nxt-tile-badge.nxt-tile-logo {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  width: 68px;
+  height: 48px;
+  min-width: 0;
+  padding: 6px;
+  border-radius: 13px;
+}
+.nxt-tile-badge.nxt-tile-logo .app-logo-img {
+  width: 100%;
+  height: 100%;
+}
+
+/* Launcher home studios row: white tile sized for the wordmark */
+.nxt-studio-badge.nxt-studio-logo {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  width: 64px;
+  height: 38px;
+  padding: 5px;
+  border-radius: 10px;
+  font-size: 0;
+}
+.nxt-studio-badge.nxt-studio-logo .app-logo-img {
+  width: 100%;
+  height: 100%;
+}
+
+/* 9-dot launcher popover tiles: white app-icon tile */
+.tile-badge.tile-logo {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  width: 58px;
+  height: 42px;
+  min-width: 0;
+  padding: 5px;
+  border-radius: 11px;
+  color: inherit;
+}
+.tile-badge.tile-logo .app-logo-img {
+  width: 100%;
+  height: 100%;
+}

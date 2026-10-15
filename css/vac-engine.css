@@ -1,0 +1,167 @@
+/* NXT VAC engine styles (v6): artboards, gradient builder, swatches,
+   image trace, export, outline mode. Scoped to #view-vac, uses the
+   --v-* theme vars so light and dark themes both work. No emojis, no zoom. */
+
+#view-vac [lang="my"] { line-height: 1.85; }
+
+/* ---------- outline view mode ---------- */
+#vCanvas.v-outline g[data-name] rect,
+#vCanvas.v-outline g[data-name] circle,
+#vCanvas.v-outline g[data-name] ellipse,
+#vCanvas.v-outline g[data-name] path,
+#vCanvas.v-outline g[data-name] polygon,
+#vCanvas.v-outline g[data-name] polyline,
+#vCanvas.v-outline g[data-name] line {
+  fill: none !important;
+  stroke: #8a8f98 !important;
+  stroke-width: 1px !important;
+  vector-effect: non-scaling-stroke;
+}
+#vCanvas.v-outline g[data-name] text { opacity: 0.45; }
+#vCanvas.v-outline g[data-name] image { opacity: 0.35; }
+
+/* ---------- artboards panel ---------- */
+.ve-ablist { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.ve-abrow {
+  display: flex; align-items: center; gap: 4px;
+  border: 1px solid var(--v-line); border-radius: 8px;
+  padding: 4px 4px 4px 8px; background: var(--v-surface);
+}
+.ve-abrow.active { border-color: var(--v-accent); }
+.ve-abmain {
+  flex: 1; display: flex; align-items: baseline; gap: 8px;
+  background: none; border: 0; color: var(--v-ink);
+  font: inherit; text-align: left; cursor: pointer; padding: 4px;
+  min-width: 0;
+}
+.ve-abname { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ve-abmeta { color: var(--v-dim); font-size: 11px; flex: none; }
+.ve-abrow .vp-icobtn { flex: none; }
+
+/* ---------- gradient builder ---------- */
+.ve-gbar {
+  position: relative; height: 30px; border-radius: 8px;
+  border: 1px solid var(--v-line); margin: 8px 0 14px; cursor: copy;
+}
+.ve-gstop {
+  position: absolute; top: -5px; width: 14px; height: 38px;
+  border: 2px solid #fff; border-radius: 4px;
+  transform: translateX(-7px); cursor: ew-resize;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.45);
+}
+.ve-gstop.sel { outline: 2px solid var(--v-accent); outline-offset: 1px; }
+.ve-gstop-ed { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+
+/* ---------- swatches ---------- */
+.ve-swgrid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  gap: 8px; margin: 8px 0;
+}
+.ve-swcell {
+  display: flex; flex-direction: column; gap: 4px; align-items: stretch;
+  border: 1px solid var(--v-line); border-radius: 8px; padding: 6px;
+  background: var(--v-surface);
+}
+.ve-swatch {
+  height: 34px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.35);
+  cursor: pointer; padding: 0;
+}
+.ve-swatch:hover { filter: brightness(1.12); }
+.ve-swname {
+  font-size: 11px; color: var(--v-dim); text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text;
+}
+.ve-swcell .vp-icobtn { align-self: center; }
+.ve-swedit { width: 100%; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; }
+
+/* ---------- generic engine rows ---------- */
+#view-vac .vp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
+#view-vac .vp-glab {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--v-dim); margin: 10px 0 4px;
+}
+#view-vac .vp-hint { font-size: 11.5px; color: var(--v-dim); margin-top: 8px; }
+#view-vac .vp-btn.active {
+  border-color: var(--v-accent); color: var(--v-accent);
+}
+#view-vac .vp-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+#view-vac .vp-field { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+#view-vac .vp-flab { font-size: 11.5px; color: var(--v-dim); white-space: nowrap; }
+#view-vac .vp-num, #view-vac .vp-text, #view-vac .vp-select {
+  background: var(--v-surface2); color: var(--v-ink);
+  border: 1px solid var(--v-line); border-radius: 6px;
+  font: inherit; font-size: 12px; padding: 5px 7px; min-width: 0;
+}
+#view-vac .vp-num { width: 64px; }
+#view-vac .vp-range { flex: 1; accent-color: var(--v-accent); min-width: 60px; }
+#view-vac .vp-val { font-size: 11.5px; color: var(--v-dim); min-width: 44px; text-align: right; }
+#view-vac .vp-seg { display: flex; gap: 4px; margin: 6px 0; }
+#view-vac .vp-seg button {
+  flex: 1; background: var(--v-surface2); color: var(--v-dim);
+  border: 1px solid var(--v-line); border-radius: 6px; padding: 6px 4px;
+  font: inherit; font-size: 12px; cursor: pointer;
+}
+#view-vac .vp-seg button.active { color: var(--v-accent); border-color: var(--v-accent); }
+#view-vac .vp-icobtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px; flex: none;
+  background: var(--v-surface2); color: var(--v-dim);
+  border: 1px solid var(--v-line); cursor: pointer; font-size: 11px;
+}
+#view-vac .vp-icobtn:hover { color: var(--v-ink); }
+#view-vac .vp-icobtn.danger:hover { color: #ff6b6b; border-color: #ff6b6b; }
+#view-vac .vp-icobtn svg { width: 14px; height: 14px; }
+#view-vac .vp-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--v-surface2); color: var(--v-ink);
+  border: 1px solid var(--v-line); border-radius: 8px;
+  padding: 7px 10px; font: inherit; font-size: 12px; cursor: pointer;
+}
+#view-vac .vp-btn:hover { border-color: var(--v-dim); }
+#view-vac .vp-btn.primary { background: var(--v-accent); border-color: var(--v-accent); color: #161616; font-weight: 700; }
+#view-vac .vp-btn.ghost { background: transparent; }
+#view-vac .vp-color { width: 34px; height: 28px; padding: 0; border: 1px solid var(--v-line); border-radius: 6px; background: none; cursor: pointer; }
+
+/* ---------- layers tree (engine-era rows) ---------- */
+.ve-ltree { display: flex; flex-direction: column; gap: 2px; }
+.ve-lhead {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 6px; border-radius: 7px; background: var(--v-surface2);
+  margin-top: 6px;
+}
+.ve-lrow {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 6px 4px 22px; border-radius: 6px; cursor: pointer;
+  border: 1px solid transparent;
+}
+.ve-lrow:hover { background: var(--v-surface); }
+.ve-lrow.sel { border-color: var(--v-blue); background: rgba(49,168,255,0.08); }
+.ve-lrow.ve-drop-target { border-color: var(--v-accent); border-style: dashed; }
+.ve-lrow.isolated { border-color: var(--v-accent); }
+.ve-ltag {
+  font-size: 10px; font-weight: 700; color: var(--v-dim);
+  border: 1px solid var(--v-line); border-radius: 4px; padding: 1px 4px;
+  text-transform: uppercase; flex: none;
+}
+.ve-lname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.ve-lname input { width: 100%; }
+.ve-licons { display: flex; gap: 2px; flex: none; }
+.ve-licons .vp-icobtn { width: 24px; height: 24px; }
+.ve-licons .vp-icobtn.off { opacity: 0.35; }
+.ve-crumb {
+  display: flex; align-items: center; gap: 8px; margin: 6px 0;
+  padding: 6px 8px; border-radius: 8px;
+  background: rgba(132,204,22,0.12); border: 1px solid var(--v-accent);
+  font-size: 12px;
+}
+.ve-crumb strong { color: var(--v-accent); }
+
+/* ---------- trace preview pulse ---------- */
+#vCanvas [data-trace-preview] { pointer-events: none; }
+
+/* ---------- mobile ---------- */
+@media (max-width: 900px) {
+  #view-vac .vp-grid2 { grid-template-columns: 1fr 1fr; }
+  .ve-swgrid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+  .ve-abrow { padding: 2px 2px 2px 6px; }
+}
