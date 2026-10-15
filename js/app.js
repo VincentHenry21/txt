@@ -654,16 +654,33 @@
   fontSize.addEventListener("change", function () { applyFontSize(parseInt(fontSize.value, 10)); });
   function applyFontSize(px) {
     if (!restoreRange()) return;
-    document.execCommand("styleWithCSS", false, true);
-    document.execCommand("fontSize", false, "7");
-    var guard = 0, f;
-    while ((f = sheet.querySelector('font[size="7"]')) && guard++ < 50) {
-      var s = document.createElement("span");
-      s.style.fontSize = px + "px";
-      s.innerHTML = f.innerHTML;
-      f.replaceWith(s);
+    var sel = window.getSelection();
+    if (sel.isCollapsed) {
+      var sp = document.createElement("span");
+      sp.style.fontSize = px + "px";
+      sp.appendChild(document.createTextNode("\u200b"));
+      var r0 = sel.getRangeAt(0);
+      r0.insertNode(sp);
+      r0.setStart(sp.firstChild, 1);
+      r0.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r0);
+    } else {
+      var range = sel.getRangeAt(0);
+      var span = document.createElement("span");
+      span.style.fontSize = px + "px";
+      try {
+        range.surroundContents(span);
+      } catch (e) {
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        var nr = document.createRange();
+        nr.selectNodeContents(span);
+        sel.removeAllRanges();
+        sel.addRange(nr);
+      }
     }
-    sheet.focus(); updateToolbar(); markDirty(); persistCurrent();
+    sheet.focus(); saveRange(); updateToolbar(); markDirty(); persistCurrent();
   }
   blockStyle.addEventListener("change", function () {
     if (!restoreRange()) return;
@@ -1407,6 +1424,7 @@
     getComments: getComments, switchDoc: switchDoc, newDoc: newDoc, newDocFromTemplate: newDocFromTemplate,
     goHome: goHome, goEditor: goEditor, openFilePicker: openFilePicker,
     currentBlock: currentBlock, blocksInSelection: blocksInSelection, updateToolbar: updateToolbar,
+    applyFontSizePx: applyFontSize,
     updateCounts: updateCounts, applyZoom: applyZoom, applyPageSetup: applyPageSetup,
     fontEntry: fontEntry, googleFonts: googleFonts, FONTS: FONTS, SIZES: SIZES,
     doExport: doExport, exportFonts: exportFonts, printDoc: printDoc,

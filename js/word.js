@@ -123,30 +123,8 @@
       return 15;
     }
     function stepFont(delta) {
-      var sheet = T.sheet();
-      if (!T.restoreRange()) return;
-      var sel = window.getSelection();
       var next = Math.max(6, Math.min(200, curFontPx() + delta));
-      document.execCommand("styleWithCSS", false, true);
-      if (sel.isCollapsed) {
-        var sp = document.createElement("span");
-        sp.style.fontSize = next + "px";
-        sp.innerHTML = "&#8203;";
-        var r = sel.getRangeAt(0);
-        r.insertNode(sp);
-        r.setStart(sp.firstChild, 1); r.collapse(true);
-        sel.removeAllRanges(); sel.addRange(r);
-      } else {
-        document.execCommand("fontSize", false, "7");
-        var guard = 0, f;
-        while ((f = sheet.querySelector('font[size="7"]')) && guard++ < 60) {
-          var s = document.createElement("span");
-          s.style.fontSize = next + "px";
-          s.innerHTML = f.innerHTML;
-          f.replaceWith(s);
-        }
-      }
-      sheet.focus(); T.updateToolbar(); T.markDirty(); T.persistCurrent();
+      T.applyFontSizePx(next);
     }
     on("btnGrow", function () { stepFont(2); });
     on("btnShrink", function () { stepFont(-2); });
