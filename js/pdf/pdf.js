@@ -514,7 +514,8 @@
     dots.setAttribute("aria-hidden", "true");
     for (var i = 0; i < 9; i++) dots.appendChild(el("i"));
     waffle.appendChild(dots);
-    waffle.addEventListener("click", function () {
+    waffle.addEventListener("click", function (e) {
+      e.stopPropagation();
       if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") T.ecosystem.toggleLauncher();
       else toast("The app launcher is not available in this build.");
     });
