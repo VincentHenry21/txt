@@ -736,6 +736,12 @@
     secR.appendChild(secRHead);
     var grid = el("div", "eco-home-grid");
     grid.id = "dck-home-recent";
+    // skeleton placeholders while the deck list paints
+    for (var ski = 0; ski < 3; ski++) {
+      var skc = el("div", "eco-home-card nxt-skeleton");
+      skc.style.minHeight = "120px";
+      grid.appendChild(skc);
+    }
     secR.appendChild(grid);
     var empty = el("div", "eco-home-empty", "No decks yet. Generate one from your document or start from a template.");
     empty.id = "dck-home-empty";
@@ -829,7 +835,13 @@
     var bPresent = el("button", "dck-btn dck-btn-accent", "Present");
     bPresent.id = "dck-presentbtn";
     bPresent.addEventListener("click", function () { present(); });
-    tb.appendChild(back); tb.appendChild(title); tb.appendChild(tbSpacer);
+    var inspToggle = el("button", "dck-btn dck-insp-toggle", "Inspector");
+    inspToggle.id = "dck-insp-toggle";
+    inspToggle.type = "button";
+    inspToggle.setAttribute("aria-label", "Toggle the inspector panel");
+    inspToggle.setAttribute("aria-expanded", "false");
+    inspToggle.addEventListener("click", function () { toggleInspector(); });
+    tb.appendChild(back); tb.appendChild(title); tb.appendChild(inspToggle); tb.appendChild(tbSpacer);
     tb.appendChild(bNew); tb.appendChild(bGen); tb.appendChild(bPresent);
     ed.appendChild(tb);
 
@@ -897,8 +909,28 @@
     blockBar.id = "dck-blockbar";
     stageWrap.appendChild(blockBar);
     main.appendChild(stageWrap);
-    var insp = el("div", "dck-inspector");
+    /* inspector: on mobile this becomes a bottom sheet (nxt-sheet). The
+       handle + close button live outside the body so renderInspector can
+       re-render the body without wiping the sheet chrome. */
+    var insp = el("div", "dck-inspector nxt-sheet");
     insp.id = "dck-inspector";
+    insp.setAttribute("aria-label", "Slide inspector");
+    var inspHandle = el("div", "nxt-sheet-handle");
+    inspHandle.setAttribute("aria-hidden", "true");
+    insp.appendChild(inspHandle);
+    var sheetbar = el("div", "dck-insp-sheetbar");
+    sheetbar.appendChild(el("span", "dck-insp-h", "Inspector"));
+    var inspClose = el("button", "icon-btn dck-insp-close");
+    inspClose.id = "dck-inspector-close";
+    inspClose.type = "button";
+    inspClose.setAttribute("aria-label", "Close inspector");
+    inspClose.innerHTML = (typeof T.icon === "function") ? T.icon("i-x") : "Close";
+    inspClose.addEventListener("click", function () { toggleInspector(false); });
+    sheetbar.appendChild(inspClose);
+    insp.appendChild(sheetbar);
+    var inspBody = el("div", "dck-insp-body");
+    inspBody.id = "dck-inspector-body";
+    insp.appendChild(inspBody);
     main.appendChild(insp);
     ed.appendChild(main);
 
@@ -1055,8 +1087,24 @@
     });
   }
 
-  function renderInspector() {
+  /* inspector sheet open/close. On desktop (>820px) the sheet classes have
+     no visual effect: the inspector is always docked. */
+  function toggleInspector(force) {
     var insp = $("dck-inspector");
+    if (!insp) return false;
+    var open = (typeof force === "boolean") ? force : !insp.classList.contains("sheet-open");
+    insp.classList.toggle("sheet-open", open);
+    var t = $("dck-insp-toggle");
+    if (t) t.setAttribute("aria-expanded", open ? "true" : "false");
+    return open;
+  }
+  function inspectorOpen() {
+    var insp = $("dck-inspector");
+    return !!(insp && insp.classList.contains("sheet-open"));
+  }
+
+  function renderInspector() {
+    var insp = $("dck-inspector-body");
     var d = currentDeck();
     if (!insp || !d) return;
     insp.innerHTML = "";
@@ -1182,6 +1230,17 @@
     var h = $("dck-home"), e = $("dck-editor");
     if (h) h.style.display = "none";
     if (e) e.style.display = "";
+    // skeleton placeholders in the inspector while the editor paints
+    var ib = $("dck-inspector-body");
+    if (ib) {
+      ib.innerHTML = "";
+      ["44px", "96px", "72px"].forEach(function (hgt) {
+        var sk = el("div", "nxt-skeleton");
+        sk.style.height = hgt;
+        sk.style.marginBottom = "10px";
+        ib.appendChild(sk);
+      });
+    }
     // flush pending live GRD blocks into the first slide
     var pending = getPendingLive();
     if (pending.length) {
@@ -1602,6 +1661,13 @@
     badge.setAttribute("aria-hidden", "true");
     bar.appendChild(badge);
     bar.appendChild(el("span", "dck-topbar-name", "DCK"));
+    var topPresent = el("button", "dck-btn dck-btn-accent dck-topbar-present");
+    topPresent.id = "dck-topbar-presentbtn";
+    topPresent.type = "button";
+    topPresent.textContent = "Present";
+    topPresent.setAttribute("aria-label", "Present the current deck");
+    topPresent.addEventListener("click", function () { present(); });
+    bar.appendChild(topPresent);
     var spacer = el("div", "dck-topbar-spacer");
     bar.appendChild(spacer);
     var waffle = el("button", "icon-btn waffle-btn");
@@ -1975,6 +2041,8 @@
     getSettings: getSettings,
     applySettings: applySettings,
     openSettings: openSettings,
+    toggleInspector: toggleInspector,
+    inspectorOpen: inspectorOpen,
     _built: function () { return built; }
   };
 })();
