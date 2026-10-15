@@ -976,7 +976,7 @@
     var head = mk("div", "eco-home-head");
     var badge = mk("span", "eco-badge", "grd-badge");
     badge.textContent = "GRD";
-    badge.style.background = "#10B981";
+    badge.style.background = "#06B6D4";
     var htitle = mk("div", "eco-home-titles");
     var h1 = mk("h1", "", "grd-home-title");
     h1.textContent = "GRD Spreadsheet";
@@ -1020,7 +1020,7 @@
     home.appendChild(empty);
 
     var foot = mk("div", "eco-home-foot", "grd-home-foot");
-    foot.textContent = "Part of NXT Ecosystem";
+    foot.textContent = "Part of NXT OS";
     home.appendChild(foot);
 
     root.appendChild(home);
@@ -1150,7 +1150,7 @@
     var about = mk("div", "grd-set-row grd-set-about");
     var abTx = mk("span", "grd-set-text");
     var abT = mk("span", "grd-set-title"); abT.textContent = "About";
-    var abD = mk("span", "grd-set-desc"); abD.textContent = "GRD Spreadsheet, part of NXT Ecosystem.";
+    var abD = mk("span", "grd-set-desc"); abD.textContent = "GRD Spreadsheet, part of NXT OS.";
     abTx.appendChild(abT); abTx.appendChild(abD);
     about.appendChild(abTx);
     body.appendChild(about);
@@ -1431,8 +1431,13 @@
     editor.addEventListener("blur", function () { if (ui.editing) commitEditor(true); });
 
     var status = mk("div", "grd-status", "grd-gridstatus");
+    var statusLeft = mk("span", "grd-status-left");
+    var statusRight = mk("span", "grd-status-right");
+    statusRight.textContent = "NXT GRD • Developed by H3NZ";
+    status.appendChild(statusLeft);
+    status.appendChild(statusRight);
     v.appendChild(status);
-    E.gridstatus = status;
+    E.gridstatus = statusLeft;
 
     app.appendChild(v);
     E.viewGrid = v;
