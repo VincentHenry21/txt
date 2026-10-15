@@ -95,12 +95,9 @@
 #hfHeader { top: 0; border-bottom: 1px dashed var(--line); }
 #hfFooter { bottom: 0; border-top: 1px dashed var(--line); }
 
-/* track changes */
+/* track changes: author shown via native title tooltip, not injected text */
 ins.tracked-insert { background: rgba(5, 150, 105, 0.14); border-bottom: 2px solid var(--ok); text-decoration: none; }
 del.tracked-delete { background: rgba(220, 38, 38, 0.12); color: var(--danger); text-decoration: line-through; }
-ins.tracked-insert::after, del.tracked-delete::after {
-  content: attr(data-author); font-size: 9px; vertical-align: super; opacity: 0.7; margin-left: 2px;
-}
 /* comments */
 .cmt { background: rgba(217, 119, 6, 0.20); border-bottom: 2px solid var(--warn); cursor: pointer; border-radius: 2px; }
 .cmt.resolved { background: none; border-bottom-color: transparent; }

@@ -76,6 +76,14 @@
 .ink-sw { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); cursor: pointer; padding: 0; box-shadow: 0 0 0 1px var(--line); }
 .ink-sw.active { box-shadow: 0 0 0 2px var(--accent); }
 
+/* ---------- device preview exit pill ---------- */
+.device-exit {
+  position: fixed; left: 16px; bottom: 16px; z-index: 400;
+  border: 0; cursor: pointer; border-radius: 999px; padding: 10px 16px;
+  background: var(--ink); color: var(--ws-bg); font-size: 13px; font-weight: 700;
+  box-shadow: var(--shadow-lg); animation: popIn 0.18s ease-out;
+}
+
 /* ============================================================
    MOBILE LAYOUT (forced + real)
    ============================================================ */
