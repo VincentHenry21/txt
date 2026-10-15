@@ -1,5 +1,5 @@
 /* TXT ecosystem store: namespaced reactive state shared across the
-   word/vector/pixel personas and the 6 companion apps.
+   word/vac/pixel personas and the 6 companion apps.
 
    T.store = {
      get(app, key), set(app, key, val),   // persisted to localStorage TXT_ECOSYSTEM_STORE
@@ -84,4 +84,17 @@
   }
 
   T.store = { get: get, set: set, on: on, off: off, emit: emit };
+
+  /* One-time migration: the vector studio was renamed to VAC. If data exists
+     under the old "vector" namespace and nothing is stored under "vac" yet,
+     copy it over so no work is lost. The old namespace is left in place. */
+  (function migrateVectorToVac() {
+    try {
+      var data = loadAll();
+      if (data && data.vector && typeof data.vector === "object" && !data.vac) {
+        data.vac = JSON.parse(JSON.stringify(data.vector));
+        saveAll(data);
+      }
+    } catch (e) { /* storage blocked; the app continues without the migration */ }
+  })();
 })();
