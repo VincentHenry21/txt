@@ -174,6 +174,7 @@
     var s = getSettings();
     if (built) {
       syncSettingsForm();
+      resetBrowserPaging();
       renderStorage();
       renderBrowser();
     }
@@ -255,6 +256,7 @@
   }
 
   function refreshFileViews() {
+    resetBrowserPaging();
     renderBrowser();
     renderRecents();
     renderStorage();
@@ -669,6 +671,27 @@
   var omniState = { results: [], active: -1 };
   var tabState = "recent";
 
+  /* P1: paginated file browser. browserLimits maps app id -> visible row count.
+     Any full refresh (show, refreshFileViews, settings change) resets to page 1. */
+  var PAGE_SIZE = 50;
+  var browserLimits = {};
+  var browserToken = 0;
+  var storageToken = 0;
+
+  /* Paint skeletons now, swap in real content on the next frame. */
+  function deferPaint(fn) {
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(function () { setTimeout(fn, 30); });
+    } else {
+      setTimeout(fn, 30);
+    }
+  }
+  function resetBrowserPaging() { browserLimits = {}; }
+  function browserVisible(app) {
+    var n = browserLimits[app];
+    return n > 0 ? n : PAGE_SIZE;
+  }
+
   function el(tag, cls, id) {
     var d = document.createElement(tag);
     if (cls) d.className = cls;
@@ -888,7 +911,7 @@
     root.appendChild(tabsBar);
 
     /* recent panel */
-    var pRecent = el("div", "hub-panel", "hub-panel-recent");
+    var pRecent = el("div", "hub-panel hub-panel-recent", "hub-panel-recent");
     pRecent.setAttribute("role", "tabpanel");
     pRecent.setAttribute("aria-label", "Recent files");
     var rcList = el("div", "hub-list", "hub-recent");
@@ -897,7 +920,7 @@
     els.recent = rcList;
 
     /* files panel: the cross-app file browser */
-    var pFiles = el("div", "hub-panel", "hub-panel-files");
+    var pFiles = el("div", "hub-panel hub-panel-files", "hub-panel-files");
     pFiles.setAttribute("role", "tabpanel");
     pFiles.setAttribute("aria-label", "All files");
     var fList = el("div", "hub-files", "hub-files");
@@ -906,7 +929,7 @@
     els.files = fList;
 
     /* clipboard panel: compact shelf with shortcuts to the full drawer */
-    var pClip = el("div", "hub-panel", "hub-panel-clipboard");
+    var pClip = el("div", "hub-panel hub-panel-clipboard", "hub-panel-clipboard");
     pClip.setAttribute("role", "tabpanel");
     pClip.setAttribute("aria-label", "Clipboard");
     var cBtns = el("div", "hub-clipbtns");
@@ -995,7 +1018,7 @@
     });
 
     /* quick actions */
-    var qaSec = el("div", "eco-home-sec");
+    var qaSec = el("div", "eco-home-sec hub-sec-quick");
     var qaH = el("h2"); qaH.textContent = "Quick actions";
     var qaRow = el("div", "eco-home-new", "hub-quick");
     [
@@ -1019,7 +1042,7 @@
     buildTabs(root);
 
     /* storage */
-    var stSec = el("div", "eco-home-sec");
+    var stSec = el("div", "eco-home-sec hub-sec-storage");
     var stH = el("h2"); stH.textContent = "Storage";
     var stList = el("div", "hub-storage", "hub-storage");
     var stNote = el("p", "hub-note");
@@ -1112,43 +1135,104 @@
     return row;
   }
 
+  /* P1: the file browser paginates. A skeleton pass paints immediately so the
+     layout does not jump, then the real pass renders the first PAGE_SIZE rows
+     per app section plus a 44px "Show more" button for the next page.
+     Any full refresh (show / refreshFileViews / settings change) resets
+     pagination to page 1, so a changed filter never strands the user mid-list. */
+  function browserSectionData() {
+    var out = [];
+    FILE_APPS.forEach(function (app) {
+      var files = appFileSource(app);
+      if (files === null) return; /* no file source: section stays hidden */
+      out.push({ app: app, files: files });
+    });
+    return out;
+  }
+
+  function fillBrowserList(list, sec) {
+    list.innerHTML = "";
+    var shown = Math.min(browserVisible(sec.app), sec.files.length);
+    for (var i = 0; i < shown; i++) list.appendChild(fileRow(sec.app, sec.files[i]));
+    if (sec.files.length > shown) {
+      var more = el("button", "hub-btn hub-btn-ghost hub-showmore");
+      more.type = "button";
+      more.textContent = "Show more (" + (sec.files.length - shown) + " remaining)";
+      more.setAttribute("aria-label", "Show more files in " + ((APP_BY_ID[sec.app] || {}).label || sec.app));
+      more.addEventListener("click", function () {
+        browserLimits[sec.app] = shown + PAGE_SIZE;
+        fillBrowserList(list, sec);
+      });
+      list.appendChild(more);
+    }
+  }
+
+  function buildBrowserSection(sec, showCounts) {
+    var wrap = el("div", "hub-filesec");
+    var head = el("div", "hub-filehead");
+    head.appendChild(badge(sec.app));
+    var label = el("span", "hub-filelabel");
+    label.textContent = (APP_BY_ID[sec.app] || {}).label || sec.app;
+    head.appendChild(label);
+    if (showCounts) {
+      var cnt = el("span", "hub-filecount");
+      cnt.textContent = String(sec.files.length);
+      head.appendChild(cnt);
+    }
+    wrap.appendChild(head);
+    if (!sec.files.length) {
+      var empty = el("div", "eco-home-empty hub-filesempty");
+      empty.textContent = "No files yet.";
+      wrap.appendChild(empty);
+    } else {
+      var list = el("div", "hub-list");
+      wrap.appendChild(list);
+      fillBrowserList(list, sec);
+    }
+    return wrap;
+  }
+
   function renderBrowser() {
     if (!els.files) return;
     els.files.innerHTML = "";
     var s = getSettings();
-    var rendered = 0;
-    FILE_APPS.forEach(function (app) {
-      var files = appFileSource(app);
-      if (files === null) return; /* no file source: section stays hidden */
-      rendered++;
-      var sec = el("div", "hub-filesec");
-      var head = el("div", "hub-filehead");
-      head.appendChild(badge(app));
-      var label = el("span", "hub-filelabel");
-      label.textContent = (APP_BY_ID[app] || {}).label || app;
-      head.appendChild(label);
-      if (s.showCounts) {
-        var cnt = el("span", "hub-filecount");
-        cnt.textContent = String(files.length);
-        head.appendChild(cnt);
-      }
-      sec.appendChild(head);
-      if (!files.length) {
-        var empty = el("div", "eco-home-empty hub-filesempty");
-        empty.textContent = "No files yet.";
-        sec.appendChild(empty);
-      } else {
-        var list = el("div", "hub-list");
-        files.forEach(function (f) { list.appendChild(fileRow(app, f)); });
-        sec.appendChild(list);
-      }
-      els.files.appendChild(sec);
-    });
-    if (!rendered) {
+    var sections = browserSectionData();
+    if (!sections.length) {
       var emptyAll = el("div", "eco-home-empty");
       emptyAll.textContent = "No apps expose files yet.";
       els.files.appendChild(emptyAll);
+      return;
     }
+    /* skeleton pass: paint placeholders immediately */
+    var shells = sections.map(function (sec) {
+      var wrap = el("div", "hub-filesec");
+      var head = el("div", "hub-filehead");
+      head.appendChild(badge(sec.app));
+      var label = el("span", "hub-filelabel");
+      label.textContent = (APP_BY_ID[sec.app] || {}).label || sec.app;
+      head.appendChild(label);
+      wrap.appendChild(head);
+      var sk = el("div", "hub-list");
+      var n = Math.min(Math.max(sec.files.length, 1), 4);
+      for (var i = 0; i < n; i++) {
+        var r = el("div", "nxt-skeleton hub-skelrow");
+        r.setAttribute("aria-hidden", "true");
+        sk.appendChild(r);
+      }
+      wrap.appendChild(sk);
+      els.files.appendChild(wrap);
+      return { sec: sec, wrap: wrap };
+    });
+    /* real pass: swap skeletons for the first page of rows on the next frame */
+    var token = ++browserToken;
+    deferPaint(function () {
+      if (token !== browserToken || !els.files) return;
+      try { if (!els.files.isConnected) return; } catch (e) {}
+      els.files.innerHTML = "";
+      shells.forEach(function (sh) {
+        els.files.appendChild(buildBrowserSection(sh.sec, s));
+      });
+    });
   }
 
   function renderRecents() {
@@ -1187,8 +1271,24 @@
     });
   }
 
+  /* Storage analytics: skeleton pass first, real rows on the next frame. */
   function renderStorage() {
     if (!els.storage) return;
+    els.storage.innerHTML = "";
+    for (var i = 0; i < 4; i++) {
+      var sk = el("div", "nxt-skeleton hub-skelrow");
+      sk.setAttribute("aria-hidden", "true");
+      els.storage.appendChild(sk);
+    }
+    var token = ++storageToken;
+    deferPaint(function () {
+      if (token !== storageToken || !els.storage) return;
+      try { if (!els.storage.isConnected) return; } catch (e) {}
+      renderStorageReal();
+    });
+  }
+
+  function renderStorageReal() {
     els.storage.innerHTML = "";
     var st = storageStats();
     var s = getSettings();
@@ -1366,6 +1466,7 @@
     var view = document.getElementById("view-hub");
     if (view) view.classList.remove("hidden");
     setTab(getSettings().landing);
+    resetBrowserPaging();
     renderRecents();
     renderBrowser();
     renderStorage();
