@@ -1,0 +1,87 @@
+/* NXT OS legal views + settings: full-screen modal cards, light/dark aware. */
+.nxtlegal-wrap {
+  position: fixed; inset: 0; z-index: 400; display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.5); padding: 16px;
+}
+.nxtlegal-card {
+  width: min(640px, 100%); max-height: min(84vh, 760px); overflow: hidden;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 16px; display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+.nxtlegal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 20px; border-bottom: 1px solid var(--line); flex: 0 0 auto;
+}
+.nxtlegal-title { font-size: 18px; font-weight: 700; margin: 0; line-height: 1.4; }
+.nxtlegal-close {
+  min-height: 44px; min-width: 44px; padding: 0 16px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  font-size: 14px; font-weight: 600;
+}
+.nxtlegal-body { padding: 20px; overflow-y: auto; line-height: 1.85; font-size: 14.5px; }
+.nxtlegal-body h3 { font-size: 15px; font-weight: 700; margin: 18px 0 6px; }
+.nxtlegal-body h3:first-child { margin-top: 0; }
+.nxtlegal-body p { margin: 0 0 10px; color: var(--ink); }
+.nxtlegal-meta { font-size: 12.5px; color: var(--muted); margin-top: 16px; }
+.nxtlegal-sec { margin-bottom: 22px; }
+.nxtlegal-sec h3 { font-size: 14px; font-weight: 700; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.nxtlegal-row { display: flex; align-items: center; gap: 12px; }
+.nxtlegal-label { display: flex; align-items: center; gap: 12px; font-size: 14.5px; min-height: 44px; }
+.nxtlegal-select {
+  min-height: 44px; padding: 0 12px; font-size: 14.5px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.nxtlegal-check {
+  display: flex; align-items: center; gap: 12px; font-size: 14.5px; cursor: pointer;
+  min-height: 44px; line-height: 1.5;
+}
+.nxtlegal-check input { width: 22px; height: 22px; accent-color: var(--accent, #7C3AED); flex: 0 0 auto; }
+.nxtlegal-btn {
+  min-height: 44px; padding: 0 20px; border-radius: 10px; cursor: pointer; font-size: 14.5px; font-weight: 600;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.nxtlegal-link {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; margin-right: 16px;
+  border: 0; background: none; cursor: pointer; font-size: 14.5px; font-weight: 600;
+  color: var(--accent, #7C3AED); text-decoration: underline; text-underline-offset: 3px;
+}
+a.nxtlegal-link { text-decoration: underline; }
+.nxtlegal-note { font-size: 14px; color: var(--muted); margin: 0 0 10px; line-height: 1.85; }
+.nxtlegal-faq-item { border-bottom: 1px solid var(--line); }
+.nxtlegal-faq-q {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 52px; padding: 8px 4px; border: 0; background: none; cursor: pointer;
+  font-size: 15px; font-weight: 600; color: var(--ink); text-align: left; line-height: 1.5;
+}
+.nxtlegal-faq-chev { font-size: 20px; font-weight: 400; color: var(--accent, #7C3AED); flex: 0 0 auto; }
+.nxtlegal-faq-a { padding: 0 4px 14px; }
+.nxtlegal-faq-a p { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.85; }
+/* phone (390px): near-full-width sheet, tighter chrome */
+@media (max-width: 560px) {
+  .nxtlegal-wrap { padding: 12px; }
+  .nxtlegal-card { width: 100%; max-height: 92vh; border-radius: 14px; }
+  .nxtlegal-head { padding: 12px 14px; }
+  .nxtlegal-title { font-size: 16px; }
+  .nxtlegal-body { padding: 16px 14px; font-size: 14px; }
+  .nxtlegal-link { margin-right: 8px; }
+}
+/* ipad (820px): comfortable reading measure */
+@media (min-width: 561px) and (max-width: 1100px) {
+  .nxtlegal-card { width: min(680px, 100%); }
+  .nxtlegal-body { padding: 24px; font-size: 15px; }
+}
+/* desktop (1440px+): generous measure */
+@media (min-width: 1440px) {
+  .nxtlegal-card { width: min(700px, 100%); }
+}
+/* terms checkbox on sign-in */
+.nxt-terms {
+  display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; font-size: 13px;
+  color: var(--muted); line-height: 1.85; cursor: pointer;
+}
+.nxt-terms input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--accent, #7C3AED); flex: 0 0 auto; }
+.nxt-terms button {
+  border: 0; background: none; padding: 0; cursor: pointer; font-size: 13px; font-weight: 600;
+  color: var(--accent, #7C3AED); text-decoration: underline; text-underline-offset: 2px;
+}
