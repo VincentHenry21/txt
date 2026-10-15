@@ -1,0 +1,90 @@
+/* NXT OS Tutorials viewer. Light/dark via theme tokens. No CSS zoom. */
+#view-tutorials { background: var(--surface-2, #F8FAFC); color: var(--ink, #111827); }
+.nt-wrap { max-width: 1440px; margin: 0 auto; padding: 16px 20px 48px; min-height: 100%; }
+
+/* header */
+.nt-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.nt-back { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line, #E5E7EB);
+  background: var(--surface, #fff); color: var(--ink, #111827); border-radius: 10px;
+  padding: 8px 12px; font-size: 14px; cursor: pointer; min-height: 40px; }
+.nt-title { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+.nt-title svg { color: var(--accent, #4F46E5); }
+.nt-title h1 { font-size: 22px; margin: 0; font-weight: 800; }
+.nt-search { border: 1px solid var(--line, #E5E7EB); background: var(--surface, #fff);
+  color: var(--ink, #111827); border-radius: 10px; padding: 9px 14px; font-size: 14px;
+  width: 240px; max-width: 100%; }
+.nt-credit { font-size: 11px; color: var(--muted, #6B7280); white-space: nowrap; }
+
+/* body: 3 columns on desktop */
+.nt-body { display: grid; grid-template-columns: 240px 260px 1fr; gap: 16px; align-items: start; }
+.nt-apps, .nt-tabs { display: flex; flex-direction: column; gap: 8px; }
+.nt-app { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line, #E5E7EB);
+  background: var(--surface, #fff); border-radius: 12px; padding: 10px 12px; cursor: pointer;
+  text-align: left; color: var(--ink, #111827); min-height: 56px; }
+.nt-app.active { border-color: var(--accent, #4F46E5); box-shadow: 0 0 0 1px var(--accent, #4F46E5); }
+.nt-app-logo { width: 34px; height: 34px; flex: none; }
+.nt-app-logo svg { width: 100%; height: 100%; display: block; }
+.nt-app-meta { display: flex; flex-direction: column; min-width: 0; margin-right: auto; }
+.nt-app-name { font-weight: 800; font-size: 14px; }
+.nt-app-count { font-size: 11px; color: var(--muted, #6B7280); }
+.nt-ring { flex: none; }
+
+.nt-tab { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border: 1px solid var(--line, #E5E7EB); background: var(--surface, #fff); border-radius: 10px;
+  padding: 10px 12px; cursor: pointer; color: var(--ink, #111827); min-height: 44px; text-align: left; }
+.nt-tab.active { border-color: var(--accent, #4F46E5); box-shadow: 0 0 0 1px var(--accent, #4F46E5); }
+.nt-tab-title { font-weight: 600; font-size: 14px; }
+.nt-tab-count { font-size: 11px; color: var(--muted, #6B7280); flex: none; }
+
+.nt-features { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.nt-tabhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.nt-tabhead h2 { font-size: 18px; margin: 0; }
+.nt-tabhead-count { font-size: 12px; color: var(--muted, #6B7280); }
+.nt-feature { border: 1px solid var(--line, #E5E7EB); background: var(--surface, #fff);
+  border-radius: 12px; padding: 12px 14px; }
+.nt-feature.done { border-left: 4px solid #10B981; }
+.nt-crumb { font-size: 11px; color: var(--muted, #6B7280); margin-bottom: 4px; }
+.nt-feature-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; cursor: pointer; }
+.nt-feature-top h3 { font-size: 15px; margin: 0; font-weight: 700; margin-right: auto; min-width: 0; }
+.nt-feature-actions { display: flex; gap: 8px; }
+.nt-btn { border: 1px solid var(--line, #E5E7EB); background: var(--surface-2, #F8FAFC);
+  color: var(--ink, #111827); border-radius: 8px; padding: 7px 12px; font-size: 13px;
+  cursor: pointer; min-height: 36px; }
+.nt-try { background: var(--accent, #4F46E5); border-color: var(--accent, #4F46E5); color: #fff; font-weight: 600; }
+.nt-donebtn.on { background: #10B981; border-color: #10B981; color: #fff; font-weight: 600; }
+.nt-exp { background: none; border: none; color: var(--accent, #4F46E5); font-size: 13px;
+  cursor: pointer; padding: 7px 4px; min-height: 36px; }
+.nt-steps { margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.nt-steps li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.55; }
+.nt-step-n { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent, #4F46E5);
+  color: #fff; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center;
+  justify-content: center; margin-top: 1px; }
+.nt-step-t { min-width: 0; }
+.nt-tip { margin-top: 12px; font-size: 13px; line-height: 1.55; background: var(--surface-2, #F8FAFC);
+  border: 1px dashed var(--line, #E5E7EB); border-radius: 8px; padding: 8px 12px; }
+.nt-empty { padding: 32px; text-align: center; color: var(--muted, #6B7280); }
+
+/* help button injected next to each app launcher */
+.nt-helpbtn { margin-left: 4px; }
+
+/* Tutorials tile on the launcher home */
+.nxt-learn-sec { margin-top: 8px; }
+
+/* tablet */
+@media (max-width: 1100px) {
+  .nt-body { grid-template-columns: 1fr; }
+  .nt-apps { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+  .nt-app { flex: none; }
+  .nt-tabs { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+  .nt-tab { flex: none; }
+}
+
+/* phone */
+@media (max-width: 640px) {
+  .nt-wrap { padding: 12px 12px 40px; }
+  .nt-title h1 { font-size: 18px; }
+  .nt-search { width: 100%; order: 5; flex-basis: 100%; }
+  .nt-credit { display: none; }
+  .nt-feature-top h3 { flex-basis: 100%; }
+  .nt-steps li { font-size: 13px; }
+}
