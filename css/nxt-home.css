@@ -12,6 +12,9 @@
   max-width: 1060px;
   margin: 0 auto;
   padding: 56px 28px 80px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 .nxt-brand { margin-bottom: 26px; }
 .nxt-brand-name {
@@ -162,6 +165,7 @@
 }
 .nxt-recent-title {
   flex: 1;
+  min-width: 0;
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
@@ -185,4 +189,64 @@
   .nxt-brand-name { font-size: 28px; }
   .nxt-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .nxt-tile { min-height: 118px; padding: 14px 12px; }
+  .nxt-studios { flex-direction: column; }
+  .nxt-studio { flex: 1 1 auto; min-width: 0; width: 100%; }
 }
+/* small phones (390px): tighter tiles, stacked studios stay tappable */
+@media (max-width: 430px) {
+  .nxt-wrap { padding: 28px 14px 90px; }
+  .nxt-brand-name { font-size: 26px; }
+  .nxt-greet { font-size: 16px; }
+  .nxt-grid { gap: 8px; }
+  .nxt-tile { min-height: 112px; padding: 12px 10px; border-radius: 16px; }
+  .nxt-tile-desc { font-size: 12px; }
+  .nxt-studio { min-height: 52px; font-size: 14px; }
+  .nxt-recent-row { min-height: 52px; }
+  .nxt-foot { flex-direction: column; align-items: flex-start; gap: 4px; }
+}
+/* ipad (820px): comfortable three-column rhythm */
+@media (min-width: 561px) and (max-width: 1100px) {
+  .nxt-wrap { max-width: 900px; padding: 48px 32px 90px; }
+  .nxt-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .nxt-tile { min-height: 140px; }
+  .nxt-recents { max-width: 720px; }
+}
+/* desktop (1440px+): centered column, generous whitespace */
+@media (min-width: 1440px) {
+  .nxt-wrap { max-width: 1120px; padding: 64px 32px 100px; }
+}
+/* ---------- username profile + footer ---------- */
+.nxt-profile { margin: 18px 0 6px; }
+.nxt-greet { font-size: 17px; font-weight: 600; line-height: 1.85; color: var(--ink); }
+.nxt-user {
+  border: 0; background: none; cursor: pointer; padding: 6px 4px; min-height: 44px;
+  font-size: 17px; font-weight: 700; color: var(--accent, #7C3AED); text-decoration: underline;
+  text-underline-offset: 3px; line-height: 1.85;
+}
+.nxt-signin { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.nxt-name-input {
+  flex: 1 1 200px; min-height: 44px; padding: 0 14px; font-size: 15px; line-height: 1.5;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink);
+}
+.nxt-name-input:focus { outline: 2px solid var(--accent, #7C3AED); outline-offset: 1px; }
+.nxt-name-btn, .nxt-name-cancel {
+  min-height: 44px; min-width: 44px; padding: 0 18px; font-size: 15px; font-weight: 600;
+  border-radius: 10px; cursor: pointer; line-height: 1.5;
+}
+.nxt-name-btn { border: 0; background: var(--accent, #7C3AED); color: #fff; }
+.nxt-name-cancel { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.nxt-foot {
+  margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between;
+}
+.nxt-foot-brand { font-size: 12.5px; font-weight: 600; color: var(--muted); line-height: 1.85; }
+.nxt-foot-support {
+  font-size: 12.5px; color: var(--accent, #7C3AED); line-height: 1.85;
+  min-height: 44px; display: inline-flex; align-items: center;
+}
+.nxt-foot-links { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.nxt-foot-link {
+  border: 0; background: none; cursor: pointer; min-height: 44px; min-width: 44px; padding: 0 8px;
+  font-size: 12.5px; font-weight: 600; color: var(--muted); line-height: 1.85;
+}
+.nxt-foot-link:hover { color: var(--accent, #7C3AED); }
