@@ -4,147 +4,306 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TXT, Word Processor</title>
-<meta name="description" content="TXT is a fast word processor that exports to DOC, DOCX, PDF, RTF, TXT, Markdown and HTML.">
+<meta name="description" content="TXT is a fast word processor that exports to DOC, DOCX, PDF, ODT, RTF, TXT, Markdown and HTML.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%234f46e5'/%3E%3Ctext x='32' y='44' font-family='Arial' font-weight='bold' font-size='30' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Nunito:wght@400;700&family=Source+Sans+3:wght@400;700&family=Raleway:wght@400;700&family=Ubuntu:wght@400;700&family=Work+Sans:wght@400;700&family=DM+Sans:wght@400;700&family=Manrope:wght@400;700&family=Outfit:wght@400;700&family=Rubik:wght@400;700&family=Karla:wght@400;700&family=Heebo:wght@400;700&family=Figtree:wght@400;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=Lora:wght@400;700&family=PT+Serif:wght@400;700&family=Source+Serif+4:wght@400;700&family=Noto+Serif:wght@400;700&family=Crimson+Pro:wght@400;700&family=Libre+Baskerville:wght@400;700&family=EB+Garamond:wght@400;700&family=Roboto+Mono:wght@400;700&family=Source+Code+Pro:wght@400;700&family=JetBrains+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=Oswald:wght@400;700&family=Bebas+Neue&family=Anton&family=Archivo+Black&family=Lobster&family=Pacifico&family=Noto+Sans+Myanmar:wght@400;700&family=Noto+Serif+Myanmar:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand">
-    <span class="brand-mark">T</span>
-    <span class="brand-name">TXT</span>
-  </div>
+  <button type="button" class="brand" id="btnHome" data-i18n-title="home" title="Home">
+    <span class="brand-mark">T</span><span class="brand-name">TXT</span>
+  </button>
   <input id="docName" class="doc-name" value="Untitled document" spellcheck="false" aria-label="Document name">
   <span id="saveState" class="save-state">Saved</span>
   <div class="topbar-actions">
-    <button type="button" id="btnNew" class="tbtn" title="New document">New</button>
-    <button type="button" id="btnImport" class="tbtn" title="Open a .txt, .md or .html file">Open</button>
+    <button type="button" id="btnNew" class="tbtn" data-i18n="new" title="New document">New</button>
+    <button type="button" id="btnImport" class="tbtn" data-i18n="open" title="Open a .txt, .md or .html file">Open</button>
     <div class="menu-wrap">
-      <button type="button" id="btnExport" class="tbtn primary" title="Export this document">Export &#9662;</button>
+      <button type="button" id="btnExport" class="tbtn primary" title="Export this document"><span data-i18n="export">Export</span> &#9662;</button>
       <div id="exportMenu" class="menu hidden" role="menu">
-        <button type="button" data-export="docx" role="menuitem"><span class="ext">DOCX</span><span class="desc">Word document</span></button>
-        <button type="button" data-export="doc" role="menuitem"><span class="ext">DOC</span><span class="desc">Word 97 to 2003</span></button>
-        <button type="button" data-export="pdf" role="menuitem"><span class="ext">PDF</span><span class="desc">Print to PDF</span></button>
-        <button type="button" data-export="odt" role="menuitem"><span class="ext">ODT</span><span class="desc">OpenDocument text</span></button>
-        <button type="button" data-export="rtf" role="menuitem"><span class="ext">RTF</span><span class="desc">Rich text format</span></button>
-        <button type="button" data-export="html" role="menuitem"><span class="ext">HTML</span><span class="desc">Web page</span></button>
-        <button type="button" data-export="md" role="menuitem"><span class="ext">MD</span><span class="desc">Markdown</span></button>
-        <button type="button" data-export="txt" role="menuitem"><span class="ext">TXT</span><span class="desc">Plain text</span></button>
+        <button type="button" data-export="docx" role="menuitem"><span class="ext">DOCX</span><span class="desc" data-i18n="fmtDocx">Word document</span></button>
+        <button type="button" data-export="doc" role="menuitem"><span class="ext">DOC</span><span class="desc" data-i18n="fmtDoc">Word 97 to 2003</span></button>
+        <button type="button" data-export="pdf" role="menuitem"><span class="ext">PDF</span><span class="desc" data-i18n="fmtPdf">Print to PDF</span></button>
+        <button type="button" data-export="odt" role="menuitem"><span class="ext">ODT</span><span class="desc" data-i18n="fmtOdt">OpenDocument text</span></button>
+        <button type="button" data-export="rtf" role="menuitem"><span class="ext">RTF</span><span class="desc" data-i18n="fmtRtf">Rich text format</span></button>
+        <button type="button" data-export="html" role="menuitem"><span class="ext">HTML</span><span class="desc" data-i18n="fmtHtml">Web page</span></button>
+        <button type="button" data-export="md" role="menuitem"><span class="ext">MD</span><span class="desc" data-i18n="fmtMd">Markdown</span></button>
+        <button type="button" data-export="txt" role="menuitem"><span class="ext">TXT</span><span class="desc" data-i18n="fmtTxt">Plain text</span></button>
+        <div class="menu-sep"></div>
+        <button type="button" data-export="fonts" role="menuitem"><span class="ext">Aa</span><span class="desc" data-i18n="fmtFonts">Download fonts used</span></button>
       </div>
     </div>
+    <button type="button" id="btnLang" class="tbtn" title="Switch language">မြန်မာ</button>
+    <button type="button" id="btnAccount" class="avatar-btn" data-i18n-title="account" title="Account">G</button>
   </div>
 </header>
 
-<div class="toolbar" id="toolbar">
-  <div class="tgroup">
-    <button type="button" data-cmd="undo" title="Undo (Ctrl+Z)" class="tool"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
-    <button type="button" data-cmd="redo" title="Redo (Ctrl+Y)" class="tool"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
-  </div>
-  <div class="tsep"></div>
-  <div class="tgroup">
-    <select id="fontFamily" class="sel" title="Font" style="width:130px"></select>
-    <select id="fontSize" class="sel" title="Font size" style="width:64px"></select>
-  </div>
-  <div class="tsep"></div>
-  <div class="tgroup">
-    <button type="button" data-cmd="bold" title="Bold (Ctrl+B)" class="tool"><b>B</b></button>
-    <button type="button" data-cmd="italic" title="Italic (Ctrl+I)" class="tool"><i>I</i></button>
-    <button type="button" data-cmd="underline" title="Underline (Ctrl+U)" class="tool"><u>U</u></button>
-    <button type="button" data-cmd="strikeThrough" title="Strikethrough" class="tool"><s>S</s></button>
-    <button type="button" data-cmd="subscript" title="Subscript" class="tool"><span style="font-size:13px">X<sub>2</sub></span></button>
-    <button type="button" data-cmd="superscript" title="Superscript" class="tool"><span style="font-size:13px">X<sup>2</sup></span></button>
-    <label class="tool color-tool" title="Text color">A<span class="color-bar" id="fgBar"></span><input type="color" id="foreColor" value="#000000" class="hidden-color"></label>
-    <label class="tool color-tool" title="Highlight color"><span class="hl-mark">A</span><input type="color" id="hiliteColor" value="#ffff00" class="hidden-color"></label>
-    <button type="button" data-cmd="removeFormat" title="Clear formatting" class="tool"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 16 12 4l5 12M8.5 12.5h7"/></svg></button>
-  </div>
-  <div class="tsep"></div>
-  <div class="tgroup">
-    <select id="blockStyle" class="sel" title="Paragraph style" style="width:104px">
-      <option value="p">Normal</option>
-      <option value="h1">Heading 1</option>
-      <option value="h2">Heading 2</option>
-      <option value="h3">Heading 3</option>
-      <option value="blockquote">Quote</option>
-    </select>
-    <button type="button" data-cmd="justifyLeft" title="Align left" class="tool"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg></button>
-    <button type="button" data-cmd="justifyCenter" title="Center" class="tool"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg></button>
-    <button type="button" data-cmd="justifyRight" title="Align right" class="tool"><svg viewBox="0 0 24 24"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg></button>
-    <button type="button" data-cmd="justifyFull" title="Justify" class="tool"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
-  </div>
-  <div class="tsep"></div>
-  <div class="tgroup">
-    <button type="button" data-cmd="insertUnorderedList" title="Bullet list" class="tool"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="1.6"/><circle cx="6" cy="12" r="1.6"/><circle cx="6" cy="17" r="1.6"/><path d="M11 7h9M11 12h9M11 17h9"/></svg></button>
-    <button type="button" data-cmd="insertOrderedList" title="Numbered list" class="tool"><svg viewBox="0 0 24 24"><path d="M10 7h10M10 12h10M10 17h10"/><text x="3" y="9" font-size="7">1</text><text x="3" y="14" font-size="7">2</text><text x="3" y="19" font-size="7">3</text></svg></button>
-    <button type="button" data-cmd="indent" title="Increase indent" class="tool"><svg viewBox="0 0 24 24"><path d="M4 6h10M4 10h16M4 14h16M4 18h10"/><path d="m17 8 3 3-3 3"/></svg></button>
-    <button type="button" data-cmd="outdent" title="Decrease indent" class="tool"><svg viewBox="0 0 24 24"><path d="M10 6h10M4 10h16M4 14h16M10 18h10"/><path d="m7 8-3 3 3 3"/></svg></button>
-    <select id="lineSpacing" class="sel" title="Line spacing" style="width:62px">
-      <option value="1">1.0</option>
-      <option value="1.15" selected>1.15</option>
-      <option value="1.5">1.5</option>
-      <option value="2">2.0</option>
-    </select>
-  </div>
-  <div class="tsep"></div>
-  <div class="tgroup">
-    <button type="button" id="btnLink" title="Insert link" class="tool"><svg viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg></button>
-    <button type="button" id="btnImage" title="Insert image" class="tool"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 17 5-5 3 3 2-2 4 4"/></svg></button>
-    <button type="button" id="btnTable" title="Insert table" class="tool"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="1"/><path d="M4 10h16M4 14.5h16M12 5v14"/></svg></button>
-    <button type="button" data-cmd="insertHorizontalRule" title="Horizontal line" class="tool"><svg viewBox="0 0 24 24"><path d="M4 12h16"/></svg></button>
-    <button type="button" id="btnPageBreak" title="Page break" class="tool"><svg viewBox="0 0 24 24"><path d="M6 4v16M18 4v16M6 9h12M6 15h12"/></svg></button>
-  </div>
-  <div class="tsep"></div>
-  <div class="tgroup">
-    <button type="button" id="btnFind" title="Find and replace (Ctrl+F)" class="tool"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 5 5"/></svg></button>
-  </div>
-</div>
-
-<div id="findbar" class="findbar hidden">
-  <input id="findInput" placeholder="Find" aria-label="Find">
-  <input id="replaceInput" placeholder="Replace with" aria-label="Replace with">
-  <button type="button" id="findPrev" class="tool" title="Previous">&#8593;</button>
-  <button type="button" id="findNext" class="tool" title="Next">&#8595;</button>
-  <button type="button" id="replaceOne" class="fbtn" title="Replace current">Replace</button>
-  <button type="button" id="replaceAll" class="fbtn" title="Replace all">All</button>
-  <span id="findCount" class="find-count"></span>
-  <button type="button" id="findClose" class="tool" title="Close">&#10005;</button>
-</div>
-
-<main class="workspace">
+<div class="app-main mode-home" id="appMain">
   <aside class="sidebar" id="sidebar">
     <div class="side-head">
-      <span>Documents</span>
-      <button type="button" id="btnNewSide" class="mini-btn" title="New document">+</button>
+      <input id="sideSearch" class="side-search" data-i18n-ph="searchDocs" placeholder="Search documents" aria-label="Search documents">
+      <button type="button" id="btnNewSide" class="mini-btn" data-i18n-title="newDoc" title="New document">+</button>
     </div>
     <div id="docList" class="doc-list"></div>
   </aside>
-  <section class="canvas" id="canvas">
-    <div class="zoom-wrap" id="zoomWrap">
-      <article id="sheet" class="sheet" contenteditable="true" spellcheck="true" aria-label="Document editor"></article>
+
+  <div class="editor-wrap hidden" id="viewEditor">
+    <div class="ribbon">
+      <div class="ribbon-tabs" id="ribbonTabs" role="tablist">
+        <button type="button" data-tab="file" data-i18n="tabFile" role="tab">File</button>
+        <button type="button" data-tab="home" class="active" data-i18n="tabHome" role="tab">Home</button>
+        <button type="button" data-tab="insert" data-i18n="tabInsert" role="tab">Insert</button>
+        <button type="button" data-tab="layout" data-i18n="tabLayout" role="tab">Layout</button>
+        <button type="button" data-tab="references" data-i18n="tabRefs" role="tab">References</button>
+        <button type="button" data-tab="review" data-i18n="tabReview" role="tab">Review</button>
+        <button type="button" data-tab="view" data-i18n="tabView" role="tab">View</button>
+      </div>
+      <div class="ribbon-panels">
+        <div class="rpanel hidden" data-panel="file">
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnFileNew"><span class="ric">+</span><span class="rlab" data-i18n="blankDoc">Blank</span></button>
+            <button type="button" class="rbtn" id="btnFileOpen"><span class="ric">&#128193;</span><span class="rlab" data-i18n="open">Open</span></button>
+          </div><div class="rglabel" data-i18n="grpNew">New</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnFilePrint"><span class="ric">&#9113;</span><span class="rlab" data-i18n="print">Print</span></button>
+          </div><div class="rglabel" data-i18n="grpPrint">Print</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnFileFonts"><span class="ric">Aa</span><span class="rlab" data-i18n="grpFonts">Fonts</span></button>
+          </div><div class="rglabel" data-i18n="fmtFonts">Download fonts used</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnFileCount"><span class="ric">123</span><span class="rlab" data-i18n="wordCount">Word count</span></button>
+          </div><div class="rglabel" data-i18n="grpInfo">Info</div></div>
+        </div>
+
+        <div class="rpanel" data-panel="home">
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn sm" id="btnUndo" data-i18n-title="undo" title="Undo"><span class="ric">&#8630;</span></button>
+            <button type="button" class="rbtn sm" id="btnRedo" data-i18n-title="redo" title="Redo"><span class="ric">&#8631;</span></button>
+            <button type="button" class="rbtn sm" id="btnPastePlain" data-i18n-title="pastePlain" title="Paste plain text"><span class="ric">&#61664;</span></button>
+            <button type="button" class="rbtn sm" id="btnSelectAll" data-i18n-title="selectAll" title="Select all"><span class="ric">&#10697;</span></button>
+          </div><div class="rglabel" data-i18n="grpClipboard">Clipboard</div></div>
+          <div class="rgroup"><div class="rbtns col">
+            <div class="rrow">
+              <select id="fontFamily" class="sel" data-i18n-title="font" title="Font" style="width:150px"></select>
+              <select id="fontSize" class="sel" data-i18n-title="fontSize" title="Font size" style="width:60px"></select>
+              <button type="button" class="rbtn sm" id="btnGrow" data-i18n-title="growFont" title="Grow font"><span class="ric">A&#8593;</span></button>
+              <button type="button" class="rbtn sm" id="btnShrink" data-i18n-title="shrinkFont" title="Shrink font"><span class="ric">A&#8595;</span></button>
+              <button type="button" class="rbtn sm" data-cmd="removeFormat" data-i18n-title="clearFmt" title="Clear formatting"><span class="ric">A&#10005;</span></button>
+            </div>
+            <div class="rrow">
+              <button type="button" class="rbtn sm" data-cmd="bold" data-i18n-title="bold" title="Bold"><b>B</b></button>
+              <button type="button" class="rbtn sm" data-cmd="italic" data-i18n-title="italic" title="Italic"><i>I</i></button>
+              <button type="button" class="rbtn sm" data-cmd="underline" data-i18n-title="underline" title="Underline"><u>U</u></button>
+              <button type="button" class="rbtn sm" data-cmd="strikeThrough" data-i18n-title="strike" title="Strikethrough"><s>S</s></button>
+              <button type="button" class="rbtn sm" data-cmd="subscript" data-i18n-title="sub" title="Subscript"><span>X<sub>2</sub></span></button>
+              <button type="button" class="rbtn sm" data-cmd="superscript" data-i18n-title="sup" title="Superscript"><span>X<sup>2</sup></span></button>
+              <button type="button" class="rbtn sm color-rbtn" id="btnTextColor" data-i18n-title="textColor" title="Text color"><span class="ric">A<span class="color-bar" id="fgBar"></span></span></button>
+              <button type="button" class="rbtn sm color-rbtn" id="btnHlColor" data-i18n-title="hlColor" title="Highlight color"><span class="ric"><span class="hl-mark">A</span></span></button>
+            </div>
+          </div><div class="rglabel" data-i18n="grpFont">Font</div></div>
+          <div class="rgroup"><div class="rbtns col">
+            <div class="rrow">
+              <button type="button" class="rbtn sm" data-cmd="insertUnorderedList" data-i18n-title="bulletList" title="Bullet list"><span class="ric">&#8226;&#9776;</span></button>
+              <button type="button" class="rbtn sm" data-cmd="insertOrderedList" data-i18n-title="numList" title="Numbered list"><span class="ric">1&#9776;</span></button>
+              <button type="button" class="rbtn sm" id="btnMultiLevel" data-i18n-title="multiLevel" title="Multilevel list"><span class="ric">1.1</span></button>
+              <button type="button" class="rbtn sm" data-cmd="outdent" data-i18n-title="indentDec" title="Decrease indent"><span class="ric">&#8678;</span></button>
+              <button type="button" class="rbtn sm" data-cmd="indent" data-i18n-title="indentInc" title="Increase indent"><span class="ric">&#8680;</span></button>
+            </div>
+            <div class="rrow">
+              <button type="button" class="rbtn sm" data-cmd="justifyLeft" data-i18n-title="alignLeft" title="Align left"><span class="ric">&#9776;</span></button>
+              <button type="button" class="rbtn sm" data-cmd="justifyCenter" data-i18n-title="alignCenter" title="Center"><span class="ric">&#9776;</span></button>
+              <button type="button" class="rbtn sm" data-cmd="justifyRight" data-i18n-title="alignRight" title="Align right"><span class="ric">&#9776;</span></button>
+              <button type="button" class="rbtn sm" data-cmd="justifyFull" data-i18n-title="justify" title="Justify"><span class="ric">&#9776;</span></button>
+            </div>
+          </div><div class="rglabel" data-i18n="grpParagraph">Paragraph</div></div>
+          <div class="rgroup"><div class="rbtns col">
+            <div class="rrow">
+              <select id="lineSpacing" class="sel" data-i18n-title="lineSpacing" title="Line spacing" style="width:62px">
+                <option value="1">1.0</option><option value="1.15" selected>1.15</option>
+                <option value="1.5">1.5</option><option value="2">2.0</option>
+              </select>
+              <button type="button" class="rbtn sm wide" id="btnParaSpacing" data-i18n-title="paraSpacing" title="Paragraph spacing"><span class="ric">&#8597;</span><span class="rlab2" data-i18n="spacing">Spacing</span></button>
+            </div>
+            <div class="rrow">
+              <button type="button" class="rbtn sm wide" id="btnShading" data-i18n-title="shading" title="Paragraph shading"><span class="ric">&#9724;</span><span class="rlab2" data-i18n="shading">Shading</span></button>
+              <button type="button" class="rbtn sm wide" id="btnBorders" data-i18n-title="borders" title="Paragraph borders"><span class="ric">&#9723;</span><span class="rlab2" data-i18n="borders">Borders</span></button>
+            </div>
+          </div><div class="rglabel" data-i18n="grpSpacing">Spacing</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <select id="blockStyle" class="sel" data-i18n-title="paraStyle" title="Paragraph style" style="width:118px">
+              <option value="p" data-i18n="normal">Normal</option>
+              <option value="h1" data-i18n="h1">Heading 1</option>
+              <option value="h2" data-i18n="h2">Heading 2</option>
+              <option value="h3" data-i18n="h3">Heading 3</option>
+              <option value="blockquote" data-i18n="quote">Quote</option>
+            </select>
+          </div><div class="rglabel" data-i18n="grpStyles">Styles</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnFind"><span class="ric">&#8981;</span><span class="rlab" data-i18n="find">Find</span></button>
+          </div><div class="rglabel" data-i18n="grpEditing">Editing</div></div>
+        </div>
+
+        <div class="rpanel hidden" data-panel="insert">
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnPageBreak"><span class="ric">&#9145;</span><span class="rlab" data-i18n="pageBreak">Page break</span></button>
+          </div><div class="rglabel" data-i18n="grpPages">Pages</div></div>
+          <div class="rgroup"><div class="rbtns col">
+            <div class="rrow">
+              <button type="button" class="rbtn sm wide" id="btnTable"><span class="ric">&#9783;</span><span class="rlab2" data-i18n="insertTable">Table</span></button>
+              <button type="button" class="rbtn sm" id="btnRowAbove" data-i18n-title="rowAbove" title="Insert row above"><span class="ric">R&#8593;</span></button>
+              <button type="button" class="rbtn sm" id="btnRowBelow" data-i18n-title="rowBelow" title="Insert row below"><span class="ric">R&#8595;</span></button>
+              <button type="button" class="rbtn sm" id="btnDelRow" data-i18n-title="delRow" title="Delete row"><span class="ric">R&#10005;</span></button>
+            </div>
+            <div class="rrow">
+              <button type="button" class="rbtn sm wide" id="btnDelTable" data-i18n-title="delTable" title="Delete table"><span class="ric">&#9783;&#10005;</span></button>
+              <button type="button" class="rbtn sm" id="btnColLeft" data-i18n-title="colLeft" title="Insert column left"><span class="ric">C&#8592;</span></button>
+              <button type="button" class="rbtn sm" id="btnColRight" data-i18n-title="colRight" title="Insert column right"><span class="ric">C&#8594;</span></button>
+              <button type="button" class="rbtn sm" id="btnDelCol" data-i18n-title="delCol" title="Delete column"><span class="ric">C&#10005;</span></button>
+            </div>
+          </div><div class="rglabel" data-i18n="grpTables">Tables</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnImage"><span class="ric">&#128247;</span><span class="rlab" data-i18n="insertImage">Image</span></button>
+            <button type="button" class="rbtn" id="btnHr" data-cmd="insertHorizontalRule"><span class="ric">&#8213;</span><span class="rlab" data-i18n="hr">Line</span></button>
+            <button type="button" class="rbtn" id="btnDropCap"><span class="ric">Aa</span><span class="rlab" data-i18n="dropCap">Drop cap</span></button>
+          </div><div class="rglabel" data-i18n="grpMedia">Media</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnLink"><span class="ric">&#128279;</span><span class="rlab" data-i18n="insertLink">Link</span></button>
+          </div><div class="rglabel" data-i18n="grpLinks">Links</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnHeader"><span class="ric">&#9135;</span><span class="rlab" data-i18n="header">Header</span></button>
+            <button type="button" class="rbtn" id="btnFooter"><span class="ric">&#9136;</span><span class="rlab" data-i18n="footer">Footer</span></button>
+            <button type="button" class="rbtn" id="btnPageNum"><span class="ric">#</span><span class="rlab" data-i18n="pageNumber">Page no.</span></button>
+          </div><div class="rglabel" data-i18n="grpHeaderFooter">Header and Footer</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnDate"><span class="ric">&#128197;</span><span class="rlab" data-i18n="dateTime">Date</span></button>
+            <button type="button" class="rbtn" id="btnSymbol"><span class="ric">&Omega;</span><span class="rlab" data-i18n="symbol">Symbol</span></button>
+            <button type="button" class="rbtn" id="btnComment"><span class="ric">&#128172;</span><span class="rlab" data-i18n="comment">Comment</span></button>
+            <button type="button" class="rbtn" id="btnWatermark"><span class="ric">W</span><span class="rlab" data-i18n="watermark">Watermark</span></button>
+          </div><div class="rglabel" data-i18n="grpText">Text</div></div>
+        </div>
+
+        <div class="rpanel hidden" data-panel="layout">
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnPageSetup"><span class="ric">&#8862;</span><span class="rlab" data-i18n="pageSetup">Page setup</span></button>
+            <button type="button" class="rbtn" id="btnOrient"><span class="ric">&#10226;</span><span class="rlab" data-i18n="orientation">Orientation</span></button>
+          </div><div class="rglabel" data-i18n="grpPageSetup">Page Setup</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn sm wide" id="btnCols1"><span class="rlab2">1</span></button>
+            <button type="button" class="rbtn sm wide" id="btnCols2"><span class="rlab2">2</span></button>
+            <button type="button" class="rbtn sm wide" id="btnCols3"><span class="rlab2">3</span></button>
+          </div><div class="rglabel" data-i18n="grpColumns">Columns</div></div>
+        </div>
+
+        <div class="rpanel hidden" data-panel="references">
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnToc"><span class="ric">&#9776;</span><span class="rlab" data-i18n="insertToc">Contents</span></button>
+            <button type="button" class="rbtn" id="btnTocUpdate"><span class="ric">&#10227;</span><span class="rlab" data-i18n="updateToc">Update</span></button>
+          </div><div class="rglabel" data-i18n="grpToc">Table of Contents</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnCite"><span class="ric">&#10078;</span><span class="rlab" data-i18n="citeTitle">Cite</span></button>
+            <button type="button" class="rbtn" id="btnBiblio"><span class="ric">&#128214;</span><span class="rlab" data-i18n="biblioTitle">Bibliography</span></button>
+          </div><div class="rglabel" data-i18n="grpCitations">Citations</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnFootnote"><span class="ric">n<sup>1</sup></span><span class="rlab" data-i18n="footnoteTitle">Footnote</span></button>
+          </div><div class="rglabel" data-i18n="grpFootnotes">Footnotes</div></div>
+        </div>
+
+        <div class="rpanel hidden" data-panel="review">
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnCommentsPane"><span class="ric">&#128172;</span><span class="rlab" data-i18n="comments">Comments</span></button>
+          </div><div class="rglabel" data-i18n="grpComments">Comments</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnWordCount"><span class="ric">123</span><span class="rlab" data-i18n="wordCount">Word count</span></button>
+          </div><div class="rglabel" data-i18n="grpProofing">Proofing</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnLang2"><span class="ric">&#127760;</span><span class="rlab" data-i18n="language">Language</span></button>
+          </div><div class="rglabel" data-i18n="grpLanguage">Language</div></div>
+        </div>
+
+        <div class="rpanel hidden" data-panel="view">
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn sm" id="zoomOut" data-i18n-title="zoomOut" title="Zoom out"><span class="ric">-</span></button>
+            <select id="zoomSel" class="sel" title="Zoom" style="width:70px">
+              <option value="0.5">50%</option><option value="0.75">75%</option>
+              <option value="1" selected>100%</option><option value="1.25">125%</option>
+              <option value="1.5">150%</option><option value="2">200%</option>
+            </select>
+            <button type="button" class="rbtn sm" id="zoomIn" data-i18n-title="zoomIn" title="Zoom in"><span class="ric">+</span></button>
+          </div><div class="rglabel" data-i18n="grpZoom">Zoom</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnOutline"><span class="ric">&#9776;</span><span class="rlab" data-i18n="outline">Outline</span></button>
+            <button type="button" class="rbtn" id="btnMarks"><span class="ric">&para;</span><span class="rlab" data-i18n="showMarks">Marks</span></button>
+          </div><div class="rglabel" data-i18n="grpShow">Show</div></div>
+          <div class="rgroup"><div class="rbtns">
+            <button type="button" class="rbtn" id="btnViewHome"><span class="ric">&#8962;</span><span class="rlab" data-i18n="home">Home</span></button>
+          </div><div class="rglabel" data-i18n="grpWindow">Window</div></div>
+        </div>
+      </div>
     </div>
+
+    <div class="workarea">
+      <div class="outline-pane hidden" id="outlinePane">
+        <h3 data-i18n="outline">Outline</h3>
+        <div id="outlineList"></div>
+      </div>
+      <div class="canvas" id="canvas">
+        <div class="zoom-wrap" id="zoomWrap">
+          <div class="page" id="page">
+            <div class="watermark-layer hidden" id="watermarkLayer" aria-hidden="true"></div>
+            <div class="doc-header hidden" id="docHeader" contenteditable="true" spellcheck="true" data-ph="Header"></div>
+            <article id="sheet" class="sheet" contenteditable="true" spellcheck="true" aria-label="Document editor"></article>
+            <div class="doc-footer hidden" id="docFooter" contenteditable="true" spellcheck="true" data-ph="Footer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="comments-pane hidden" id="commentsPane">
+        <h3 data-i18n="comments">Comments</h3>
+        <div id="commentsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="home" id="viewHome">
+    <div class="home-hero">
+      <div class="home-logo">T</div>
+      <h1>TXT</h1>
+      <p data-i18n="homeTag">A fast word processor that saves automatically and exports everywhere.</p>
+      <div class="home-search">
+        <input id="homeSearch" data-i18n-ph="searchDocs" placeholder="Search documents" aria-label="Search documents">
+      </div>
+      <div class="home-actions">
+        <button type="button" id="btnHomeNew" class="big-btn">+ <span data-i18n="newBlankDoc">New blank document</span></button>
+        <button type="button" id="btnHomeTpl" class="big-btn ghost"><span data-i18n="browseTemplates">Browse templates</span></button>
+      </div>
+    </div>
+    <h2 id="tplHeading" data-i18n="templates">Templates</h2>
+    <div class="tpl-grid" id="tplGrid"></div>
+    <h2 data-i18n="recentDocs">Recent documents</h2>
+    <div class="doc-grid" id="recentGrid"></div>
   </section>
-</main>
+</div>
+
+<div id="findbar" class="findbar hidden">
+  <input id="findInput" data-i18n-ph="find" placeholder="Find" aria-label="Find">
+  <input id="replaceInput" data-i18n-ph="replaceWith" placeholder="Replace with" aria-label="Replace with">
+  <button type="button" id="findPrev" class="tool" data-i18n-title="prev" title="Previous">&#8593;</button>
+  <button type="button" id="findNext" class="tool" data-i18n-title="next" title="Next">&#8595;</button>
+  <button type="button" id="replaceOne" class="fbtn" data-i18n="replace" title="Replace current">Replace</button>
+  <button type="button" id="replaceAll" class="fbtn" data-i18n="replaceAll" title="Replace all">All</button>
+  <span id="findCount" class="find-count"></span>
+  <button type="button" id="findClose" class="tool" data-i18n-title="close" title="Close">&#10005;</button>
+</div>
 
 <footer class="statusbar">
   <span id="wordCount">0 words</span>
   <span class="sdot">.</span>
   <span id="charCount">0 characters</span>
   <span class="spacer"></span>
-  <button type="button" id="btnPageSetup" class="sbtn" title="Page setup">Page setup</button>
-  <span class="sdot">.</span>
-  <button type="button" id="zoomOut" class="sbtn" title="Zoom out">-</button>
-  <select id="zoomSel" class="sel small" title="Zoom">
-    <option value="0.5">50%</option>
-    <option value="0.75">75%</option>
-    <option value="1" selected>100%</option>
-    <option value="1.25">125%</option>
-    <option value="1.5">150%</option>
-    <option value="2">200%</option>
-  </select>
-  <button type="button" id="zoomIn" class="sbtn" title="Zoom in">+</button>
+  <span id="pageInfo" class="page-info"></span>
 </footer>
 
 <div id="popover" class="popover hidden"></div>
@@ -154,6 +313,8 @@
 <script src="vendor/docx.iife.js"></script>
 <script src="js/convert.js"></script>
 <script src="js/docx-export.js"></script>
+<script src="js/templates.js"></script>
+<script src="js/word.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
