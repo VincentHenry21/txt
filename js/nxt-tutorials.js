@@ -108,7 +108,7 @@
       b.setAttribute("aria-label", app.name + " tutorials, " + st.done + " of " + st.total + " done");
       var logo = document.createElement("span");
       logo.className = "nt-app-logo";
-      try { logo.innerHTML = (T.nxtLogos ? T.nxtLogos.get(id === "vec" ? "vec" : id === "pxl" ? "pxl" : id) : ""); } catch (e) {}
+      try { logo.innerHTML = (T.nxtLogos ? T.nxtLogos.get(id) : ""); } catch (e) {}
       b.appendChild(logo);
       var meta = h("span", "nt-app-meta", null);
       meta.appendChild(h("span", "nt-app-name", app.code));
@@ -308,7 +308,7 @@
   /* ---------- help buttons in each app top bar ---------- */
   var VIEW_TO_APP = {
     "view-word": null, // persona-dependent
-    "view-vector": "vec", "view-pixel": "pxl",
+    "view-vac": "vac", "view-pixel": "pxl",
     "view-grd": "grd", "view-dck": "dck", "view-mem": "mem",
     "view-pdf": "pdf", "view-hub": "hub"
   };
@@ -316,7 +316,7 @@
     if (viewId === "view-word") {
       var p = null;
       try { p = T.ecosystem && T.ecosystem.persona; } catch (e) {}
-      return p === "vector" ? "vec" : p === "pixel" ? "pxl" : "txt";
+      return p === "vac" ? "vac" : p === "pixel" ? "pxl" : "txt";
     }
     return VIEW_TO_APP[viewId] || null;
   }

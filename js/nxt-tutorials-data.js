@@ -644,19 +644,19 @@
       ]
     },
 
-    /* ================= VEC : vector studio ================= */
-    vec: {
-      name: "VEC", code: "VEC", color: "#84CC16",
-      desc: "Vector drawing studio",
-      open: { kind: "persona", id: "vector" },
+    /* ================= VAC : vector studio ================= */
+    vac: {
+      name: "VAC", code: "VAC", color: "#84CC16",
+      desc: "VAC drawing studio",
+      open: { kind: "persona", id: "vac" },
       tabs: [
         {
           id: "tools", title: "Tools", tryTab: null,
           features: [
             {
-              id: "vec-select", title: "Select and direct select",
+              id: "vac-select", title: "Select and direct select",
               steps: [
-                "Open VEC and create or open a drawing.",
+                "Open VAC and create or open a drawing.",
                 "Click Select (V) and click any shape to move it.",
                 "Click Direct select (A), then click an anchor point to move just that point.",
                 "Drag a marquee to select several objects at once."
@@ -664,7 +664,7 @@
               tip: "Direct select edits the shape itself; Select moves the whole object."
             },
             {
-              id: "vec-pen", title: "Pen tool",
+              id: "vac-pen", title: "Pen tool",
               steps: [
                 "Click Pen (P) in the tools.",
                 "Click to place anchor points; click and drag to pull out curve handles.",
@@ -674,7 +674,7 @@
               tip: "Fewer points make smoother curves."
             },
             {
-              id: "vec-shapes", title: "Shapes",
+              id: "vac-shapes", title: "Shapes",
               steps: [
                 "Click Shapes (M).",
                 "Drag on the pasteboard to draw rectangles and ellipses.",
@@ -683,7 +683,7 @@
               tip: "Shapes stay editable: resize them anytime with Select."
             },
             {
-              id: "vec-type", title: "Type tool",
+              id: "vac-type", title: "Type tool",
               steps: [
                 "Click Type (T).",
                 "Click on the pasteboard and type your text.",
@@ -692,7 +692,7 @@
               tip: "Text stays as live text, not outlines, until you export."
             },
             {
-              id: "vec-eyedropper", title: "Eyedropper",
+              id: "vac-eyedropper", title: "Eyedropper",
               steps: [
                 "Click Eyedropper (I).",
                 "Click any object to copy its fill and stroke onto the current selection.",
@@ -706,7 +706,7 @@
           id: "artboards", title: "Artboards", tryTab: null,
           features: [
             {
-              id: "vec-artboard", title: "Add artboards",
+              id: "vac-artboard", title: "Add artboards",
               steps: [
                 "Open the Artboards panel.",
                 "Choose a preset size from the dropdown, or set a custom size.",
@@ -716,7 +716,7 @@
               tip: "Keep logo variations on separate artboards."
             },
             {
-              id: "vec-artboard-export", title: "Export per artboard",
+              id: "vac-artboard-export", title: "Export per artboard",
               steps: [
                 "Open the Export panel.",
                 "Choose which artboard to export.",
@@ -730,7 +730,7 @@
           id: "appearance", title: "Appearance", tryTab: null,
           features: [
             {
-              id: "vec-gradient", title: "Gradient builder",
+              id: "vac-gradient", title: "Gradient builder",
               steps: [
                 "Select an object.",
                 "Open the Gradient panel.",
@@ -741,7 +741,7 @@
               tip: "Two stops close together make a hard color edge."
             },
             {
-              id: "vec-swatches", title: "Global swatches",
+              id: "vac-swatches", title: "Global swatches",
               steps: [
                 "Open the Swatches panel.",
                 "Create a swatch from the current fill color.",
@@ -751,7 +751,7 @@
               tip: "Global swatches keep brand colors consistent."
             },
             {
-              id: "vec-stroke", title: "Strokes",
+              id: "vac-stroke", title: "Strokes",
               steps: [
                 "Select an object.",
                 "Open the Stroke panel.",
@@ -761,7 +761,7 @@
               tip: "Round caps soften line endings."
             },
             {
-              id: "vec-transform", title: "Transform",
+              id: "vac-transform", title: "Transform",
               steps: [
                 "Select an object.",
                 "Open the Transform panel.",
@@ -776,7 +776,7 @@
           id: "pathfinder", title: "Pathfinder", tryTab: null,
           features: [
             {
-              id: "vec-pathfinder", title: "Combine shapes",
+              id: "vac-pathfinder", title: "Combine shapes",
               steps: [
                 "Select two or more overlapping shapes.",
                 "Open the Pathfinder panel.",
@@ -787,7 +787,7 @@
               tip: "Unite first, then edit the merged anchors with Direct select."
             },
             {
-              id: "vec-align", title: "Align and distribute",
+              id: "vac-align", title: "Align and distribute",
               steps: [
                 "Select several objects.",
                 "Open the Align panel.",
@@ -802,7 +802,7 @@
           id: "layers", title: "Layers", tryTab: null,
           features: [
             {
-              id: "vec-layers", title: "Organize with layers",
+              id: "vac-layers", title: "Organize with layers",
               steps: [
                 "Open the Layers panel.",
                 "Create new layers and drag objects between them.",
@@ -812,7 +812,7 @@
               tip: "Name layers as you go; future you will be grateful."
             },
             {
-              id: "vec-isolation", title: "Isolation mode",
+              id: "vac-isolation", title: "Isolation mode",
               steps: [
                 "Double-click a group to enter isolation mode.",
                 "Everything else dims so you can edit inside the group.",
@@ -826,7 +826,7 @@
           id: "trace", title: "Image Trace", tryTab: null,
           features: [
             {
-              id: "vec-trace", title: "Trace a raster image",
+              id: "vac-trace", title: "Trace a raster image",
               steps: [
                 "Place or paste a raster image on the pasteboard.",
                 "Select it and open the Trace panel.",
@@ -836,7 +836,7 @@
               tip: "High-contrast black and white art traces cleanest."
             },
             {
-              id: "vec-outline", title: "Outline mode",
+              id: "vac-outline", title: "Outline mode",
               steps: [
                 "Open the View panel.",
                 "Switch to Outline mode to see pure paths without fills.",
@@ -845,7 +845,7 @@
               tip: "Outline mode reveals hidden junk in traced art."
             },
             {
-              id: "vec-guides", title: "Smart guides",
+              id: "vac-guides", title: "Smart guides",
               steps: [
                 "Open the View panel and turn on Smart guides.",
                 "Move objects; guides snap to edges, centers and equal spacing.",
@@ -859,7 +859,7 @@
           id: "publish", title: "Publish", tryTab: null,
           features: [
             {
-              id: "vec-publish", title: "Send to TXT, DCK and PDF",
+              id: "vac-publish", title: "Send to TXT, DCK and PDF",
               steps: [
                 "Finish your vector artwork.",
                 "Open the Export panel.",
@@ -1331,7 +1331,7 @@
               id: "hub-files", title: "Browse all app files",
               steps: [
                 "Open the Files tab.",
-                "Files are grouped by app: TXT, GRD, DCK, MEM, PDF, VEC and PXL.",
+                "Files are grouped by app: TXT, GRD, DCK, MEM, PDF, VAC and PXL.",
                 "Click a file to open it.",
                 "Rename or delete from the file menu."
               ],

@@ -5,7 +5,7 @@
    shortcuts. Other personas/apps fill their #view-* sections in later waves.
 
    T.ecosystem = {
-     persona, app,                 // live getters: 'word'|'vector'|'pixel', 'txt'|...
+     persona, app,                 // live getters: 'word'|'vac'|'pixel', 'txt'|...
      setPersona(p),                // show persona view; vector/pixel morph to carbon theme
      openApp(a),                   // show app view; 'txt' == word persona
      toggleLauncher(),             // 9-dot app launcher popover
@@ -15,22 +15,23 @@
   "use strict";
   var T = window.TXT;
 
-  var PERSONAS = ["word", "vector", "pixel"];
-  var APPS = ["txt", "grd", "dck", "mem", "pdf", "hub"];
-  var VIEWS = ["view-home", "view-login", "view-tutorials", "view-word", "view-vector", "view-pixel",
-    "view-grd", "view-dck", "view-mem", "view-pdf", "view-hub"];
-  var VIEW_FOR_PERSONA = { word: "view-word", vector: "view-vector", pixel: "view-pixel" };
+  var PERSONAS = ["word", "vac", "pixel"];
+  var APPS = ["txt", "grd", "dck", "mem", "pdf", "hub", "ascend"];
+  var VIEWS = ["view-home", "view-login", "view-tutorials", "view-word", "view-vac", "view-pixel",
+    "view-grd", "view-dck", "view-mem", "view-pdf", "view-hub", "view-ascend"];
+  var VIEW_FOR_PERSONA = { word: "view-word", vac: "view-vac", pixel: "view-pixel" };
   var VIEW_FOR_APP = {
     txt: "view-word", grd: "view-grd", dck: "view-dck",
-    mem: "view-mem", pdf: "view-pdf", hub: "view-hub"
+    mem: "view-mem", pdf: "view-pdf", hub: "view-hub", ascend: "view-ascend"
   };
   var APPS_META = [
-    { id: "txt", code: "TXT", color: "#7C3AED", desc: "Flagship word processor" },
-    { id: "grd", code: "GRD", color: "#06B6D4", desc: "Spreadsheet grid and kanban" },
-    { id: "dck", code: "DCK", color: "#FF2E93", desc: "Slide deck generator" },
-    { id: "mem", code: "MEM", color: "#10B981", desc: "Memory clipper and notes" },
-    { id: "pdf", code: "PDF", color: "#F59E0B", desc: "PDF toolkit" },
-    { id: "hub", code: "HUB", color: "#3B82F6", desc: "Ecosystem home" }
+    { id: "txt", code: "TXT", color: "#7C3AED", desc: "Flagship word processor", logo: "txt" },
+    { id: "grd", code: "GRD", color: "#06B6D4", desc: "Spreadsheet grid and kanban", logo: "grd" },
+    { id: "dck", code: "DCK", color: "#FF2E93", desc: "Slide deck generator", logo: "dck" },
+    { id: "mem", code: "MEM", color: "#10B981", desc: "Memory clipper and notes", logo: "mem" },
+    { id: "pdf", code: "PDF", color: "#F59E0B", desc: "PDF toolkit", logo: "pdf" },
+    { id: "hub", code: "HUB", color: "#3B82F6", desc: "Ecosystem home", logo: "hub" },
+    { id: "ascend", code: "ASC", color: "#0EA5E9", desc: "Study webapp by H3NZ" }
   ];
 
   var eco = { persona: "word", app: "txt" };
@@ -81,7 +82,7 @@
     sw.className = "segmented";
     sw.setAttribute("role", "tablist");
     sw.setAttribute("aria-label", "Persona");
-    [["word", "T", "TXT"], ["vector", "Vc", "VEC"], ["pixel", "Px", "PXL"]].forEach(function (d, i) {
+    [["word", "T", "TXT"], ["vac", "Va", "VAC"], ["pixel", "Px", "PXL"]].forEach(function (d, i) {
       var b = document.createElement("button");
       b.type = "button";
       b.setAttribute("data-persona", d[0]);
@@ -179,7 +180,7 @@
     la.appendChild(head);
     var pRow = document.createElement("div");
     pRow.className = "launcher-personas";
-    [["word", "W", "Word"], ["vector", "Ai", "Vector"], ["pixel", "Ps", "Pixel"]].forEach(function (d) {
+    [["word", "W", "Word"], ["vac", "Ai", "VAC"], ["pixel", "Ps", "Pixel"]].forEach(function (d) {
       var b = document.createElement("button");
       b.type = "button";
       b.className = "launcher-persona" + ((eco.persona === d[0] && eco.app === "txt") ? " active" : "");
@@ -208,8 +209,15 @@
       tile.setAttribute("aria-label", m.code + ": " + m.desc);
       var badge = document.createElement("span");
       badge.className = "tile-badge";
-      badge.style.background = m.color;
-      badge.textContent = m.code;
+      var logoImg = (m.logo && T.appLogoImg) ? T.appLogoImg(m.logo) : null;
+      if (logoImg) {
+        /* user-supplied wordmark on a white app-icon tile */
+        badge.className += " tile-logo";
+        badge.appendChild(logoImg);
+      } else {
+        badge.style.background = m.color;
+        badge.textContent = m.code;
+      }
       badge.setAttribute("aria-hidden", "true");
       var nm = document.createElement("span");
       nm.className = "tile-name";
@@ -292,12 +300,12 @@
     syncPersonaSwitch();
     showOnly(VIEW_FOR_PERSONA[p]);
     try {
-      if (p === "vector" && T.vector && T.vector.show) T.vector.show();
+      if (p === "vac" && T.vac && T.vac.show) T.vac.show();
       else if (p === "pixel" && T.pixel && T.pixel.open) T.pixel.open();
       else if (prev === "pixel" && T.pixel && T.pixel.close) T.pixel.close();
     } catch (e) {}
     var cur = document.documentElement.getAttribute("data-theme");
-    if (p === "vector" || p === "pixel") {
+    if (p === "vac" || p === "pixel") {
       if (cur !== "carbon") prevTheme = T.state.prefs.theme || cur || "studio";
       applyCarbon();
     } else {
@@ -325,6 +333,9 @@
     showOnly(VIEW_FOR_APP[a]);
     focusView(VIEW_FOR_APP[a]);
     applyNxtTheme(a);
+    if (a === "ascend" && T.ascend && typeof T.ascend.open === "function") {
+      try { T.ascend.open(); } catch (e) { /* view still shows; iframe retry is in the view */ }
+    }
     T.bus.emit("ecosystem:app", { app: a });
   }
 
@@ -448,7 +459,7 @@
     if (tag === "input" || tag === "textarea" || tag === "select") return;
     if (t && t.isContentEditable) return;
     if (e.key === "1") { e.preventDefault(); setPersona("word"); }
-    else if (e.key === "2") { e.preventDefault(); setPersona("vector"); }
+    else if (e.key === "2") { e.preventDefault(); setPersona("vac"); }
     else if (e.key === "3") { e.preventDefault(); setPersona("pixel"); }
   });
 
@@ -469,8 +480,8 @@
   /* ---------- commands ---------- */
   T.register("persona.word", function () { setPersona("word"); },
     { title: "Word persona", cat: "NXT OS", icon: "i-file", keys: "Ctrl+1", match: "word document" });
-  T.register("persona.vector", function () { setPersona("vector"); },
-    { title: "VEC studio", cat: "NXT OS", icon: "i-shapes", keys: "Ctrl+2", match: "vector illustrator svg" });
+  T.register("persona.vac", function () { setPersona("vac"); },
+    { title: "VAC studio", cat: "NXT OS", icon: "i-shapes", keys: "Ctrl+2", match: "vac vector illustrator svg" });
   T.register("persona.pixel", function () { setPersona("pixel"); },
     { title: "PXL studio", cat: "NXT OS", icon: "i-image", keys: "Ctrl+3", match: "pixel photoshop raster" });
   APPS_META.forEach(function (m) {

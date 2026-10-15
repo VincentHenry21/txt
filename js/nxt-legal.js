@@ -20,7 +20,7 @@
 
   var TERMS_HTML =
     "<h3>1. What NXT OS is</h3>" +
-    "<p>NXT OS is a personal productivity suite developed by H3NZ. It includes the TXT word processor, GRD spreadsheets, DCK slide decks, MEM notes, PDF tools, HUB file browser, and the VEC and PXL studios. The suite runs as a web app in your browser.</p>" +
+    "<p>NXT OS is a personal productivity suite developed by H3NZ. It includes the TXT word processor, GRD spreadsheets, DCK slide decks, MEM notes, PDF tools, HUB file browser, and the VAC and PXL studios. The suite runs as a web app in your browser.</p>" +
     "<h3>2. Your content stays yours</h3>" +
     "<p>Documents, sheets, decks, notes, and files you create belong to you. NXT OS does not claim ownership of your content.</p>" +
     "<h3>3. Local-first storage</h3>" +
@@ -47,7 +47,7 @@
     "<p class=\"nxtlegal-meta\">Last updated: October 2026 · NXT OS V1.0 · Developed by H3NZ</p>";
 
   var FAQ = [
-    ["What is NXT OS?", "NXT OS is a suite of eight productivity apps developed by H3NZ: TXT (word processor), GRD (spreadsheets and kanban), DCK (slide decks), MEM (notes), PDF (PDF tools), HUB (file browser), VEC (vector studio), and PXL (pixel studio). They share one launcher, one file system, and one design language."],
+    ["What is NXT OS?", "NXT OS is a suite of eight productivity apps developed by H3NZ: TXT (word processor), GRD (spreadsheets and kanban), DCK (slide decks), MEM (notes), PDF (PDF tools), HUB (file browser), VAC (vector studio), and PXL (pixel studio). They share one launcher, one file system, and one design language."],
     ["Do I need an account?", "No. Pick a username on the launcher and everything is stored locally in your browser. There is no password and no cloud account required."],
     ["Where are my files stored?", "In your browser's local storage on this device. Use each app's export options to save copies to your device or share them elsewhere."],
     ["How do I switch between apps?", "Use the 9-dot launcher button in any app's top bar, the command palette (Ctrl+K), or the NXT home button to return to the launcher."],

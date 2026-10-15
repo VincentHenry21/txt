@@ -7,7 +7,7 @@
   "use strict";
   var T = window.TXT;
 
-  var IDS = ["nxt", "txt", "pxl", "vec", "pdf", "grd", "dck", "mem", "hub"];
+  var IDS = ["nxt", "txt", "pxl", "vac", "pdf", "grd", "dck", "mem", "hub"];
 
   /* Interlocking 3D geometric prism forming an NXT monogram, with an H3NZ
      micro-engraving. Titanium/champagne palette. */
@@ -64,18 +64,18 @@
 
   /* Precision compass nib plotting a cubic Bezier S-curve with glowing
      diamond anchor handles, Vc mark. #84CC16 family. */
-  function logoVec() {
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="VEC">' +
-      '<defs><linearGradient id="vec-g1" x1="0" y1="0" x2="1" y2="0">' +
+  function logoVac() {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="VAC">' +
+      '<defs><linearGradient id="vac-g1" x1="0" y1="0" x2="1" y2="0">' +
       '<stop offset="0" stop-color="#A3E635"/><stop offset="1" stop-color="#65A30D"/></linearGradient>' +
-      '<filter id="vec-glow" x="-40%" y="-40%" width="180%" height="180%">' +
+      '<filter id="vac-glow" x="-40%" y="-40%" width="180%" height="180%">' +
       '<feGaussianBlur stdDeviation="1.2" result="b"/>' +
       '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
       '<path d="M8 36 C 16 36, 16 12, 24 12 S 32 36, 40 36" fill="none" ' +
-      'stroke="url(#vec-g1)" stroke-width="3.2" stroke-linecap="round"/>' +
-      '<polygon points="8,32 12,36 8,40 4,36" fill="#A3E635" filter="url(#vec-glow)"/>' +
-      '<polygon points="40,32 44,36 40,40 36,36" fill="#65A30D" filter="url(#vec-glow)"/>' +
-      '<polygon points="24,8 28,12 24,16 20,12" fill="#D9F99D" filter="url(#vec-glow)"/>' +
+      'stroke="url(#vac-g1)" stroke-width="3.2" stroke-linecap="round"/>' +
+      '<polygon points="8,32 12,36 8,40 4,36" fill="#A3E635" filter="url(#vac-glow)"/>' +
+      '<polygon points="40,32 44,36 40,40 36,36" fill="#65A30D" filter="url(#vac-glow)"/>' +
+      '<polygon points="24,8 28,12 24,16 20,12" fill="#D9F99D" filter="url(#vac-glow)"/>' +
       '<polygon points="33,6 41,6 41,14 37,10" fill="#3F6212"/>' +
       '<polygon points="33,6 37,10 33,14" fill="#65A30D"/>' +
       '<text x="24" y="33" font-family="Verdana, sans-serif" font-size="9" font-weight="bold" ' +
@@ -193,7 +193,7 @@
   }
 
   var BUILDERS = {
-    nxt: logoNxt, txt: logoTxt, pxl: logoPxl, vec: logoVec, pdf: logoPdf,
+    nxt: logoNxt, txt: logoTxt, pxl: logoPxl, vac: logoVac, pdf: logoPdf,
     grd: logoGrd, dck: logoDck, mem: logoMem, hub: logoHub
   };
 

@@ -7,19 +7,25 @@
   if (!T) return;
 
   var APPS = [
-    { id: "txt", code: "TXT", color: "#7C3AED", desc: "Flagship word processor" },
-    { id: "grd", code: "GRD", color: "#06B6D4", desc: "Spreadsheet grid and kanban" },
-    { id: "dck", code: "DCK", color: "#FF2E93", desc: "Slide deck generator" },
-    { id: "mem", code: "MEM", color: "#10B981", desc: "Notes and whiteboard" },
-    { id: "pdf", code: "PDF", color: "#F59E0B", desc: "PDF toolkit" },
-    { id: "hub", code: "HUB", color: "#3B82F6", desc: "Files and storage" }
+    { id: "txt", code: "TXT", color: "#7C3AED", desc: "Flagship word processor", logo: "txt" },
+    { id: "grd", code: "GRD", color: "#06B6D4", desc: "Spreadsheet grid and kanban", logo: "grd" },
+    { id: "dck", code: "DCK", color: "#FF2E93", desc: "Slide deck generator", logo: "dck" },
+    { id: "mem", code: "MEM", color: "#10B981", desc: "Notes and whiteboard", logo: "mem" },
+    { id: "pdf", code: "PDF", color: "#F59E0B", desc: "PDF toolkit", logo: "pdf" },
+    { id: "hub", code: "HUB", color: "#3B82F6", desc: "Files and storage", logo: "hub" },
+    { id: "ascend", code: "ASC", color: "#0EA5E9", desc: "Study webapp by H3NZ", icon: "cap" }
   ];
   var STUDIOS = [
     { id: "word", code: "T", name: "TXT" },
-    { id: "vector", code: "Vc", name: "VEC" },
-    { id: "pixel", code: "Px", name: "PXL" }
+    { id: "vac", code: "Va", name: "VAC", logo: "vac" },
+    { id: "pixel", code: "Px", name: "PXL", logo: "pxl" }
   ];
   var APP_IDS = ["grd", "dck", "mem", "pdf", "hub"];
+
+  var CAP_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M21.4 10.9a1 1 0 0 0 0-1.8L12.8 5.2a2 2 0 0 0-1.6 0L2.6 9.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0z"/>' +
+    '<path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>';
 
   var built = false, view = null, searchInput = null, recentBox = null, profileBox = null;
 
@@ -123,7 +129,7 @@
 
     var brand = h("div", "nxt-brand", null);
     brand.appendChild(h("div", "nxt-brand-name", "NXT OS"));
-    brand.appendChild(h("div", "nxt-brand-tag", "Documents, sheets, slides, boards and files. One OS home."));
+    brand.appendChild(h("div", "nxt-brand-tag", "Documents, sheets, slides, boards, files and study. One OS home."));
     wrap.appendChild(brand);
 
     wrap.appendChild(buildProfile());
@@ -154,7 +160,12 @@
       b.type = "button";
       b.setAttribute("data-search", (s.name + " studio").toLowerCase());
       b.setAttribute("aria-label", s.name + " studio");
-      var badge = h("span", "nxt-studio-badge", s.code);
+      var badge = h("span", "nxt-studio-badge", s.logo ? "" : s.code);
+      if (s.logo && T.appLogoImg) {
+        badge.className += " nxt-studio-logo";
+        var sImg = T.appLogoImg(s.logo);
+        if (sImg) badge.appendChild(sImg);
+      }
       b.appendChild(badge);
       b.appendChild(h("span", "nxt-studio-name", s.name));
       b.addEventListener("click", function () {
@@ -171,8 +182,27 @@
       t.type = "button";
       t.setAttribute("data-search", (a.code + " " + a.desc).toLowerCase());
       t.setAttribute("aria-label", a.code + ": " + a.desc);
-      var badge = h("span", "nxt-tile-badge", a.code);
-      badge.style.background = a.color;
+      var badge = h("span", "nxt-tile-badge", null);
+      var usedLogo = false;
+      if (a.logo && T.appLogoImg) {
+        /* user-supplied wordmark on a white app-icon tile */
+        var lImg = T.appLogoImg(a.logo);
+        if (lImg) {
+          badge.className += " nxt-tile-logo";
+          badge.appendChild(lImg);
+          usedLogo = true;
+        }
+      }
+      if (!usedLogo) badge.style.background = a.color;
+      if (a.icon === "cap") {
+        /* graduation-cap icon badge for Ascend (inline, no gradient ids) */
+        badge.innerHTML = CAP_SVG;
+        badge.style.display = "inline-flex";
+        badge.style.alignItems = "center";
+        badge.style.justifyContent = "center";
+      } else if (!usedLogo) {
+        badge.textContent = a.code;
+      }
       t.appendChild(badge);
       t.appendChild(h("span", "nxt-tile-name", a.code));
       t.appendChild(h("span", "nxt-tile-desc", a.desc));
@@ -336,7 +366,7 @@
     if (searchInput) { searchInput.value = ""; applyFilter(""); }
     if (T.ecosystem && T.ecosystem.home) T.ecosystem.home();
     else if (view) {
-      ["view-word", "view-vector", "view-pixel", "view-grd", "view-dck", "view-mem", "view-pdf", "view-hub"].forEach(function (id) {
+      ["view-word", "view-vac", "view-pixel", "view-grd", "view-dck", "view-mem", "view-pdf", "view-hub", "view-ascend"].forEach(function (id) {
         var s = document.getElementById(id);
         if (s) s.classList.add("hidden");
       });

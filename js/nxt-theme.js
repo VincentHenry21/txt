@@ -7,7 +7,7 @@
   "use strict";
   var T = window.TXT = window.TXT || {};
 
-  var APPS = ["home", "txt", "grd", "dck", "mem", "pdf", "hub", "vector", "pixel"];
+  var APPS = ["home", "txt", "grd", "dck", "mem", "pdf", "hub", "ascend", "vac", "pixel"];
   var DEFAULT_APP = "home";
 
   function valid(app) {

@@ -111,7 +111,7 @@
     { code: "MEM", name: "Memory clipper and notes", color: "#10B981" },
     { code: "PDF", name: "PDF toolkit", color: "#F59E0B" },
     { code: "HUB", name: "Files and storage", color: "#3B82F6" },
-    { code: "VEC", name: "Vector studio", color: "#84CC16" },
+    { code: "VAC", name: "VAC studio", color: "#84CC16" },
     { code: "PXL", name: "Pixel studio", color: "#EC4899" }
   ];
   var aboutOpen = false;

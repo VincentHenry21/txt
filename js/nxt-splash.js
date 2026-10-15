@@ -20,7 +20,7 @@
     mem:    { name: "MEM",    logoId: "mem" },
     pdf:    { name: "PDF",    logoId: "pdf" },
     hub:    { name: "HUB",    logoId: "hub" },
-    vector: { name: "VEC",    logoId: "vec" },
+    vac:    { name: "VAC",    logoId: "vac" },
     pixel:  { name: "PXL",    logoId: "pxl" },
     home:   { name: "NXT OS", logoId: "nxt" }
   };

@@ -8,7 +8,7 @@
    - 'mem:send'         {text}               -> insert text at cursor
 
    Double-click a figure.vector-block to open it in the Vector persona
-   (T.vector.setSVG); double-click an img[data-pid] to open the Pixel
+   (T.vac.setSVG); double-click an img[data-pid] to open the Pixel
    persona (T.pixel.loadDataURL). Every studio call is guarded so nothing
    throws before the studios load. */
 (function () {
@@ -89,16 +89,16 @@
       fig.className = "vector-block";
       fig.setAttribute("data-vid", String(id));
       fig.setAttribute("tabindex", "0");
-      fig.setAttribute("title", "Double-click to edit in Vector Studio");
+      fig.setAttribute("title", "Double-click to edit in VAC Studio");
       var cap = document.createElement("figcaption");
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "vec-edit-btn";
+      btn.className = "vac-edit-btn";
       btn.innerHTML = T.icon("i-pen") + "<span>Edit in Vector</span>";
       btn.addEventListener("click", function (ev) {
         ev.stopPropagation();
         ev.preventDefault();
-        openInVector(fig);
+        openInVac(fig);
       });
       cap.appendChild(btn);
       fig.appendChild(cap);
@@ -114,16 +114,16 @@
     }
     touchDoc();
   }
-  function openInVector(fig) {
-    if (typeof T.vector === "undefined" || !T.vector || typeof T.vector.setSVG !== "function") {
-      T.toast("Vector Studio is not loaded yet.", "error");
+  function openInVac(fig) {
+    if (typeof T.vac === "undefined" || !T.vac || typeof T.vac.setSVG !== "function") {
+      T.toast("VAC Studio is not loaded yet.", "error");
       return;
     }
     var svg = fig.querySelector(":scope > svg");
-    if (T.store) T.store.set("vector", "editVid", fig.getAttribute("data-vid"));
-    if (T.ecosystem && T.ecosystem.setPersona) T.ecosystem.setPersona("vector");
-    try { T.vector.setSVG(svg ? svg.outerHTML : ""); }
-    catch (e) { T.toast("Could not open in Vector Studio.", "error"); }
+    if (T.store) T.store.set("vac", "editVid", fig.getAttribute("data-vid"));
+    if (T.ecosystem && T.ecosystem.setPersona) T.ecosystem.setPersona("vac");
+    try { T.vac.setSVG(svg ? svg.outerHTML : ""); }
+    catch (e) { T.toast("Could not open in VAC Studio.", "error"); }
   }
 
   /* ---------- pixel images ---------- */
@@ -226,7 +226,7 @@
     if (fig && sh.contains(fig)) {
       if (e.target.closest("button")) return; // the Edit button handles itself
       e.preventDefault();
-      openInVector(fig);
+      openInVac(fig);
       return;
     }
     var img = e.target.closest("img[data-pid]");
