@@ -2,6 +2,8 @@
    Homescreen, TXT-to-PDF conversion with paginated preview and bookmark tree,
    annotation tools (highlight, sticky notes, shapes), true burn-in redaction,
    signature pad, and HTML / TXT / print export.
+   Phase 1: per-app topbar (app launcher + settings), persisted per-app
+   settings, and a real per-app file model backed by the pdf store namespace.
 
    Dependency-free IIFE module. Reuses the app's existing export path:
    T.download (blob downloads, js/export.js), T.exporters.pdf (window.print),
@@ -46,6 +48,20 @@
   var undoStack = [];
   var pendingSig = null;     /* signature waiting for placement */
   var dragState = null;
+  var sigPad = null;         /* active signature pad in the modal */
+  var inkColor = "#111827";  /* signature / draw ink, from settings */
+  var singlePage = 0;        /* current page index in single-page mode */
+
+  var SETTING_DEFAULTS = { zoom: "fit", highlight: "#FDE68A", ink: "#111827", pageMode: "continuous" };
+  var HL_SWATCHES = ["#FDE68A", "#BBF7D0", "#FBCFE8", "#BFDBFE", "#FED7AA"];
+  var INK_SWATCHES = ["#111827", "#1D4ED8", "#B91C1C", "#047857", "#7C3AED"];
+  var GEAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/>' +
+    '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33' +
+    ' 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1' +
+    ' 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65' +
+    ' 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0' +
+    ' 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0' +
+    ' 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
   /* ---------------- small helpers ---------------- */
   function $(id) { return document.getElementById(id); }
@@ -87,6 +103,151 @@
     doc.updatedAt = Date.now();
     T.store.set("pdf", "doc:" + doc.id, JSON.parse(JSON.stringify(doc)));
     pushRecent({ id: doc.id, title: doc.title, source: doc.source, updatedAt: doc.updatedAt });
+  }
+
+  /* ---------------- per-app settings (persisted under pdf/settings) ---------------- */
+  function getSettings() {
+    var s = T.store ? T.store.get("pdf", "settings") : null;
+    var out = {}, k;
+    for (k in SETTING_DEFAULTS) out[k] = (s && s[k] !== undefined && s[k] !== null) ? s[k] : SETTING_DEFAULTS[k];
+    return out;
+  }
+
+  function setSettings(patch) {
+    var s = getSettings(), k;
+    for (k in (patch || {})) if (k in SETTING_DEFAULTS) s[k] = patch[k];
+    if (T.store) T.store.set("pdf", "settings", s);
+    applySettings();
+    return s;
+  }
+
+  function syncSwatches(containerId, value) {
+    var box = $(containerId);
+    if (!box) return;
+    var want = String(value || "").toLowerCase();
+    Array.prototype.forEach.call(box.querySelectorAll("[data-color]"), function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-color")).toLowerCase() === want ? "true" : "false");
+    });
+  }
+
+  /* Apply settings to live state + DOM. Safe to call before the view exists. */
+  function applySettings() {
+    var s = getSettings();
+    hlColor = s.highlight;
+    inkColor = s.ink;
+    var hl = $("pdf-hl-color");
+    if (hl && hl.value !== s.highlight) hl.value = s.highlight;
+    var stage = $("pdf-stage");
+    if (stage) {
+      stage.setAttribute("data-zoom", s.zoom);
+      stage.setAttribute("data-pagemode", s.pageMode);
+    }
+    var pager = $("pdf-pager");
+    if (pager) pager.classList.toggle("hidden", s.pageMode !== "single");
+    var zs = $("pdf-set-zoom");
+    if (zs) zs.value = s.zoom;
+    var pm = $("pdf-set-pagemode");
+    if (pm) pm.value = s.pageMode;
+    syncSwatches("pdf-set-hl", s.highlight);
+    syncSwatches("pdf-set-ink", s.ink);
+    if (doc && s.pageMode === "single") refreshSinglePage();
+  }
+
+  /* ---------------- per-app files (records over the existing recent/doc storage) ---------------- */
+  function fileRecord(d) {
+    if (!d) return null;
+    return { id: d.id, name: d.title || "Untitled", updatedAt: d.updatedAt, source: d.source, payload: d };
+  }
+
+  function findFile(id) {
+    var e = getRecent().filter(function (x) { return x && x.id === id; })[0];
+    if (!e) return null;
+    var payload = T.store ? T.store.get("pdf", "doc:" + id) : null;
+    return { id: e.id, name: e.title || "Untitled", updatedAt: e.updatedAt, source: e.source, payload: payload || null };
+  }
+
+  function listFiles() {
+    return getRecent().map(function (e) {
+      var payload = T.store ? T.store.get("pdf", "doc:" + e.id) : null;
+      return { id: e.id, name: e.title || "Untitled", updatedAt: e.updatedAt, source: e.source, payload: payload || null };
+    });
+  }
+
+  function createFile(name) {
+    var d = newDocFromHtml((name || "").trim() || "Untitled", "", "file");
+    return fileRecord(d);
+  }
+
+  function renameFile(id, name) {
+    name = (name || "").trim();
+    if (!name || !T.store) return false;
+    var payload = T.store.get("pdf", "doc:" + id);
+    if (!payload || !payload.model) { toast("That document is no longer stored."); return false; }
+    payload.title = name;
+    payload.updatedAt = Date.now();
+    T.store.set("pdf", "doc:" + id, payload);
+    var r = getRecent();
+    r.forEach(function (e) { if (e && e.id === id) { e.title = name; e.updatedAt = payload.updatedAt; } });
+    T.store.set("pdf", "recent", r);
+    if (doc && doc.id === id) {
+      doc.title = name;
+      var t = $("pdf-doc-title");
+      if (t) t.textContent = name;
+    }
+    return fileRecord(payload);
+  }
+
+  function duplicateFile(id) {
+    if (!T.store) return false;
+    var payload = T.store.get("pdf", "doc:" + id);
+    if (!payload || !payload.model) { toast("That document is no longer stored."); return false; }
+    var copy = JSON.parse(JSON.stringify(payload));
+    copy.id = uid();
+    copy.title = (copy.title || "Untitled") + " copy";
+    copy.createdAt = Date.now();
+    copy.updatedAt = Date.now();
+    T.store.set("pdf", "doc:" + copy.id, copy);
+    pushRecent({ id: copy.id, title: copy.title, source: copy.source, updatedAt: copy.updatedAt });
+    toast("Duplicated as \"" + copy.title + "\".");
+    return fileRecord(copy);
+  }
+
+  function removeFile(id) {
+    var rec = findFile(id);
+    if (!rec) return Promise.resolve(false);
+    function done() {
+      removeRecent(id);
+      if (doc && doc.id === id) doc = null;
+      renderRecent($("pdf-search") ? $("pdf-search").value : "");
+      show();
+      return true;
+    }
+    if (T.modal) {
+      return T.modal({
+        title: "Delete document?",
+        sub: "Delete \"" + rec.name + "\" permanently? This cannot be undone.",
+        okText: "Delete"
+      }).then(function (ok) { return ok ? done() : false; });
+    }
+    return Promise.resolve(done());
+  }
+
+  function openFile(id) { return openRecent(id); }
+
+  function promptRename(id) {
+    var rec = findFile(id);
+    if (!rec) return;
+    if (!T.modal) { toast("Renaming is not available here."); return; }
+    T.modal({
+      title: "Rename document",
+      fields: [{ key: "name", label: "Name", type: "text", value: rec.name }],
+      okText: "Rename"
+    }).then(function (out) {
+      if (out && out.name && String(out.name).trim()) {
+        renameFile(id, String(out.name).trim());
+        renderRecent($("pdf-search") ? $("pdf-search").value : "");
+      }
+    });
   }
 
   /* ---------------- text model + pagination (pure helpers) ---------------- */
@@ -203,6 +364,7 @@
     };
     undoStack = [];
     pendingSig = null;
+    singlePage = 0;
     ensureView();
     showStudio();
     renderPages();
@@ -218,6 +380,7 @@
     doc = saved;
     undoStack = [];
     pendingSig = null;
+    singlePage = 0;
     ensureView();
     showStudio();
     renderPages();
@@ -292,8 +455,11 @@
     var view = $("view-pdf");
     if (!view) return;
     view.innerHTML = "";
+    buildTopbar(view);
     buildHome(view);
     buildStudio(view);
+    buildSettingsDrawer(view);
+    applySettings();
     built = true;
   }
 
@@ -317,6 +483,43 @@
   function hide() {
     var v = $("view-pdf");
     if (v) v.classList.add("hidden");
+  }
+
+  /* ---------------- per-app topbar (launcher + settings) ---------------- */
+  function buildTopbar(view) {
+    var bar = el("div", "pdf-topbar");
+    bar.id = "pdf-topbar";
+    var badge = el("span", "pdf-app-badge");
+    badge.textContent = "PDF";
+    var name = el("span", "pdf-topbar-name");
+    name.textContent = "PDF Studio";
+    var spacer = el("span", "pdf-topbar-spacer");
+    var waffle = el("button", "icon-btn waffle-btn");
+    waffle.type = "button";
+    waffle.id = "pdf-launcher-btn";
+    waffle.title = "Apps";
+    waffle.setAttribute("aria-label", "Open app launcher");
+    var dots = el("span", "waffle-dots");
+    dots.setAttribute("aria-hidden", "true");
+    for (var i = 0; i < 9; i++) dots.appendChild(el("i"));
+    waffle.appendChild(dots);
+    waffle.addEventListener("click", function () {
+      if (T.ecosystem && typeof T.ecosystem.toggleLauncher === "function") T.ecosystem.toggleLauncher();
+      else toast("The app launcher is not available in this build.");
+    });
+    var gear = el("button", "icon-btn");
+    gear.type = "button";
+    gear.id = "pdf-settings-btn";
+    gear.title = "PDF settings";
+    gear.setAttribute("aria-label", "PDF settings");
+    gear.innerHTML = GEAR_SVG;
+    gear.addEventListener("click", openSettings);
+    bar.appendChild(badge);
+    bar.appendChild(name);
+    bar.appendChild(spacer);
+    bar.appendChild(waffle);
+    bar.appendChild(gear);
+    view.insertBefore(bar, view.firstChild);
   }
 
   /* ---------------- homescreen ---------------- */
@@ -369,7 +572,7 @@
     home.appendChild(secNew);
 
     var secRec = el("div", "eco-home-sec");
-    var hRec = el("h2"); hRec.textContent = "Recent";
+    var hRec = el("h2"); hRec.textContent = "Files";
     var grid = el("div", "eco-home-grid");
     grid.id = "pdf-recent-grid";
     var empty = el("div", "eco-home-empty");
@@ -377,6 +580,11 @@
     empty.textContent = "No recent PDFs yet. Convert a TXT document or import a file to get started.";
     secRec.appendChild(hRec); secRec.appendChild(grid); secRec.appendChild(empty);
     home.appendChild(secRec);
+
+    var foot = el("div", "pdf-eco-foot");
+    foot.id = "pdf-eco-foot";
+    foot.textContent = "Part of NXT Ecosystem";
+    home.appendChild(foot);
 
     view.appendChild(home);
   }
@@ -400,12 +608,34 @@
       open.type = "button";
       open.textContent = "Open";
       open.addEventListener("click", function (ev) { ev.stopPropagation(); openRecent(e.id); });
-      var del = el("button", "pdf-btn");
+      var ren = el("button", "pdf-btn pdf-btn-sm");
+      ren.type = "button";
+      ren.textContent = "Rename";
+      ren.setAttribute("aria-label", "Rename " + (e.title || "document"));
+      ren.addEventListener("click", function (ev) { ev.stopPropagation(); promptRename(e.id); });
+      var dup = el("button", "pdf-btn pdf-btn-sm");
+      dup.type = "button";
+      dup.textContent = "Duplicate";
+      dup.setAttribute("aria-label", "Duplicate " + (e.title || "document"));
+      dup.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        duplicateFile(e.id);
+        renderRecent($("pdf-search") ? $("pdf-search").value : "");
+      });
+      var del = el("button", "pdf-btn pdf-btn-sm");
       del.type = "button";
       del.textContent = "Delete";
-      del.setAttribute("aria-label", "Delete " + (e.title || "document") + " from recents");
-      del.addEventListener("click", function (ev) { ev.stopPropagation(); removeRecent(e.id); renderRecent($("pdf-search") ? $("pdf-search").value : ""); });
-      row.appendChild(open); row.appendChild(del);
+      del.setAttribute("aria-label", "Delete " + (e.title || "document"));
+      del.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        removeFile(e.id).then(function (ok) {
+          if (ok) {
+            toast("Document deleted.");
+            renderRecent($("pdf-search") ? $("pdf-search").value : "");
+          }
+        });
+      });
+      row.appendChild(open); row.appendChild(ren); row.appendChild(dup); row.appendChild(del);
       card.appendChild(h3); card.appendChild(meta); card.appendChild(row);
       card.addEventListener("click", function () { openRecent(e.id); });
       card.addEventListener("keydown", function (ev) {
@@ -415,6 +645,129 @@
       card.setAttribute("role", "button");
       grid.appendChild(card);
     });
+  }
+
+  /* ---------------- settings drawer ---------------- */
+  function openSettings() {
+    ensureView();
+    applySettings();
+    var scrim = $("pdf-settings-scrim"), dr = $("pdf-settings-drawer");
+    if (scrim) scrim.classList.remove("hidden");
+    if (dr) dr.classList.remove("hidden");
+  }
+
+  function closeSettings() {
+    var scrim = $("pdf-settings-scrim"), dr = $("pdf-settings-drawer");
+    if (scrim) scrim.classList.add("hidden");
+    if (dr) dr.classList.add("hidden");
+  }
+
+  function swatchRow(containerId, colors, label) {
+    var box = el("div", "pdf-swatches");
+    box.id = containerId;
+    box.setAttribute("role", "radiogroup");
+    box.setAttribute("aria-label", label);
+    colors.forEach(function (c) {
+      var b = el("button", "pdf-swatch");
+      b.type = "button";
+      b.setAttribute("data-color", c);
+      b.style.background = c;
+      b.setAttribute("aria-label", label + " " + c);
+      b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", function () {
+        var patch = {};
+        patch[containerId === "pdf-set-hl" ? "highlight" : "ink"] = c;
+        setSettings(patch);
+      });
+      box.appendChild(b);
+    });
+    return box;
+  }
+
+  function buildSettingsDrawer(view) {
+    var scrim = el("div", "pdf-scrim hidden");
+    scrim.id = "pdf-settings-scrim";
+    scrim.setAttribute("aria-hidden", "true");
+    scrim.addEventListener("click", closeSettings);
+
+    var dr = el("div", "pdf-drawer hidden");
+    dr.id = "pdf-settings-drawer";
+    dr.setAttribute("role", "dialog");
+    dr.setAttribute("aria-label", "PDF settings");
+
+    var head = el("div", "pdf-drawer-head");
+    var h2 = el("h2"); h2.textContent = "PDF settings";
+    var close = el("button", "icon-btn");
+    close.type = "button";
+    close.id = "pdf-settings-close";
+    close.setAttribute("aria-label", "Close settings");
+    close.innerHTML = T.icon ? T.icon("i-x") : "x";
+    close.addEventListener("click", closeSettings);
+    head.appendChild(h2); head.appendChild(close);
+    dr.appendChild(head);
+
+    var body = el("div", "pdf-drawer-body");
+
+    /* default zoom */
+    var zr = el("div", "pdf-set-row");
+    var zl = el("label"); zl.setAttribute("for", "pdf-set-zoom"); zl.textContent = "Default zoom";
+    var zs = el("select", "pdf-select pdf-set-select");
+    zs.id = "pdf-set-zoom";
+    [["fit", "Fit width"], ["100", "100%"], ["150", "150%"]].forEach(function (o) {
+      var op = el("option"); op.value = o[0]; op.textContent = o[1]; zs.appendChild(op);
+    });
+    zs.addEventListener("change", function () { setSettings({ zoom: zs.value }); });
+    var zh = el("p", "pdf-set-hint");
+    zh.textContent = "Controls how large document pages render in the viewer.";
+    zr.appendChild(zl); zr.appendChild(zs); zr.appendChild(zh);
+    body.appendChild(zr);
+
+    /* highlight color */
+    var hr = el("div", "pdf-set-row");
+    var hlab = el("span", "pdf-set-label"); hlab.id = "pdf-set-hl-label"; hlab.textContent = "Highlight color";
+    var hb = swatchRow("pdf-set-hl", HL_SWATCHES, "Highlight color");
+    hb.setAttribute("aria-labelledby", "pdf-set-hl-label");
+    var hh = el("p", "pdf-set-hint");
+    hh.textContent = "Used for new highlights made with the highlight tool.";
+    hr.appendChild(hlab); hr.appendChild(hb); hr.appendChild(hh);
+    body.appendChild(hr);
+
+    /* ink color */
+    var ir = el("div", "pdf-set-row");
+    var ilab = el("span", "pdf-set-label"); ilab.id = "pdf-set-ink-label"; ilab.textContent = "Ink color";
+    var ib = swatchRow("pdf-set-ink", INK_SWATCHES, "Ink color");
+    ib.setAttribute("aria-labelledby", "pdf-set-ink-label");
+    var ih = el("p", "pdf-set-hint");
+    ih.textContent = "Used for drawn signatures and typed signature text.";
+    ir.appendChild(ilab); ir.appendChild(ib); ir.appendChild(ih);
+    body.appendChild(ir);
+
+    /* page mode */
+    var pr = el("div", "pdf-set-row");
+    var pl = el("label"); pl.setAttribute("for", "pdf-set-pagemode"); pl.textContent = "Page mode";
+    var ps = el("select", "pdf-select pdf-set-select");
+    ps.id = "pdf-set-pagemode";
+    [["continuous", "Continuous"], ["single", "Single page"]].forEach(function (o) {
+      var op = el("option"); op.value = o[0]; op.textContent = o[1]; ps.appendChild(op);
+    });
+    ps.addEventListener("change", function () { setSettings({ pageMode: ps.value }); });
+    var ph = el("p", "pdf-set-hint");
+    ph.textContent = "Continuous scrolls through every page. Single page shows one page at a time with pager controls.";
+    pr.appendChild(pl); pr.appendChild(ps); pr.appendChild(ph);
+    body.appendChild(pr);
+
+    /* about */
+    var about = el("div", "pdf-set-about");
+    about.id = "pdf-set-about";
+    var ah = el("h3"); ah.textContent = "About";
+    var ap = el("p");
+    ap.textContent = "PDF Studio is part of the NXT Ecosystem. Convert, annotate, redact, sign and print documents, all on this device.";
+    about.appendChild(ah); about.appendChild(ap);
+    body.appendChild(about);
+
+    dr.appendChild(body);
+    view.appendChild(scrim);
+    view.appendChild(dr);
   }
 
   /* ---------------- studio ---------------- */
@@ -475,7 +828,7 @@
     hl.type = "color";
     hl.value = hlColor;
     hl.setAttribute("aria-label", "Highlight color");
-    hl.addEventListener("input", function () { hlColor = hl.value; });
+    hl.addEventListener("input", function () { setSettings({ highlight: hl.value }); });
     hlWrap.appendChild(hl);
     tb.appendChild(hlWrap);
 
@@ -517,11 +870,48 @@
     main.appendChild(stage);
     main.appendChild(side);
 
+    var pager = el("div", "pdf-pager hidden");
+    pager.id = "pdf-pager";
+    var prev = el("button", "pdf-btn");
+    prev.type = "button"; prev.id = "pdf-pager-prev";
+    prev.textContent = "Previous";
+    prev.setAttribute("aria-label", "Previous page");
+    prev.addEventListener("click", function () { singlePage--; refreshSinglePage(); });
+    var plabel = el("span", "pdf-pager-label");
+    plabel.id = "pdf-pager-label";
+    plabel.textContent = "Page 1 of 1";
+    var next = el("button", "pdf-btn");
+    next.type = "button"; next.id = "pdf-pager-next";
+    next.textContent = "Next";
+    next.setAttribute("aria-label", "Next page");
+    next.addEventListener("click", function () { singlePage++; refreshSinglePage(); });
+    pager.appendChild(prev); pager.appendChild(plabel); pager.appendChild(next);
+
     studio.appendChild(tb);
+    studio.appendChild(pager);
     studio.appendChild(main);
     view.appendChild(studio);
 
     wireStage(stage);
+  }
+
+  function refreshSinglePage() {
+    if (!doc) return;
+    var n = doc.model.pages.length;
+    singlePage = clamp(singlePage, 0, Math.max(n - 1, 0));
+    var stage = $("pdf-stage");
+    if (!stage) return;
+    var pages = stage.querySelectorAll(".pdf-page");
+    Array.prototype.forEach.call(pages, function (pg, i) {
+      pg.classList.toggle("is-current", i === singlePage);
+    });
+    var caps = stage.querySelectorAll(".pdf-page-cap");
+    Array.prototype.forEach.call(caps, function (c, i) {
+      c.classList.toggle("is-current", i === singlePage);
+    });
+    var lbl = $("pdf-pager-label");
+    if (lbl) lbl.textContent = "Page " + (singlePage + 1) + " of " + n;
+    stage.scrollTop = 0;
   }
 
   var SIDE_TABS = [
@@ -605,6 +995,7 @@
       cap.textContent = "Page " + (pi + 1) + " of " + doc.model.pages.length;
       stage.appendChild(cap);
     });
+    applySettings();
   }
 
   function pct(v) { return clamp(v, 0, 100) + "%"; }
@@ -670,6 +1061,7 @@
       } else {
         var typed = el("div", "pdf-sig-typed");
         typed.textContent = s.typed || s.signer;
+        typed.style.color = s.ink || inkColor;
         wrap.appendChild(typed);
       }
       var badge = el("div", "pdf-sig-badge");
@@ -749,8 +1141,12 @@
 
   function jumpToPage(pageNum) {
     var target = $("pdf-page-" + pageNum);
-    if (target && target.scrollIntoView) target.scrollIntoView({ block: "start", behavior: "smooth" });
-    else if (target) target.scrollIntoView();
+    if (getSettings().pageMode === "single" && doc) {
+      singlePage = clamp(pageNum - 1, 0, Math.max(doc.model.pages.length - 1, 0));
+      refreshSinglePage();
+    } else if (target && target.scrollIntoView) {
+      target.scrollIntoView({ block: "start", behavior: "smooth" });
+    }
     if (target) {
       target.classList.add("flash");
       setTimeout(function () { target.classList.remove("flash"); }, 1200);
@@ -1312,25 +1708,26 @@
       ctx.lineWidth = 2.5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "#111827";
       strokes.forEach(function (s) {
-        if (s.length < 2) return;
+        var pts = s.pts || [];
+        if (pts.length < 2) return;
+        ctx.strokeStyle = s.color || inkColor;
         ctx.beginPath();
-        ctx.moveTo(s[0].x, s[0].y);
-        for (var i = 1; i < s.length; i++) ctx.lineTo(s[i].x, s[i].y);
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
         ctx.stroke();
       });
     }
     function start(e) {
       e.preventDefault();
-      cur = [pos(e)];
+      cur = { pts: [pos(e)], color: inkColor };
       strokes.push(cur);
       redraw();
     }
     function move(e) {
       if (!cur) return;
       e.preventDefault();
-      cur.push(pos(e));
+      cur.pts.push(pos(e));
       redraw();
     }
     function end() { cur = null; }
@@ -1357,6 +1754,7 @@
       signer: signer,
       dataUrl: opts.dataUrl || null,
       typed: opts.typed || null,
+      ink: inkColor,
       stamp: "Signed by " + signer + " · " + fmtTime(Date.now()) + " · local timestamp, not a certified digital signature"
     };
     return pendingSig;
@@ -1373,6 +1771,7 @@
       signer: pendingSig.signer,
       dataUrl: pendingSig.dataUrl,
       typed: pendingSig.typed,
+      ink: pendingSig.ink || inkColor,
       stamp: pendingSig.stamp
     });
     pendingSig = null;
@@ -1433,7 +1832,7 @@
         if (s.page !== pi) return;
         var sigHtml = s.dataUrl
           ? '<img src="' + s.dataUrl + '" alt="Signature of ' + esc(s.signer) + '">'
-          : '<div class="pdf-sig-typed">' + esc(s.typed || s.signer) + "</div>";
+          : '<div class="pdf-sig-typed"' + (s.ink ? ' style="color:' + esc(s.ink) + ';"' : "") + ">" + esc(s.typed || s.signer) + "</div>";
         annot += '<div class="pdf-sig" style="left:' + s.x + '%;top:' + s.y + '%;width:' + (s.w || 30) + '%;">' +
           sigHtml + '<div class="pdf-sig-badge">' + esc(s.stamp) + "</div></div>";
       });
@@ -1495,6 +1894,12 @@
   if (typeof window !== "undefined" && window.addEventListener) {
     window.addEventListener("beforeprint", function () { document.body.classList.add("pdf-printing"); });
     window.addEventListener("afterprint", function () { document.body.classList.remove("pdf-printing"); });
+    document.addEventListener("keydown", function (e) {
+      if (e && e.key === "Escape") {
+        var dr = document.getElementById("pdf-settings-drawer");
+        if (dr && !dr.classList.contains("hidden")) closeSettings();
+      }
+    });
   }
 
   /* ---------------- commands ---------------- */
@@ -1547,6 +1952,18 @@
     setTool: setTool,
     currentTool: function () { return tool; },
     undo: undo,
-    getDoc: function () { return doc; }
+    getDoc: function () { return doc; },
+    files: {
+      list: listFiles,
+      create: createFile,
+      rename: renameFile,
+      duplicate: duplicateFile,
+      remove: removeFile,
+      open: openFile
+    },
+    getSettings: getSettings,
+    setSettings: setSettings,
+    openSettings: openSettings,
+    closeSettings: closeSettings
   };
 })();
