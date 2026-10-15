@@ -76,7 +76,8 @@
         if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { T.toast(T.t("copied")); });
       }
     });
-    if (T.homescreen) T.homescreen.show();
+    if (T.nxthome) T.nxthome.show();
+    else if (T.homescreen) T.homescreen.show();
     T.bus.emit("app:ready");
   });
 })();

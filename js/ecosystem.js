@@ -17,7 +17,7 @@
 
   var PERSONAS = ["word", "vector", "pixel"];
   var APPS = ["txt", "grd", "dck", "mem", "pdf", "hub"];
-  var VIEWS = ["view-word", "view-vector", "view-pixel",
+  var VIEWS = ["view-home", "view-word", "view-vector", "view-pixel",
     "view-grd", "view-dck", "view-mem", "view-pdf", "view-hub"];
   var VIEW_FOR_PERSONA = { word: "view-word", vector: "view-vector", pixel: "view-pixel" };
   var VIEW_FOR_APP = {
@@ -163,6 +163,15 @@
     var brand = document.createElement("div");
     brand.className = "launcher-brand";
     brand.textContent = "NXT Ecosystem";
+    brand.style.cursor = "pointer";
+    brand.title = "NXT home";
+    brand.setAttribute("role", "button");
+    brand.setAttribute("tabindex", "0");
+    brand.setAttribute("aria-label", "Go to NXT home");
+    brand.addEventListener("click", function () { hideLauncher(); showHome(); });
+    brand.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); hideLauncher(); showHome(); }
+    });
     la.appendChild(brand);
     var head = document.createElement("div");
     head.className = "launcher-head";
@@ -312,6 +321,15 @@
     T.bus.emit("ecosystem:app", { app: a });
   }
 
+  function showHome() {
+    eco.app = "home";
+    hideLauncher();
+    syncPersonaSwitch();
+    showOnly("view-home");
+    focusView("view-home");
+    T.bus.emit("ecosystem:home", {});
+  }
+
   /* ---------- split-screen ---------- */
   function homeFor(viewId) {
     if (!homeOf[viewId]) {
@@ -442,6 +460,8 @@
   }, { title: "Toggle split view", cat: "NXT", icon: "i-split", match: "split screen side by side" });
   T.register("ecosystem.launcher", function () { toggleLauncher(); },
     { title: "App launcher", cat: "NXT", icon: "i-grid", match: "launcher apps waffle" });
+  T.register("nxt.home", function () { showHome(); },
+    { title: "NXT home", cat: "NXT", icon: "i-home", match: "nxt home launcher start" });
 
   /* ---------- public API ---------- */
   T.ecosystem = {};
@@ -451,6 +471,7 @@
   });
   T.ecosystem.setPersona = setPersona;
   T.ecosystem.openApp = openApp;
+  T.ecosystem.home = showHome;
   T.ecosystem.toggleLauncher = toggleLauncher;
   T.ecosystem.setSplit = setSplit;
   T.ecosystem._toggleRatio = toggleRatio; // internal helper, exposed for tests
