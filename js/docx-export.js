@@ -44,25 +44,29 @@
     return bytes;
   }
 
-  function buildDocument(docx, model, title) {
+  var PAPER_TWIPS = { a4: [11906, 16838], letter: [12240, 15840], legal: [12240, 20160], a5: [8391, 11906] };
+
+  function buildDocument(docx, model, title, opts) {
+    opts = opts || {};
     var children = [];
 
     function textRun(r) {
-      var opts = { text: r.t || "" };
-      if (r.b) opts.bold = true;
-      if (r.i) opts.italics = true;
-      if (r.u) opts.underline = {};
-      if (r.s) opts.strike = true;
-      if (r.sub) opts.subScript = true;
-      if (r.sup) opts.superScript = true;
-      if (r.color) opts.color = hexNoHash(r.color);
-      if (r.bg) opts.highlight = nearestHighlight(r.bg);
-      if (r.size) opts.size = halfPoints(r.size);
-      if (r.font) opts.font = r.font;
-      var run = new docx.TextRun(opts);
+      if (r.pageNum) return new docx.SimpleField("PAGE", "#");
+      var opts2 = { text: r.t || "" };
+      if (r.b) opts2.bold = true;
+      if (r.i) opts2.italics = true;
+      if (r.u) opts2.underline = {};
+      if (r.s) opts2.strike = true;
+      if (r.sub) opts2.subScript = true;
+      if (r.sup) opts2.superScript = true;
+      if (r.color) opts2.color = hexNoHash(r.color);
+      if (r.bg) opts2.highlight = nearestHighlight(r.bg);
+      if (r.size) opts2.size = halfPoints(r.size);
+      if (r.font) opts2.font = r.font;
+      var run = new docx.TextRun(opts2);
       if (r.link) {
         return new docx.ExternalHyperlink({
-          children: [new docx.TextRun(Object.assign({}, opts, { style: "Hyperlink" }))],
+          children: [new docx.TextRun(Object.assign({}, opts2, { style: "Hyperlink" }))],
           link: r.link
         });
       }
@@ -79,6 +83,7 @@
         buf = [];
       }
       runs.forEach(function (r) {
+        if (r.pageNum) { flush(); parts.push(textRun(r)); return; }
         if (r.img) {
           flush();
           var bytes = dataUrlToBytes(r.img.src);
@@ -109,73 +114,117 @@
     }
 
     function paraFromBlock(b) {
-      var opts = { children: runsToInlines(b.runs || []) };
-      if (b.type === "h1") opts.heading = docx.HeadingLevel.HEADING_1;
-      else if (b.type === "h2") opts.heading = docx.HeadingLevel.HEADING_2;
-      else if (b.type === "h3") opts.heading = docx.HeadingLevel.HEADING_3;
-      opts.alignment = alignOf(b.align, docx);
-      if (b.indent) opts.indent = { left: Math.round(b.indent * 15) };
-      return new docx.Paragraph(opts);
+      var popts = { children: runsToInlines(b.runs || []) };
+      if (b.type === "h1") popts.heading = docx.HeadingLevel.HEADING_1;
+      else if (b.type === "h2") popts.heading = docx.HeadingLevel.HEADING_2;
+      else if (b.type === "h3") popts.heading = docx.HeadingLevel.HEADING_3;
+      popts.alignment = alignOf(b.align, docx);
+      if (b.indent) popts.indent = { left: Math.round(b.indent * 15) };
+      var sp = {};
+      if (b.spacing) {
+        if (b.spacing.before) sp.before = Math.round(b.spacing.before * 20);
+        if (b.spacing.after) sp.after = Math.round(b.spacing.after * 20);
+      }
+      if (b.line) {
+        var m = String(b.line).match(/([\d.]+)pt/);
+        if (m) {
+          sp.line = Math.round(parseFloat(m[1]) * 20);
+          sp.lineRule = b.lineRule === "atleast" ? "atLeast" : "exact";
+        } else {
+          var mult = parseFloat(b.line);
+          if (mult) { sp.line = Math.round(mult * 240); sp.lineRule = "auto"; }
+        }
+      }
+      if (sp.before || sp.after || sp.line) popts.spacing = sp;
+      if (b.bg) popts.shading = { fill: hexNoHash(b.bg) };
+      if (b.border === "bottom") popts.border = { bottom: { style: docx.BorderStyle.SINGLE, size: 6, color: "999999" } };
+      else if (b.border === "box") popts.border = {
+        top: { style: docx.BorderStyle.SINGLE, size: 6, color: "999999" },
+        bottom: { style: docx.BorderStyle.SINGLE, size: 6, color: "999999" },
+        left: { style: docx.BorderStyle.SINGLE, size: 6, color: "999999" },
+        right: { style: docx.BorderStyle.SINGLE, size: 6, color: "999999" }
+      };
+      return new docx.Paragraph(popts);
     }
 
-    model.forEach(function (b) {
-      if (b.type === "li" && b.list) {
-        var ref = b.list.ordered ? "txt-num" : "txt-bul";
-        children.push(new docx.Paragraph({
-          children: runsToInlines(b.runs || []),
-          alignment: alignOf(b.align, docx),
-          numbering: { reference: ref, level: Math.min(b.list.depth, 8) }
-        }));
-        return;
-      }
-      if (b.type === "hr") {
-        children.push(new docx.Paragraph({
-          children: [new docx.TextRun("")],
-          border: { bottom: { style: docx.BorderStyle.SINGLE, size: 6, color: "999999" } }
-        }));
-        return;
-      }
-      if (b.type === "pagebreak") {
-        children.push(new docx.Paragraph({ children: [new docx.TextRun({ break: 1, breakType: "page" })] }));
-        return;
-      }
-      if (b.type === "table") {
-        var cols = Math.max.apply(null, b.rows.map(function (r) { return r.length; }));
-        var rows = b.rows.map(function (row) {
-          var cells = row.map(function (cell) {
-            return new docx.TableCell({
-              children: cell.blocks.map(paraFromBlock),
-              shading: cell.header ? { fill: "EEF0F6" } : undefined
+    function blocksToChildren(blocks) {
+      var out = [];
+      blocks.forEach(function (b) {
+        if (b.type === "li" && b.list) {
+          var ref = b.list.ordered ? "txt-num" : "txt-bul";
+          out.push(new docx.Paragraph({
+            children: runsToInlines(b.runs || []),
+            alignment: alignOf(b.align, docx),
+            numbering: { reference: ref, level: Math.min(b.list.depth, 8) }
+          }));
+          return;
+        }
+        if (b.type === "hr") {
+          out.push(new docx.Paragraph({
+            children: [new docx.TextRun("")],
+            border: { bottom: { style: docx.BorderStyle.SINGLE, size: 6, color: "999999" } }
+          }));
+          return;
+        }
+        if (b.type === "pagebreak") {
+          out.push(new docx.Paragraph({ children: [new docx.TextRun({ break: 1, breakType: "page" })] }));
+          return;
+        }
+        if (b.type === "toc") {
+          try {
+            out.push(new docx.TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-3" }));
+          } catch (e) {
+            out.push(new docx.Paragraph({ children: [new docx.TextRun({ text: "Contents", bold: true })] }));
+            (b.entries || []).forEach(function (en) {
+              out.push(new docx.Paragraph({
+                children: [new docx.TextRun(en.text)],
+                indent: { left: (en.level - 1) * 360 }
+              }));
             });
-          });
-          while (cells.length < cols) cells.push(new docx.TableCell({ children: [new docx.Paragraph("")] }));
-          return new docx.TableRow({ children: cells });
-        });
-        children.push(new docx.Table({
-          rows: rows,
-          width: { size: 100, type: docx.WidthType.PERCENTAGE },
-          borders: {
-            top: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
-            bottom: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
-            left: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
-            right: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
-            insideHorizontal: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
-            insideVertical: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" }
           }
-        }));
-        return;
-      }
-      if (b.type === "blockquote") {
-        children.push(new docx.Paragraph({
-          children: runsToInlines(b.runs || []),
-          alignment: alignOf(b.align, docx),
-          indent: { left: 720 },
-          border: { left: { style: docx.BorderStyle.SINGLE, size: 12, color: "4F46E5" } }
-        }));
-        return;
-      }
-      children.push(paraFromBlock(b));
-    });
+          return;
+        }
+        if (b.type === "table") {
+          var cols = Math.max.apply(null, b.rows.map(function (r) { return r.length; }));
+          var rows = b.rows.map(function (row) {
+            var cells = row.map(function (cell) {
+              return new docx.TableCell({
+                children: cell.blocks.map(paraFromBlock),
+                shading: cell.header ? { fill: "EEF0F6" } : undefined
+              });
+            });
+            while (cells.length < cols) cells.push(new docx.TableCell({ children: [new docx.Paragraph("")] }));
+            return new docx.TableRow({ children: cells });
+          });
+          out.push(new docx.Table({
+            rows: rows,
+            width: { size: 100, type: docx.WidthType.PERCENTAGE },
+            borders: {
+              top: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
+              bottom: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
+              left: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
+              right: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
+              insideHorizontal: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" },
+              insideVertical: { style: docx.BorderStyle.SINGLE, size: 4, color: "999999" }
+            }
+          }));
+          return;
+        }
+        if (b.type === "blockquote") {
+          out.push(new docx.Paragraph({
+            children: runsToInlines(b.runs || []),
+            alignment: alignOf(b.align, docx),
+            indent: { left: 720 },
+            border: { left: { style: docx.BorderStyle.SINGLE, size: 12, color: "4F46E5" } }
+          }));
+          return;
+        }
+        out.push(paraFromBlock(b));
+      });
+      return out;
+    }
+
+    children = blocksToChildren(model);
 
     var numbering = { config: [] };
     if (docx.LevelFormat) {
@@ -205,17 +254,48 @@
       });
     }
 
+    var dims = PAPER_TWIPS[opts.paper] || PAPER_TWIPS.a4;
+    var sectionProps = {
+      page: {
+        size: {
+          width: dims[0],
+          height: dims[1],
+          orientation: opts.orient === "landscape" ? "landscape" : "portrait"
+        }
+      }
+    };
+    if (opts.diffFirst) sectionProps.titlePage = true;
+    var section = { children: children.length ? children : [new docx.Paragraph("")], properties: sectionProps };
+    function hfDoc(kind, blocks) {
+      if (!blocks || !blocks.length) return null;
+      try {
+        var kids = blocksToChildren(blocks);
+        return kind === "header" ? new docx.Header({ children: kids }) : new docx.Footer({ children: kids });
+      } catch (e) { return null; }
+    }
+    var hdr = hfDoc("header", opts.headerBlocks), ftr = hfDoc("footer", opts.footerBlocks);
+    if (hdr || ftr) {
+      section.headers = {};
+      section.footers = {};
+      if (hdr) section.headers.default = hdr;
+      if (ftr) section.footers.default = ftr;
+      if (opts.diffFirst) {
+        if (hdr) section.headers.first = new docx.Header({ children: [new docx.Paragraph("")] });
+        if (ftr) section.footers.first = new docx.Footer({ children: [new docx.Paragraph("")] });
+      }
+    }
+
     return new docx.Document({
       numbering: numbering,
-      sections: [{ children: children.length ? children : [new docx.Paragraph("")] }],
+      sections: [section],
       title: title || "TXT document"
     });
   }
 
-  function buildBlob(model, title) {
+  function buildBlob(model, title, opts) {
     var docx = (typeof window !== "undefined" && window.docx) || (typeof self !== "undefined" && self.docx);
     if (!docx) return Promise.reject(new Error("docx library not loaded"));
-    var doc = buildDocument(docx, model, title);
+    var doc = buildDocument(docx, model, title, opts);
     return docx.Packer.toBlob(doc);
   }
 

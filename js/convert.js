@@ -108,6 +108,10 @@
           runs.push({ img: { src: k.getAttribute("src") || "", w: k.naturalWidth || parseInt(k.getAttribute("width"), 10) || 0, h: k.naturalHeight || parseInt(k.getAttribute("height"), 10) || 0 } });
           continue;
         }
+        if (tag === "SPAN" && k.classList && k.classList.contains("pagenum")) {
+          runs.push(Object.assign({ t: "#", pageNum: true }, props));
+          continue;
+        }
         collectRuns(k, inlineProps(k, props), runs);
       }
     }
@@ -124,12 +128,32 @@
     return m ? parseFloat(m[1]) : 0;
   }
 
+  function ptVal(v) {
+    var m = String(v || "").match(/([\d.]+)pt/);
+    return m ? parseFloat(m[1]) : 0;
+  }
+  function blockProps(el) {
+    var st = el.style || {}, o = {};
+    var bf = ptVal(st.marginTop), af = ptVal(st.marginBottom);
+    if (bf || af) o.spacing = { before: bf, after: af };
+    if (st.lineHeight) {
+      o.line = st.lineHeight;
+      if (el.dataset && el.dataset.lineRule) o.lineRule = el.dataset.lineRule;
+    }
+    var bg = toHexColor(st.backgroundColor);
+    if (bg) o.bg = bg;
+    var bb = String(st.borderBottom || ""), bd = String(st.border || "");
+    if (/solid/i.test(bb)) o.border = "bottom";
+    else if (/solid/i.test(bd)) o.border = "box";
+    return o;
+  }
+
   function domToModel(root) {
     var blocks = [];
     function paraFrom(el, type) {
       var runs = [];
       collectRuns(el, {}, runs);
-      blocks.push({ type: type, align: blockAlign(el), indent: blockIndent(el), runs: runs });
+      blocks.push(Object.assign({ type: type, align: blockAlign(el), indent: blockIndent(el), runs: runs }, blockProps(el)));
     }
     function listItems(listEl, depth, target) {
       var arr = target || blocks;
@@ -187,9 +211,18 @@
       if (tag === "P" || tag === "DIV" || tag === "H1" || tag === "H2" || tag === "H3" || tag === "BLOCKQUOTE" || tag === "PRE") {
         var type = tag === "DIV" ? "p" : tag.toLowerCase();
         if (el.classList && el.classList.contains("page-break")) { push({ type: "pagebreak" }); return; }
+        if (el.classList && el.classList.contains("toc")) {
+          var entries = [];
+          el.querySelectorAll(".toc-entry").forEach(function (en) {
+            var tx = en.textContent.trim();
+            if (tx) entries.push({ text: tx, level: Math.min(3, Math.round((parseFloat(en.style.paddingLeft) || 0) / 18) + 1) });
+          });
+          push({ type: "toc", entries: entries });
+          return;
+        }
         var runs = [];
         collectRuns(el, {}, runs);
-        push({ type: type, align: blockAlign(el), indent: blockIndent(el), runs: runs });
+        push(Object.assign({ type: type, align: blockAlign(el), indent: blockIndent(el), runs: runs }, blockProps(el)));
       } else if (tag === "UL" || tag === "OL") {
         listItems(el, 0, target);
       } else if (tag === "TABLE") {
@@ -220,6 +253,7 @@
   function runsText(runs) {
     return runs.map(function (r) {
       if (r.img) return "[image]";
+      if (r.pageNum) return "#";
       return r.t || "";
     }).join("");
   }
@@ -252,6 +286,7 @@
 
   /* ---------------- model -> Markdown ---------------- */
   function mdRun(r) {
+    if (r.pageNum) return "#";
     if (r.img) return "![](" + (r.img.src.length > 200 ? "" : r.img.src) + ")";
     var t = (r.t || "").replace(/\n/g, "  \n");
     if (!t.trim()) return t;
@@ -350,6 +385,7 @@
 
   /* ---------------- model -> HTML ---------------- */
   function htmlRun(r) {
+    if (r.pageNum) return '<span class="pagenum">#</span>';
     if (r.img) {
       var dims = "";
       if (r.img.w) dims += ' width="' + r.img.w + '"';
@@ -372,6 +408,19 @@
     if (r.link) t = '<a href="' + escHtml(r.link) + '">' + t + "</a>";
     return t;
   }
+  function blockStyleAttr(b) {
+    var s = [];
+    if (b.align && b.align !== "left") s.push("text-align:" + b.align);
+    if (b.spacing) {
+      if (b.spacing.before) s.push("margin-top:" + b.spacing.before + "pt");
+      if (b.spacing.after) s.push("margin-bottom:" + b.spacing.after + "pt");
+    }
+    if (b.line) s.push("line-height:" + b.line);
+    if (b.bg) s.push("background-color:" + b.bg);
+    if (b.border === "bottom") s.push("border-bottom:1pt solid #999");
+    else if (b.border === "box") s.push("border:1pt solid #999");
+    return s.length ? ' style="' + s.join(";") + '"' : "";
+  }
   function modelToHtmlBody(blocks) {
     var out = [], listOpen = null, listDepth = -1;
     function closeList() {
@@ -380,7 +429,7 @@
     }
     blocks.forEach(function (b) {
       var body = (b.runs || []).map(htmlRun).join("") || "<br>";
-      var align = b.align && b.align !== "left" ? ' style="text-align:' + b.align + '"' : "";
+      var bsa = blockStyleAttr(b);
       if (b.type === "li" && b.list) {
         var tag = b.list.ordered ? "ol" : "ul";
         if (listOpen !== tag) { closeList(); out.push("<" + tag + ">"); listOpen = tag; }
@@ -388,11 +437,16 @@
         return;
       }
       closeList();
-      if (b.type === "h1" || b.type === "h2" || b.type === "h3") out.push("<" + b.type + align + ">" + body + "</" + b.type + ">");
-      else if (b.type === "blockquote") out.push("<blockquote" + align + ">" + body + "</blockquote>");
-      else if (b.type === "pre") out.push("<pre" + align + ">" + body + "</pre>");
+      if (b.type === "h1" || b.type === "h2" || b.type === "h3") out.push("<" + b.type + bsa + ">" + body + "</" + b.type + ">");
+      else if (b.type === "blockquote") out.push("<blockquote" + bsa + ">" + body + "</blockquote>");
+      else if (b.type === "pre") out.push("<pre" + bsa + ">" + body + "</pre>");
       else if (b.type === "hr") out.push("<hr>");
       else if (b.type === "pagebreak") out.push('<div style="page-break-after:always"></div>');
+      else if (b.type === "toc") {
+        out.push('<div class="toc"><h2>Contents</h2>' + (b.entries || []).map(function (e) {
+          return '<p style="padding-left:' + ((e.level - 1) * 18) + 'px">' + escHtml(e.text) + "</p>";
+        }).join("") + "</div>");
+      }
       else if (b.type === "table") {
         out.push('<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">');
         b.rows.forEach(function (row) {
@@ -405,28 +459,57 @@
         });
         out.push("</table>");
       }
-      else out.push("<p" + align + ">" + body + "</p>");
+      else out.push("<p" + bsa + ">" + body + "</p>");
     });
     closeList();
     return out.join("\n");
   }
-  function modelToHtmlDoc(blocks, title) {
+  function modelToHtmlDoc(blocks, title, fontLink, opts) {
+    opts = opts || {};
+    var colCss = opts.columns > 1 ? "main{column-count:" + opts.columns + ";column-gap:40px}" : "";
+    var wm = "";
+    if (opts.watermark && opts.watermark.text) {
+      var w = opts.watermark;
+      wm = '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5">' +
+        '<div style="font-size:' + (w.size || 72) + "px;font-weight:800;letter-spacing:4px;white-space:nowrap;color:" +
+        (w.color || "#9aa0b4") + ";opacity:" + (w.opacity != null ? w.opacity : 0.18) +
+        (w.style === "horizontal" ? "" : ";transform:rotate(-38deg)") + '">' + escHtml(w.text) + "</div></div>";
+    }
+    var hf = (opts.headerHtml ? "<header>" + opts.headerHtml + "</header>" : "") +
+      (opts.footerHtml ? "<footer>" + opts.footerHtml + "</footer>" : "");
     return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>' +
       escHtml(title || "TXT document") +
-      '</title>\n<style>body{font-family:Calibri,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.6}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px 10px}img{max-width:100%}</style>\n</head>\n<body>\n' +
-      modelToHtmlBody(blocks) + "\n</body>\n</html>\n";
+      '</title>\n' + (fontLink || "") +
+      '<style>body{font-family:Calibri,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.6}' + colCss + 'table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px 10px}img{max-width:100%}header{border-bottom:1px solid #ccc;margin-bottom:20px;color:#555}footer{border-top:1px solid #ccc;margin-top:20px;color:#555}</style>\n</head>\n<body>\n' + wm + '<main>\n' +
+      modelToHtmlBody(blocks) + "\n</main>\n" + hf + "</body>\n</html>\n";
   }
 
   /* ---------------- model -> DOC (Word HTML) ---------------- */
-  function modelToWordHtml(blocks, title) {
+  function modelToWordHtml(blocks, title, opts) {
+    opts = opts || {};
+    var hf = (opts.headerHtml ? '<div style="border-bottom:1pt solid #999;color:#555;font-size:9pt">' + opts.headerHtml + "</div>" : "") +
+      (opts.footerHtml ? '<div style="border-top:1pt solid #999;color:#555;font-size:9pt">' + opts.footerHtml + "</div>" : "");
     return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">\n<head>\n<meta charset="utf-8">\n<title>' +
       escHtml(title || "TXT document") +
       '</title>\n<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->\n<style>\n@page{size:8.27in 11.69in;margin:1in}\nbody{font-family:Calibri,Arial,sans-serif;font-size:11pt}\ntable{border-collapse:collapse}\ntd,th{border:1pt solid #999;padding:4pt 8pt}\n</style>\n</head>\n<body>\n' +
-      modelToHtmlBody(blocks) + "\n</body>\n</html>";
+      hf + modelToHtmlBody(blocks) + "\n</body>\n</html>";
   }
 
   /* ---------------- model -> RTF ---------------- */
-  function modelToRtf(blocks) {
+  function htmlToTextLines(html) {
+    return String(html || "")
+      .replace(/<span[^>]*pagenum[^>]*>.*?<\/span>/gi, " [#] ")
+      .replace(/<\/(p|div|h\d|li|tr|blockquote)>/gi, "\n")
+      .replace(/<br[^>]*>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .split("\n").map(function (s) { return s.replace(/\s+/g, " ").trim(); })
+      .filter(function (s) { return s; });
+  }
+  function pageFieldRtf(s) {
+    return s.split("[#]").join("{\\field{\\*\\fldinst PAGE}}");
+  }
+  function modelToRtf(blocks, title, opts) {
+    opts = opts || {};
     var fonts = [], colors = [];
     function fontIdx(name) {
       var i = fonts.indexOf(name);
@@ -464,9 +547,21 @@
       var r = parseInt(c.slice(1, 3), 16), g = parseInt(c.slice(3, 5), 16), b2 = parseInt(c.slice(5, 7), 16);
       return "\\red" + r + "\\green" + g + "\\blue" + b2 + ";";
     }).join("") + "}");
+    if (opts.columns > 1) out.push("\\cols" + opts.columns + "\\colsx720");
+    if (opts.headerHtml) {
+      htmlToTextLines(opts.headerHtml).forEach(function (ln) {
+        out.push("{\\header\\pard\\qc " + pageFieldRtf(escRtfText(ln)) + "\\par}");
+      });
+    }
+    if (opts.footerHtml) {
+      htmlToTextLines(opts.footerHtml).forEach(function (ln) {
+        out.push("{\\footer\\pard\\qc " + pageFieldRtf(escRtfText(ln)) + "\\par}");
+      });
+    }
     var alignMap = { left: "\\ql", center: "\\qc", right: "\\qr", justify: "\\qj" };
     function runRtf(r, para) {
       var s = "";
+      if (r.pageNum) return "{\\field{\\*\\fldinst PAGE}}";
       if (r.img) {
         var src = r.img.src || "";
         var m = src.match(/^data:image\/(png|jpeg|jpg);base64,(.*)$/);
@@ -505,7 +600,20 @@
     function paraRtf(b, extra) {
       var p = "\\pard" + (alignMap[b.align] || "\\ql") + " ";
       if (b.indent) p += "\\li" + Math.round(b.indent * 15) + " ";
-      p += "\\sa120 ";
+      if (b.spacing) {
+        if (b.spacing.before) p += "\\sb" + Math.round(b.spacing.before * 20) + " ";
+        if (b.spacing.after) p += "\\sa" + Math.round(b.spacing.after * 20) + " ";
+      } else {
+        p += "\\sa120 ";
+      }
+      if (b.line) {
+        var lm = String(b.line).match(/([\d.]+)pt/);
+        if (lm) p += "\\sl-" + Math.round(parseFloat(lm[1]) * 20) + "\\slmult0 ";
+        else {
+          var mult = parseFloat(b.line);
+          if (mult) p += "\\sl" + Math.round(mult * 240) + "\\slmult1 ";
+        }
+      }
       var body = b.runs.map(function (r) { return runRtf(r); }).join("");
       if (b.type === "li" && b.list) {
         var li = Math.round((b.list.depth * 36 + 36) * 15);
@@ -518,6 +626,13 @@
     blocks.forEach(function (b) {
       if (b.type === "hr") { out.push("\\pard\\qc \\sa120 \\emdash\\emdash\\emdash\\par\n"); return; }
       if (b.type === "pagebreak") { out.push("\\pard\\page\\par\n"); return; }
+      if (b.type === "toc") {
+        out.push("\\pard\\qc\\b Contents\\b0\\par\n");
+        (b.entries || []).forEach(function (e) {
+          out.push("\\pard\\li" + ((e.level - 1) * 360 + 360) + " " + pageFieldRtf(escRtfText(e.text)) + "\\par\n");
+        });
+        return;
+      }
       if (b.type === "h1" || b.type === "h2" || b.type === "h3") {
         var sz = b.type === "h1" ? 32 : b.type === "h2" ? 26 : 22;
         out.push(paraRtf({ type: "p", align: b.align, indent: 0, runs: b.runs.map(function (r) { return Object.assign({}, r, { b: true, size: r.size || sz / 1.5 }); }) }));
@@ -592,7 +707,11 @@
   }
 
   /* ---------------- model -> ODT ---------------- */
-  function modelToOdt(blocks, title) {
+  function odtTextWithPageNum(s) {
+    return escXml(s).split("[#]").join("<text:page-number/>");
+  }
+  function modelToOdt(blocks, title, opts) {
+    opts = opts || {};
     var enc = new TextEncoder();
     var pStyles = {}, tStyles = {}, pCount = 0, tCount = 0;
     function pKey(o) { return JSON.stringify(o); }
@@ -604,12 +723,23 @@
         if (o.align && o.align !== "left") pp.push('fo:text-align="' + o.align + '"');
         if (o.breakAfter) pp.push('fo:break-after="page"');
         if (o.borderBottom) pp.push('fo:border-bottom="0.5pt solid #999999" fo:padding-bottom="2pt"');
+        if (o.before) pp.push('fo:margin-top="' + o.before + 'pt"');
+        if (o.after) pp.push('fo:margin-bottom="' + o.after + 'pt"');
+        if (o.line) pp.push('fo:line-height="' + escXml(String(o.line)) + '"');
+        if (o.bg) pp.push('fo:background-color="' + o.bg + '"');
         var tp = [];
         if (o.bold) tp.push('fo:font-weight="bold"');
         if (o.size) tp.push('fo:font-size="' + o.size + 'pt"');
         pStyles[k] = { name: "P" + pCount, para: pp, text: tp };
       }
       return pStyles[k].name;
+    }
+    function pStyleOf(b, extra) {
+      var o = Object.assign({ align: b.align }, extra);
+      if (b.spacing) { o.before = b.spacing.before; o.after = b.spacing.after; }
+      if (b.line) o.line = b.line;
+      if (b.bg) o.bg = b.bg;
+      return getPStyle(o);
     }
     function getTStyle(o) {
       var k = pKey(o);
@@ -630,6 +760,7 @@
     }
     var images = [], imgCount = 0;
     function odtRun(r) {
+      if (r.pageNum) return "<text:page-number/>";
       if (r.img) {
         var src = r.img.src || "";
         var m = src.match(/^data:image\/(png|jpeg|jpg|gif);base64,(.*)$/s);
@@ -657,7 +788,7 @@
     }
     function odtPara(b, forceStyle) {
       var runs = b.runs.map(odtRun).join("") || "";
-      var st = forceStyle || getPStyle({ align: b.align });
+      var st = forceStyle || pStyleOf(b, {});
       return '<text:p text:style-name="' + st + '">' + runs + "</text:p>";
     }
     var body = [];
@@ -690,10 +821,16 @@
       }
       if (b.type === "h1" || b.type === "h2" || b.type === "h3") {
         var lvl = parseInt(b.type[1], 10);
-        var st = getPStyle({ bold: true, size: lvl === 1 ? 18 : lvl === 2 ? 15 : 13, align: b.align });
+        var st = pStyleOf(b, { bold: true, size: lvl === 1 ? 18 : lvl === 2 ? 15 : 13 });
         body.push('<text:h text:style-name="' + st + '" text:outline-level="' + lvl + '">' + b.runs.map(odtRun).join("") + "</text:h>");
       }
-      else if (b.type === "blockquote") body.push(odtPara({ type: "p", align: b.align, runs: b.runs }, getPStyle({ align: b.align })));
+      else if (b.type === "blockquote") body.push(odtPara({ type: "p", align: b.align, runs: b.runs }, pStyleOf(b, {})));
+      else if (b.type === "toc") {
+        body.push('<text:p text:style-name="' + getPStyle({ bold: true, size: 14 }) + '">Contents</text:p>');
+        (b.entries || []).forEach(function (e) {
+          body.push('<text:p text:style-name="' + getPStyle({}) + '">' + escXml(e.text) + "</text:p>");
+        });
+      }
       else if (b.type === "hr") body.push('<text:p text:style-name="' + getPStyle({ borderBottom: true }) + '"></text:p>');
       else if (b.type === "pagebreak") body.push('<text:p text:style-name="' + getPStyle({ breakAfter: true }) + '"></text:p>');
       else if (b.type === "table") {
@@ -729,13 +866,34 @@
     });
     var listStyles = '<text:list-style style:name="Lbul">' + [0, 1, 2, 3, 4].map(function (d) { return listLevelProps(d, false); }).join("") + "</text:list-style>" +
       '<text:list-style style:name="Lnum">' + [0, 1, 2, 3, 4].map(function (d) { return listLevelProps(d, true); }).join("") + "</text:list-style>";
+    var PAPER_CM = { a4: [21, 29.7], letter: [21.59, 27.94], legal: [21.59, 35.56], a5: [14.8, 21] };
+    var pdims = PAPER_CM[opts.paper] || PAPER_CM.a4;
+    var pland = opts.orient === "landscape";
+    var ppw = (pland ? pdims[1] : pdims[0]).toFixed(2), pph = (pland ? pdims[0] : pdims[1]).toFixed(2);
+    var colXml = opts.columns > 1 ? '<style:columns fo:column-count="' + opts.columns + '"/>' : "";
+    var pageLayoutXml = '<style:page-layout style:name="PM0">' +
+      '<style:page-layout-properties fo:page-width="' + ppw + 'cm" fo:page-height="' + pph + 'cm" fo:margin-top="2cm" fo:margin-bottom="2cm" fo:margin-left="2cm" fo:margin-right="2cm">' + colXml + "</style:page-layout-properties>" +
+      '<style:header-style><style:header-footer-properties fo:min-height="0.8cm"/></style:header-style>' +
+      '<style:footer-style><style:header-footer-properties fo:min-height="0.8cm"/></style:footer-style>' +
+      "</style:page-layout>";
+    function hfParas(html) {
+      return htmlToTextLines(html).map(function (ln) {
+        return '<text:p text:style-name="HF">' + odtTextWithPageNum(ln) + "</text:p>";
+      }).join("");
+    }
+    var masterXml = '<style:master-page style:name="Default" style:page-layout-name="PM0">' +
+      (opts.headerHtml ? "<style:header>" + hfParas(opts.headerHtml) + "</style:header>" : "") +
+      (opts.footerHtml ? "<style:footer>" + hfParas(opts.footerHtml) + "</style:footer>" : "") +
+      "</style:master-page>";
+    var hfStyle = '<style:style style:name="HF" style:family="paragraph"><style:text-properties fo:font-size="9pt" fo:color="#555555"/></style:style>';
     var contentXml =
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:version="1.2">\n' +
-      "<office:automatic-styles>" + autoStyles.join("") + listStyles +
+      "<office:automatic-styles>" + pageLayoutXml + hfStyle + autoStyles.join("") + listStyles +
       '<style:style style:name="TCw" style:family="table-column"><style:table-column-properties style:column-width="3cm"/></style:style>' +
       '<style:style style:name="TCb" style:family="table-cell"><style:table-cell-properties fo:border="0.5pt solid #999999" fo:padding="2pt"/></style:style>' +
       "</office:automatic-styles>\n" +
+      "<office:master-styles>" + masterXml + "</office:master-styles>\n" +
       "<office:body><office:text>" + body.join("") + "</office:text></office:body>\n" +
       "</office:document-content>";
     var stylesXml =
