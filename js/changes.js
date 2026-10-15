@@ -54,55 +54,191 @@
     if (dir) handleDelete(e, dir, e.inputType.indexOf("Word") >= 0);
   }
 
+  function authorTitle() {
+    var d = new Date();
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return authorName() + " - " + d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+
+  function makeIns() {
+    var ins = document.createElement("ins");
+    ins.className = "tracked-insert";
+    ins.setAttribute("data-author", authorName());
+    ins.setAttribute("data-ts", String(Date.now()));
+    ins.setAttribute("title", authorTitle());
+    return ins;
+  }
+  function makeDel() {
+    var del = document.createElement("del");
+    del.className = "tracked-delete";
+    del.setAttribute("data-author", authorName());
+    del.setAttribute("data-ts", String(Date.now()));
+    del.setAttribute("title", authorTitle());
+    return del;
+  }
+
   function handleInsert(e) {
     if (!e.data || e.isComposing) return; // IME: let native handle composition
     var r = T.sel.range();
     if (!r || !inSheet(r)) return;
     e.preventDefault();
     r = r.cloneRange();
-    if (!r.collapsed) r.deleteContents();
-    r.collapse(true);
-    var ins = document.createElement("ins");
-    ins.className = "tracked-insert";
-    ins.setAttribute("data-author", authorName());
-    ins.setAttribute("data-ts", String(Date.now()));
-    ins.textContent = e.data;
-    r.insertNode(ins);
+    if (!r.collapsed) {
+      // selected text becomes a tracked deletion first
+      var frag = r.extractContents();
+      if (frag.textContent || frag.querySelector("img,table,hr")) {
+        var del0 = makeDel();
+        del0.appendChild(frag);
+        r.insertNode(del0);
+        r.setStartAfter(del0);
+      }
+      r.collapse(true);
+    }
+    // merge with previous insertion by same author within a short burst
+    var caretNode = r.startContainer, prev = null;
+    if (caretNode.nodeType === 3) prev = caretNode.parentNode;
+    else prev = caretNode.childNodes[r.startOffset - 1] || null;
+    function caretAtEndOf(el) {
+      var sc = r.startContainer, so = r.startOffset;
+      var last = el.lastChild;
+      if (last && last.nodeType === 3 && sc === last && so === last.nodeValue.length) return true;
+      if (sc.nodeType === 1 && so > 0 && sc.childNodes[so - 1] === el) return true;
+      return false;
+    }
+    if (prev && prev.nodeType === 1 && prev.classList.contains("tracked-insert") &&
+        prev.getAttribute("data-author") === authorName() &&
+        (Date.now() - (+(prev.getAttribute("data-ts") || 0))) < 4000 &&
+        caretAtEndOf(prev)) {
+      // caret is right at the end of the previous ins: append
+      prev.textContent += e.data;
+      prev.setAttribute("data-ts", String(Date.now()));
+      prev.setAttribute("title", authorTitle());
+      placeCaretAfter(prev);
+    } else {
+      var ins = makeIns();
+      ins.textContent = e.data;
+      r.insertNode(ins);
+      placeCaretAfter(ins);
+    }
+    T.editor.markDirty();
+    T.bus.emit("doc:change");
+  }
+
+  function placeCaretAfter(node) {
     var s = window.getSelection();
     s.removeAllRanges();
     var cr = document.createRange();
-    cr.setStartAfter(ins);
+    cr.setStartAfter(node);
     cr.collapse(true);
     s.addRange(cr);
-    T.editor.markDirty();
-    T.bus.emit("doc:change");
+  }
+
+  /* ----- deterministic deletion range (no Selection.modify) ----- */
+  function textNodesOf(root) {
+    var out = [];
+    var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var n;
+    while ((n = tw.nextNode())) out.push(n);
+    return out;
+  }
+  function prevText(tn, sheet) {
+    var all = textNodesOf(sheet), i = all.indexOf(tn);
+    for (var k = i - 1; k >= 0; k--) if (all[k].nodeValue.length) return all[k];
+    return null;
+  }
+  function nextText(tn, sheet) {
+    var all = textNodesOf(sheet), i = all.indexOf(tn);
+    for (var k = i + 1; k < all.length; k++) if (all[k].nodeValue.length) return all[k];
+    return null;
+  }
+  // normalize caret (container, offset) to a text node + offset
+  function caretTextNode(sc, so, dir, sheet) {
+    if (sc.nodeType === 3) return { node: sc, offset: Math.min(so, sc.nodeValue.length) };
+    var kids = sc.childNodes;
+    if (dir === "backward") {
+      for (var i = Math.min(so, kids.length) - 1; i >= 0; i--) {
+        var t = textNodesOf(kids[i]);
+        if (t.length) { var last = t[t.length - 1]; return { node: last, offset: last.nodeValue.length }; }
+      }
+      var p = prevText(null, sheet);
+      return p ? { node: p, offset: p.nodeValue.length } : null;
+    }
+    for (var j = Math.max(so, 0); j < kids.length; j++) {
+      var t2 = textNodesOf(kids[j]);
+      if (t2.length) return { node: t2[0], offset: 0 };
+    }
+    var nx = nextText(null, sheet);
+    return nx ? { node: nx, offset: 0 } : null;
+  }
+
+  function wordEdge(text, off, dir) {
+    if (dir === "backward") {
+      var left = text.slice(0, off);
+      var m = left.match(/(\S+\s*)$/);
+      // skip over whitespace-only gaps first
+      var ws = left.match(/(\s+)$/);
+      if (ws && !m) return off - ws[1].length;
+      return m ? off - m[1].length : 0;
+    }
+    var right = text.slice(off);
+    var m2 = right.match(/^(\s*\S+)/);
+    return m2 ? off + m2[1].length : text.length;
+  }
+
+  function extendDeleteRange(r, dir, byWord) {
+    var sheet = T.editor.sheetEl();
+    if (!sheet) return null;
+    var ct = caretTextNode(r.startContainer, r.startOffset, dir, sheet);
+    if (!ct) return null;
+    var tn = ct.node, off = ct.offset;
+    var nr = document.createRange();
+    if (!byWord) {
+      if (dir === "backward") {
+        if (off > 0) { nr.setStart(tn, off - 1); nr.setEnd(tn, off); }
+        else {
+          var p = prevText(tn, sheet);
+          if (!p) return null;
+          nr.setStart(p, p.nodeValue.length - 1); nr.setEnd(p, p.nodeValue.length);
+        }
+      } else {
+        if (off < tn.nodeValue.length) { nr.setStart(tn, off); nr.setEnd(tn, off + 1); }
+        else {
+          var nx = nextText(tn, sheet);
+          if (!nx) return null;
+          nr.setStart(nx, 0); nr.setEnd(nx, 1);
+        }
+      }
+    } else {
+      var edge = wordEdge(tn.nodeValue, off, dir);
+      if (edge === off) {
+        // at a boundary with nothing to take: step one char instead
+        return extendDeleteRange(r, dir, false);
+      }
+      if (dir === "backward") { nr.setStart(tn, edge); nr.setEnd(tn, off); }
+      else { nr.setStart(tn, off); nr.setEnd(tn, edge); }
+    }
+    return nr;
   }
 
   function handleDelete(e, dir, byWord) {
     var r = T.sel.range();
     if (!r || !inSheet(r)) return;
-    var s = window.getSelection();
-    r = r.cloneRange();
-    if (r.collapsed) {
-      // Extend the collapsed caret by one unit in the delete direction.
-      s.removeAllRanges();
-      s.addRange(r);
-      if (typeof s.modify !== "function") return; // cannot extend safely; let native handle it
-      var gran = byWord ? "word" : "character";
-      var before = s.toString();
-      s.modify("extend", dir, gran);
-      if (s.toString() === before && gran !== "character") s.modify("extend", dir, "character");
-      if (!s.rangeCount || s.getRangeAt(0).collapsed) return; // nothing to delete
-      r = s.getRangeAt(0).cloneRange();
-    }
+    var delR = r.collapsed ? extendDeleteRange(r.cloneRange(), dir, byWord) : r.cloneRange();
+    if (!delR || delR.collapsed) return; // let native handle it
     e.preventDefault();
-    var frag = r.extractContents();
-    var del = document.createElement("del");
-    del.className = "tracked-delete";
-    del.setAttribute("data-author", authorName());
-    del.setAttribute("data-ts", String(Date.now()));
+    var frag = delR.extractContents();
+    var del = makeDel();
     del.appendChild(frag);
-    r.insertNode(del);
+    delR.insertNode(del);
+    // merge with adjacent del by same author
+    var sib = del.previousSibling;
+    if (sib && sib.nodeType === 1 && sib.classList.contains("tracked-delete") &&
+        sib.getAttribute("data-author") === authorName()) {
+      while (del.firstChild) sib.appendChild(del.firstChild);
+      del.remove();
+      del = sib;
+    }
+    var s = window.getSelection();
     s.removeAllRanges();
     var cr = document.createRange();
     cr.setStartBefore(del);

@@ -197,6 +197,26 @@
     range: function () { var s = window.getSelection(); return s.rangeCount ? s.getRangeAt(0) : null; },
     collapsed: function () { var s = window.getSelection(); return !s.rangeCount || s.isCollapsed; },
     sheet: function () { return $("#sheetLayer .psheet"); },
+    /* Focus the sheet without disturbing the live selection (some engines
+       collapse the selection on focus; restore it when that happens). */
+    focusSheet: function () {
+      var sheet = sel.sheet();
+      if (!sheet) return;
+      var s = window.getSelection();
+      var live = s.rangeCount ? s.getRangeAt(0) : null;
+      var keep = null;
+      try { keep = live ? live.cloneRange() : null; } catch (e) { keep = null; }
+      sheet.focus();
+      if (keep) {
+        var cur = s.rangeCount ? s.getRangeAt(0) : null;
+        var same = cur && cur.startContainer === keep.startContainer && cur.startOffset === keep.startOffset &&
+          cur.endContainer === keep.endContainer && cur.endOffset === keep.endOffset;
+        if (!same) {
+          s.removeAllRanges();
+          try { s.addRange(keep); } catch (e2) { /* ignore */ }
+        }
+      }
+    },
     block: function () {
       var sheet = sel.sheet(); if (!sheet) return null;
       var r = sel.range(); if (!r) return null;
@@ -212,12 +232,18 @@
   /* ---------------- command registry ---------------- */
   var commands = {};
   function register(name, fn, meta) {
-    commands[name] = { fn: fn, title: (meta && meta.title) || name, cat: (meta && meta.cat) || "General", icon: (meta && meta.icon) || "i-file", keys: (meta && meta.keys) || "" };
+    commands[name] = { fn: fn, title: (meta && meta.title) || name, cat: (meta && meta.cat) || "General", icon: (meta && meta.icon) || "i-file", keys: (meta && meta.keys) || "", match: (meta && meta.match) || "" };
   }
+  // commands that mutate the document take a pre-change undo snapshot
+  var UNDOABLE = /^(fmt|para|style|table|insert|refs|layout|design|changes|comments|ink)\./;
   function cmd(name) {
     var c = commands[name];
     if (!c) { console.warn("[TXT] unknown command:", name); return; }
     var args = Array.prototype.slice.call(arguments, 1);
+    if (UNDOABLE.test(name)) {
+      var X = window.TXT;
+      if (X && X.history) { try { X.history.push(); } catch (e) { /* ignore */ } }
+    }
     return c.fn.apply(null, args);
   }
   function listCommands() {

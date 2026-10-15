@@ -86,12 +86,10 @@
     if (sc) { sc.classList.add("hidden"); sc.classList.remove("open"); }
   }
 
-  /* ---------- device mode ---------- */
+  /* ---------- device mode (session-only: always boots to desktop) ---------- */
   function setDevice(mode) {
     if (mode !== "desktop" && mode !== "ipad" && mode !== "mobile") mode = "desktop";
     document.documentElement.dataset.device = mode;
-    T.state.prefs.device = mode;
-    T.savePrefs();
     var stage = $("#stage");
     var mob = (mode === "mobile");
     if (stage) stage.classList.toggle("view-reflow", mob);
@@ -106,7 +104,24 @@
       });
     }
     if (!mob) closeSheet();
+    ensureExitPill(mode);
     bus.emit("device:change", { mode: mode });
+  }
+
+  /* Floating exit pill so a preview mode can never trap the user. */
+  function ensureExitPill(mode) {
+    var b = $("#deviceExit");
+    if (!b) {
+      b = document.createElement("button");
+      b.type = "button";
+      b.id = "deviceExit";
+      b.className = "device-exit hidden";
+      document.body.appendChild(b);
+      b.addEventListener("click", function () { setDevice("desktop"); });
+    }
+    var names = { ipad: "iPad preview", mobile: "iPhone preview" };
+    b.innerHTML = "Exit " + (names[mode] || "preview");
+    b.classList.toggle("hidden", mode === "desktop");
   }
 
   /* ---------- read-only ---------- */
@@ -155,6 +170,14 @@
     r1.appendChild(chip("Quote", function () { styleCmd("style.quote", "<blockquote>"); }));
     s1.appendChild(r1);
     wrap.appendChild(s1);
+
+    var sP = sec("Preview");
+    var rP = row();
+    [["Desktop", "desktop", "i-monitor"], ["iPad", "ipad", "i-tablet"], ["iPhone", "mobile", "i-phone"]].forEach(function (d) {
+      rP.appendChild(chip(d[0], function () { setDevice(d[1]); closeSheet(); }, d[2]));
+    });
+    sP.appendChild(rP);
+    wrap.appendChild(sP);
 
     var s2 = sec("Font");
     var r2 = row();
@@ -461,6 +484,14 @@
     s1.appendChild(r1);
     wrap.appendChild(s1);
 
+    var sP = sec("Preview");
+    var rP = row();
+    [["Desktop", "desktop", "i-monitor"], ["iPad", "ipad", "i-tablet"], ["iPhone", "mobile", "i-phone"]].forEach(function (d) {
+      rP.appendChild(chip(d[0], function () { setDevice(d[1]); closeSheet(); }, d[2]));
+    });
+    sP.appendChild(rP);
+    wrap.appendChild(sP);
+
     var s2 = sec("Export");
     var r2 = row();
     EXPORT_FMTS.forEach(function (f) {
@@ -471,8 +502,7 @@
 
     var s3 = sec("Document");
     var r3 = row();
-    r3.appendChild(chip("Word goal", function () {
-      T.modal({
+    r3.appendChild(chip("Word goal", function () {      T.modal({
         title: "Word goal",
         sub: "Set your daily word target.",
         fields: [{ key: "goal", label: "Words", type: "number", value: String(T.state.prefs.wordGoal || 500) }],
@@ -615,5 +645,5 @@
   wireMTopbar();
   wireFab();
   wireSheetDismiss();
-  setDevice(T.state.prefs.device || "desktop");
+  setDevice("desktop"); // previews are session-only; never boot trapped in one
 })();

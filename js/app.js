@@ -5,8 +5,8 @@
   var $ = T.$;
 
   /* ----- core editing commands (used by quick access + palette) ----- */
-  T.register("doc.undo", function () { document.execCommand("undo"); }, { title: "Undo", cat: "Document", icon: "i-undo", keys: "Ctrl+Z" });
-  T.register("doc.redo", function () { document.execCommand("redo"); }, { title: "Redo", cat: "Document", icon: "i-redo", keys: "Ctrl+Y" });
+  T.register("doc.undo", function () { if (T.history) T.history.undo(); }, { title: "Undo", cat: "Document", icon: "i-undo", keys: "Ctrl+Z" });
+  T.register("doc.redo", function () { if (T.history) T.history.redo(); }, { title: "Redo", cat: "Document", icon: "i-redo", keys: "Ctrl+Y" });
   T.register("doc.print", function () { window.print(); }, { title: "Print", cat: "Document", icon: "i-print", keys: "Ctrl+P" });
   T.register("doc.new", function () {
     T.modal({ title: T.t("newDoc"), sub: T.t("confirmNew"), okText: "Create" }).then(function (r) {
@@ -49,9 +49,12 @@
     var mod = e.ctrlKey || e.metaKey;
     var tag = (e.target.tagName || "").toLowerCase();
     var inField = tag === "input" || tag === "textarea" || tag === "select";
-    if (mod && e.key.toLowerCase() === "k" && !inField) { e.preventDefault(); T.bus.emit("palette:open"); }
-    else if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); T.cmd("doc.save"); }
-    else if (mod && e.key.toLowerCase() === "p" && !e.shiftKey) { e.preventDefault(); T.cmd("doc.print"); }
+    var key = e.key.toLowerCase();
+    if (mod && key === "k" && !inField) { e.preventDefault(); T.bus.emit("palette:open"); }
+    else if (mod && key === "s") { e.preventDefault(); T.cmd("doc.save"); }
+    else if (mod && key === "p" && !e.shiftKey) { e.preventDefault(); T.cmd("doc.print"); }
+    else if (mod && key === "z" && !e.shiftKey && !inField) { e.preventDefault(); T.cmd("doc.undo"); }
+    else if (mod && (key === "y" || (key === "z" && e.shiftKey)) && !inField) { e.preventDefault(); T.cmd("doc.redo"); }
     else if (e.key === "Escape") { T.bus.emit("overlay:escape"); }
   }
 

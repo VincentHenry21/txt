@@ -50,7 +50,7 @@
     var q = (query || "").trim().toLowerCase();
     items = [];
     T.listCommands().forEach(function (c) {
-      var hay = ((c.title || "") + " " + (c.name || "") + " " + (c.cat || "")).toLowerCase();
+      var hay = ((c.title || "") + " " + (c.name || "") + " " + (c.cat || "") + " " + (c.match || "")).toLowerCase();
       if (!q || hay.indexOf(q) >= 0) {
         items.push({ type: "cmd", name: c.name, title: c.title, cat: c.cat, icon: c.icon, keys: c.keys });
       }

@@ -139,6 +139,9 @@
 
   /* ----- input pipeline ----- */
   function bindSheet(sheet) {
+    sheet.addEventListener("beforeinput", function (e) {
+      if (!e.isComposing) histPush(true); // pre-change snapshot for typing (coalesced)
+    });
     sheet.addEventListener("input", function () {
       ensureBlockIds(sheet);
       markDirty();
@@ -235,7 +238,114 @@
     T.bus.emit("cursor", { ln: ln, col: col });
   }
 
+  /* ----- undo / redo (snapshot-based, covers typing + commands) ----- */
+  var undoStack = [], redoStack = [];
+  var lastTypePush = 0;
+
+  function blockOf(node) {
+    var sheet = sheetEl();
+    while (node && node !== sheet) {
+      if (node.nodeType === 1 && node.getAttribute && node.getAttribute("data-bid")) return node;
+      node = node.parentNode;
+    }
+    return null;
+  }
+  function offsetInBlock(block, node, offset) {
+    var tw = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    var total = 0, n;
+    while ((n = tw.nextNode())) {
+      if (n === node) return total + Math.min(offset, n.nodeValue.length);
+      total += n.nodeValue.length;
+    }
+    return total;
+  }
+  function nodeAtOffset(block, target) {
+    var tw = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    var total = 0, n, prev = null;
+    while ((n = tw.nextNode())) {
+      prev = n;
+      if (total + n.nodeValue.length >= target) return { node: n, offset: Math.max(0, target - total) };
+      total += n.nodeValue.length;
+    }
+    return prev ? { node: prev, offset: prev.nodeValue.length } : null;
+  }
+  function snapSel() {
+    var r = T.sel.range();
+    if (!r) return null;
+    var sb = blockOf(r.startContainer), eb = blockOf(r.endContainer);
+    if (!sb || !eb) return null;
+    return {
+      sb: sb.getAttribute("data-bid"), so: offsetInBlock(sb, r.startContainer, r.startOffset),
+      eb: eb.getAttribute("data-bid"), eo: offsetInBlock(eb, r.endContainer, r.endOffset)
+    };
+  }
+  function snapshot() {
+    var sheet = sheetEl();
+    return sheet ? { html: sheet.innerHTML, sel: snapSel() } : null;
+  }
+  function restoreSnap(snap) {
+    if (!snap) return;
+    var sheet = sheetEl();
+    if (!sheet) return;
+    sheet.innerHTML = snap.html;
+    ensureBlockIds(sheet);
+    if (snap.sel) {
+      try {
+        var sb = sheet.querySelector('[data-bid="' + snap.sel.sb + '"]');
+        var eb = sheet.querySelector('[data-bid="' + snap.sel.eb + '"]');
+        if (sb && eb) {
+          var a = nodeAtOffset(sb, snap.sel.so), b = nodeAtOffset(eb, snap.sel.eo);
+          if (a && b) {
+            var r = document.createRange();
+            r.setStart(a.node, Math.min(a.offset, a.node.nodeValue.length));
+            r.setEnd(b.node, Math.min(b.offset, b.node.nodeValue.length));
+            var s = window.getSelection();
+            s.removeAllRanges();
+            s.addRange(r);
+          }
+        }
+      } catch (e) { /* best effort */ }
+    }
+    layoutPages();
+    updateCounts();
+    T.bus.emit("doc:change");
+    markDirty();
+  }
+  function histPush(typing) {
+    var now = Date.now();
+    if (typing) {
+      if (now - lastTypePush < 2000 && undoStack.length) return; // coalesce typing bursts
+      lastTypePush = now;
+    }
+    var snap = snapshot();
+    if (!snap) return;
+    undoStack.push(snap);
+    if (undoStack.length > 120) undoStack.shift();
+    redoStack.length = 0;
+  }
+  function histUndo() {
+    if (!undoStack.length) return false;
+    var cur = snapshot();
+    if (cur) redoStack.push(cur);
+    restoreSnap(undoStack.pop());
+    return true;
+  }
+  function histRedo() {
+    if (!redoStack.length) return false;
+    var cur = snapshot();
+    if (cur) undoStack.push(cur);
+    restoreSnap(redoStack.pop());
+    return true;
+  }
+
   /* ----- public API ----- */
+  T.history = {
+    push: function () { histPush(false); },
+    pushTyping: function () { histPush(true); },
+    undo: histUndo, redo: histRedo,
+    canUndo: function () { return undoStack.length > 0; },
+    canRedo: function () { return redoStack.length > 0; }
+  };
   T.editor = {
     newDoc: newDoc, openDoc: openDoc, getDoc: getDoc,
     sheetEl: sheetEl, pagesEl: pagesEl,

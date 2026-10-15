@@ -34,7 +34,11 @@
   T.register("theme.cycle", function () {
     var i = THEMES.indexOf(document.documentElement.getAttribute("data-theme"));
     apply(THEMES[(i + 1) % THEMES.length]);
-  }, { title: "Cycle theme", cat: "View", icon: "i-moon" });
+  }, { title: "Cycle theme", cat: "View", icon: "i-moon", match: "dark light mode" });
+  T.register("theme.dark", function () { apply("obsidian"); }, { title: "Dark mode", cat: "View", icon: "i-moon", match: "dark night obsidian" });
+  T.register("theme.light", function () { apply("studio"); }, { title: "Light mode", cat: "View", icon: "i-sun", match: "light day studio" });
+  T.register("theme.sepia", function () { apply("sepia"); }, { title: "Sepia focus mode", cat: "View", icon: "i-eye", match: "sepia editorial eye strain" });
+  T.register("theme.contrast", function () { apply("contrast"); }, { title: "High contrast mode", cat: "View", icon: "i-shield", match: "contrast accessibility wcag aaa" });
   T.register("theme.paperToggle", togglePaper, { title: "Toggle white paper", cat: "View", icon: "i-pagecolor" });
 
   T.themes = { apply: apply, togglePaper: togglePaper, THEMES: THEMES, NAMES: NAMES };

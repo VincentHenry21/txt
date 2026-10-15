@@ -92,7 +92,10 @@
   function outlineHeadings() {
     var sh = sheet();
     if (!sh) { return []; }
-    return $$("H1,H2,H3,H4", sh);
+    return $$("H1,H2,H3,H4", sh).filter(function (h) {
+      if (h.closest && h.closest(".toc-block")) return false;
+      return !!h.textContent.trim();
+    });
   }
 
   function rebuildOutline() {
