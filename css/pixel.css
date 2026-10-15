@@ -1,6 +1,8 @@
 /* TXT Pixel Studio styles. Theme-aware via shared tokens. No CSS zoom. */
 
 #view-pixel {
+  --accent: #EC4899;
+  --accent-soft: rgba(236, 72, 153, 0.14);
   position: absolute;
   inset: 0;
   display: flex;
