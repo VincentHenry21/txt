@@ -2,9 +2,8 @@
    Theme-aware via CSS variables; pairs with the carbon workspace theme. */
 
 #vPanels {
-  width: 272px;
-  min-width: 272px;
-  max-width: 272px;
+  /* width comes from the flex-basis in vac.css (280px desktop, 260px at <=1100px,
+     bottom sheet at <=900px) */
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;

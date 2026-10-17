@@ -89,7 +89,7 @@
 /* ---------- filter popover ---------- */
 .px-pop {
   position: absolute; z-index: 30; left: 8px; right: 8px; top: 40px;
-  background: var(--surface); border: 1px solid var(--accent); border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius);
   box-shadow: var(--shadow, 0 8px 30px rgba(10,15,40,.25)); padding: 10px;
   display: flex; flex-direction: column; gap: 8px;
 }
@@ -122,7 +122,7 @@
 .px-hint { font-size: 11px; color: var(--muted); }
 
 /* ---------- NXT shared: skeleton loaders ---------- */
-.nxt-skeleton { position: relative; overflow: hidden; background: var(--surface-2); border-radius: 10px; min-height: 20px; }
+.nxt-skeleton { position: relative; overflow: hidden; background: var(--surface-2); border-radius: var(--radius); min-height: 20px; }
 .nxt-skeleton::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.45) 50%, transparent 80%); animation: nxt-shimmer 1.4s infinite; }
 @keyframes nxt-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 
@@ -133,8 +133,63 @@
 }
 
 /* ---------- Pixel responsive: iPad panels + mobile bottom sheet ---------- */
+/* iPad (820px falls in this range): roomy 240px panels, all sections visible */
 @media (max-width: 900px) {
   #pPanels { min-width: 0; width: 240px; max-width: 240px; }
+}
+
+/* mobile sheet header: title + section tabs + close.
+   Hidden on desktop; the sheet tabs scroll the sheet to each section. */
+.px-sheet-head { display: none; }
+@media (max-width: 640px) {
+  .px-sheet-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0 10px;
+  }
+  .px-sheet-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+    white-space: nowrap;
+    margin-right: auto;
+  }
+  .px-sheet-tabs { display: flex; gap: 6px; }
+  .px-sheet-tab {
+    border: 1px solid var(--line);
+    background: var(--ws-bg);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 0 14px;
+    min-height: 44px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .px-sheet-tab:active { background: var(--accent-soft); border-color: var(--accent); }
+  .px-sheet-close {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    padding: 0;
+  }
+  .px-sheet-close svg { width: 18px; height: 18px; }
+  .px-sheet-close:active { background: var(--accent-soft); }
+  #pPanels.nxt-sheet.open { animation: px-sheet-up 0.24s cubic-bezier(0.32, 0.72, 0, 1); }
+}
+@keyframes px-sheet-up {
+  from { transform: translateY(60px); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
 }
 @media (max-width: 640px) {
   #pPanels { display: none; }
@@ -144,5 +199,14 @@
     border-left: 0;
   }
   #pSheetToolOpts { display: flex; flex-direction: column; gap: 10px; margin-bottom: 2px; }
-  .px-layer { min-height: 44px; }
+  /* layer rows: full 44px touch rows on mobile */
+  .px-layer { min-height: 44px; padding: 8px; gap: 8px; grid-template-columns: 44px 1fr auto auto; }
+  .px-thumb { width: 44px; height: 44px; }
+  /* thumb-friendly sheet sliders: full-width rows, tall sliders */
+  .px-sheet-opts .px-opt { min-height: 52px; gap: 10px; }
+  .px-sheet-opts .px-opt-lb { font-size: 13px; }
+  .px-sheet-opts .px-opt-v { font-size: 13px; min-width: 38px; }
+  .px-sheet-opts .px-range { flex: 1 1 auto; width: auto; min-height: 52px; }
+  .px-sheet-opts .px-seg { min-height: 52px; padding: 0 18px; font-size: 13px; }
+  .px-sheet-opts .px-toolname { font-size: 15px; font-weight: 800; }
 }

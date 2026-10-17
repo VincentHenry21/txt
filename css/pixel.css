@@ -175,7 +175,7 @@
   width: 44px;
   height: 44px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
@@ -238,7 +238,7 @@
   top: -2px;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
@@ -310,12 +310,33 @@
   .px-canvaswrap { padding: 12px; }
   #pComposite, #pOverlay { top: 12px; left: 12px; }
   /* mobile: two-row topbar so every control stays 44px and reachable */
-  .px-topbar { flex-wrap: wrap; row-gap: 4px; padding: 6px 8px; }
+  .px-topbar { flex-wrap: wrap; row-gap: 4px; padding: 6px 12px; }
   .px-topleft { flex: 1 1 auto; min-width: 0; }
   .px-sname { display: none; }
   #pToolOpts { display: none; }
   .px-topright { flex: 1 1 100%; justify-content: flex-start; gap: 8px; }
   #pPanelsBtn { display: inline-flex; }
+  /* mobile: canvas on top, collapsed panels handle, horizontal tool strip at bottom */
+  .px-main { flex-direction: column; }
+  #pCanvasWrap { order: 1; flex: 1 1 auto; min-height: 0; }
+  #pSheetBar { order: 2; display: flex; }
+  .px-tools {
+    order: 3;
+    flex-direction: row;
+    width: auto;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px calc(8px + env(safe-area-inset-bottom));
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  .px-tools::-webkit-scrollbar { display: none; }
+  .px-tools .px-tool { min-width: 44px; min-height: 44px; }
+  .px-swatches { margin: 0 0 0 6px; }
+  #pPanels { order: 4; }
 }
 
 /* ---------- per-app topbar: studio badge, launcher, settings, files ---------- */
@@ -324,7 +345,7 @@
   width: 44px;
   height: 44px;
   flex: none;
-  border-radius: 10px;
+  border-radius: var(--radius);
   color: var(--ink);
 }
 #view-pixel .px-tbtn:hover { background: var(--accent-soft); }
@@ -332,7 +353,7 @@
 .px-studio { display: flex; align-items: center; gap: 8px; }
 .px-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; border-radius: 10px;
+  width: 44px; height: 44px; border-radius: var(--radius);
   background: var(--accent); color: #161616;
   font-size: 13px; font-weight: 800; letter-spacing: 0.02em;
   flex: none;
@@ -340,6 +361,38 @@
 .px-sname { font-size: 15px; font-weight: 800; color: var(--ink); white-space: nowrap; }
 /* mobile panels toggle: hidden on desktop, shown in the mobile toolbar */
 #pPanelsBtn { display: none; }
+
+/* collapsed panels handle: sits above the bottom tool strip on phones,
+   tap to expand the panels bottom sheet. Hidden on desktop. */
+.px-sheetbar {
+  display: none;
+  order: 2;
+  width: 100%;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 16px;
+  background: var(--surface);
+  border: 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.px-sheetbar .nxt-sheet-handle.px-sheetbar-grip {
+  width: 36px;
+  height: 4px;
+  margin: 0;
+  flex: none;
+}
+.px-sheetbar-chev { display: inline-flex; color: var(--muted); flex: none; }
+.px-sheetbar-chev svg { width: 18px; height: 18px; transition: transform 0.15s ease; }
+.px-sheetbar[aria-expanded="true"] .px-sheetbar-chev svg { transform: rotate(180deg); }
+.px-sheetbar:active { background: var(--accent-soft); }
+.px-sheetbar [lang="my"] { line-height: 1.85; }
 
 /* large touch-friendly tool options rendered inside the mobile bottom sheet */
 .px-sheet-opts .px-opt { min-height: 44px; }
@@ -371,7 +424,7 @@
 .px-drawer-head .px-dclose svg { width: 18px; height: 18px; }
 .px-drawer-head .px-new {
   margin-left: auto; min-height: 44px; padding: 0 16px;
-  border: 1px solid var(--line); border-radius: 10px;
+  border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--surface); color: var(--ink);
   font-size: 13px; font-weight: 700; cursor: pointer;
 }
@@ -426,7 +479,7 @@
 .px-fact {
   width: 44px; height: 44px; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
-  background: transparent; border: 1px solid transparent; border-radius: 10px;
+  background: transparent; border: 1px solid transparent; border-radius: var(--radius);
   color: var(--muted); cursor: pointer;
 }
 .px-fact:hover { background: var(--accent-soft); color: var(--ink); border-color: var(--line); }

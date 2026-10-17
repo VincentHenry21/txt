@@ -167,6 +167,8 @@ html[data-theme="carbon"] #view-vac {
   font-weight: 600;
   padding: 5px 8px;
   width: 150px;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 .v-docname:hover { border-color: var(--v-line); }
 .v-docname:focus { outline: none; border-color: var(--v-blue); background: var(--v-surface2); }
@@ -343,6 +345,46 @@ html[data-theme="carbon"] #view-vac {
 }
 #vPanels:empty { display: none; }
 
+/* P3: narrower side panels on iPad-width viewports (the <=900px mobile
+   bottom sheet below takes over on phones and iPad portrait) */
+@media (max-width: 1100px) {
+  #view-vac #vPanels { flex: 0 0 260px; }
+}
+
+/* ---------- tools overflow bottom sheet (mobile, <=900px) ----------
+   The element carries .nxt-sheet so it picks up the shared cross-app sheet
+   pattern (css/mobile.css) automatically; the rules below make it work
+   standalone in the meantime. */
+#vToolsSheet { display: none; }
+@media (max-width: 900px) {
+  #vToolsSheet.nxt-sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 360;
+    max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: var(--surface); color: var(--ink);
+    border-top: 1px solid var(--line); border-radius: 14px 14px 0 0;
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35);
+  }
+  #vToolsSheet.nxt-sheet.open { display: block; }
+  #vToolsSheet .nxt-sheet-handle { cursor: pointer; }
+  .v-tools-list { display: flex; flex-direction: column; gap: 2px; padding: 4px 0 8px; }
+  .v-tool-row {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    min-height: 44px; padding: 6px 12px; box-sizing: border-box;
+    background: transparent; border: 1px solid transparent; border-radius: 10px;
+    color: var(--ink); cursor: pointer; text-align: left;
+  }
+  .v-tool-row:hover { background: var(--accent-soft); }
+  .v-tool-row.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .v-tool-row .vico { width: 20px; height: 20px; flex: none; }
+  .v-tool-row .v-tool-name { font-size: 13px; font-weight: 600; }
+  .v-tool-row .v-tool-key {
+    margin-left: auto; font-size: 11px; font-weight: 700; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; flex: none;
+  }
+  .v-tool-row.active .v-tool-key { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+}
+
 /* overlay handles get pointer events via inline style; keep overlay itself passive */
 #vOverlay { pointer-events: none; }
 
@@ -382,7 +424,8 @@ html[data-theme="carbon"] #view-vac {
   }
   #vTools .vtool { width: 44px; height: 44px; }
   #vTools .v-more { display: inline-flex; }
-  #vTools:not(.show-all) > button.vtool:not(.v-more):nth-of-type(n+7) { display: none; }
+  /* tools 7+ live in the "More" bottom sheet on mobile (#vToolsSheet) */
+  #vTools > button.vtool:not(.v-more):nth-of-type(n+7) { display: none; }
   #vPaintStack { display: none; }
 
   /* the side panel is a hidden-until-opened bottom sheet on mobile */

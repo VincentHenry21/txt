@@ -255,6 +255,12 @@
     linear-gradient(#fff,#fff) center/2px 8px no-repeat;
 }
 .dck-resize { bottom: -9px; right: -9px; cursor: nwse-resize; }
+/* 44px touch hit area on the drag handles (visual stays small) */
+.dck-move::before, .dck-resize::before {
+  content: "";
+  position: absolute;
+  inset: -13px;
+}
 .dck-guide-v, .dck-guide-h {
   position: absolute;
   background: var(--dck-brand);
@@ -469,6 +475,7 @@
   .dck-move, .dck-resize { width: 30px; height: 30px; }
   .dck-move { top: -15px; left: -15px; }
   .dck-resize { bottom: -15px; right: -15px; }
+  .dck-move::before, .dck-resize::before { inset: -7px; }
   .dck-toolbar { flex-wrap: wrap; }
   .dck-present-stage { margin: 8px 8px 0; }
   .dck-present-notes { margin: 8px 8px 0; font-size: 15px; }
@@ -511,7 +518,7 @@
   justify-content: center;
   color: #FFFFFF;
   font-weight: 800;
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.5px;
   flex: 0 0 auto;
 }
@@ -630,51 +637,34 @@ label.dck-set-row { cursor: pointer; }
   .dck-sec-head { flex-wrap: wrap; }
 }
 
-/* ---------- cross-app: skeleton loaders ---------- */
-.nxt-skeleton { position: relative; overflow: hidden; background: var(--surface-2); border-radius: 10px; min-height: 20px; }
-.nxt-skeleton::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.45) 50%, transparent 80%); animation: nxt-shimmer 1.4s infinite; }
-@keyframes nxt-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-
-/* ---------- cross-app: bottom sheet pattern ---------- */
-@media (max-width: 640px) {
-  .nxt-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 350; max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--surface); color: var(--ink); border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 32px rgba(0,0,0,.18); }
-  .nxt-sheet-handle { width: 40px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 12px; }
-}
-/* same sheet geometry for the 641-820px range (inspector sheet) */
-@media (min-width: 641px) and (max-width: 820px) {
-  .dck-inspector.nxt-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 350; max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--surface); color: var(--ink); border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 32px rgba(0,0,0,.18); }
-  .dck-inspector .nxt-sheet-handle { width: 40px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 12px; }
-}
-
-/* ---------- inspector bottom sheet (<=820px) ---------- */
-/* sheet chrome is desktop-hidden; the sheet starts closed on mobile */
+/* ---------- inspector bottom sheet (<=820px) ----------
+   Uses the shared .nxt-sheet pattern from css/mobile.css (the single source
+   of truth for sheet geometry, shimmer, and topbar spec). This file only
+   adds the DCK-specific bits: desktop dock override, handle/head visibility,
+   and the Inspector toolbar toggle button. The sheet contract (.open on the
+   sheet + .nxt-sheet-backdrop) is toggled by toggleInspector() in dck.js. */
+/* sheet chrome is desktop-hidden */
 .dck-inspector > .nxt-sheet-handle { display: none; }
-.dck-insp-sheetbar { display: none; }
+.dck-inspector > .nxt-sheet-head { display: none; }
 .dck-insp-toggle { display: none; }
+/* desktop (>820px): the inspector is always a docked side panel, even if the
+   .open class is ever set programmatically */
+@media (min-width: 821px) {
+  .dck-inspector.nxt-sheet,
+  .dck-inspector.nxt-sheet.open {
+    position: static;
+    transform: none; visibility: visible; pointer-events: auto;
+    border: 0; border-left: 1px solid var(--line); border-radius: 0;
+    max-height: none; box-shadow: none; padding-bottom: 0;
+    z-index: auto;
+  }
+  #dck-insp-backdrop { display: none !important; }
+}
 @media (max-width: 820px) {
   .dck-inspector > .nxt-sheet-handle { display: block; }
-  .dck-insp-sheetbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    min-height: 44px;
-    margin-bottom: 6px;
-  }
-  .dck-insp-sheetbar .dck-insp-h { margin: 0; font-size: 15px; font-weight: 800; }
-  .dck-inspector.nxt-sheet {
-    transform: translateY(110%);
-    visibility: hidden;
-    transition: transform 0.25s ease, visibility 0.25s;
-  }
-  .dck-inspector.nxt-sheet.sheet-open {
-    transform: none;
-    visibility: visible;
-  }
+  .dck-inspector > .nxt-sheet-head { display: flex; }
   .dck-insp-toggle { display: inline-flex; white-space: nowrap; }
 }
-.dck-insp-close { width: 44px; height: 44px; border-radius: 10px; flex: none; }
-.dck-insp-close svg { width: 20px; height: 20px; }
 
 /* ---------- topbar Present button (all sizes) ---------- */
 .dck-topbar-present { white-space: nowrap; flex: none; }

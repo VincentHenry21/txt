@@ -1,0 +1,65 @@
+/* NXT OS unified Export / Share dialog. Theme tokens, no CSS zoom. */
+.nxes-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(10, 12, 20, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.nxes-card {
+  width: min(520px, 100%);
+  max-height: min(86vh, 720px);
+  overflow-y: auto;
+  background: var(--surface, #FFFFFF);
+  color: var(--ink, #111827);
+  border: 1px solid var(--line, #E5E7EB);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  padding: 18px;
+}
+.nxes-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.nxes-title { font-size: 18px; font-weight: 700; letter-spacing: 0.01em; }
+.nxes-sub { font-size: 12px; color: var(--muted, #6B7280); margin-top: 2px; }
+.nxes-x {
+  border: 1px solid var(--line, #E5E7EB); background: transparent; color: var(--ink, #111827);
+  width: 32px; height: 32px; border-radius: 10px; font-size: 18px; line-height: 1; cursor: pointer;
+}
+.nxes-secttl { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted, #6B7280); margin: 12px 0 8px; }
+.nxes-list { display: flex; flex-direction: column; gap: 8px; }
+.nxes-opt {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line, #E5E7EB); border-radius: 12px;
+  padding: 10px 12px; cursor: pointer; background: var(--surface-2, #F8FAFC);
+}
+.nxes-opt input { accent-color: var(--accent, #4F46E5); }
+.nxes-opt.nxes-sel { border-color: var(--accent, #4F46E5); box-shadow: 0 0 0 1px var(--accent, #4F46E5); }
+.nxes-optmain { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.nxes-optlabel { font-size: 14px; font-weight: 600; }
+.nxes-optnote { font-size: 12px; color: var(--muted, #6B7280); line-height: 1.4; }
+.nxes-ext {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  border: 1px solid var(--line, #E5E7EB); border-radius: 8px; padding: 3px 8px;
+  color: var(--muted, #6B7280); white-space: nowrap;
+}
+.nxes-empty { font-size: 14px; color: var(--muted, #6B7280); padding: 12px 4px; line-height: 1.5; }
+.nxes-namelbl { display: block; margin-top: 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted, #6B7280); }
+.nxes-name {
+  display: block; width: 100%; margin-top: 6px; box-sizing: border-box;
+  font-size: 15px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line, #E5E7EB); background: var(--surface-2, #F8FAFC); color: var(--ink, #111827);
+}
+.nxes-shareline { font-size: 12px; color: var(--muted, #6B7280); margin-top: 10px; line-height: 1.5; }
+.nxes-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.nxes-btn {
+  flex: 1 1 140px; padding: 12px 14px; border-radius: 12px; font-size: 14px; font-weight: 700;
+  border: 1px solid var(--line, #E5E7EB); background: var(--surface-2, #F8FAFC);
+  color: var(--ink, #111827); cursor: pointer;
+}
+.nxes-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.nxes-btn.nxes-primary { background: var(--accent, #4F46E5); border-color: var(--accent, #4F46E5); color: #FFFFFF; }
+.nxes-btn.nxes-busy { opacity: 0.6; }
+.nxes-sharebtn svg { width: 16px; height: 16px; }
+@media (max-width: 480px) {
+  .nxes-card { padding: 14px; border-radius: 14px; }
+  .nxes-actions { flex-direction: column; }
+  .nxes-btn { flex: 1 1 auto; }
+}

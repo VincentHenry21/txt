@@ -156,3 +156,160 @@ html[data-device="ipad"] #stage { padding-top: 76px; }
   #inspector { right: 0; }
   #stage { padding-top: 76px; }
 }
+
+/* ============================================================
+   SHARED NXT UI PATTERNS (Phase B polish, audit P2 items 6 and 8)
+   Owner: shared-patterns agent. This file is loaded by the main suite
+   and by all 6 standalone apps, so patterns defined here apply
+   everywhere. Per-app agents: USE these classes, do not redefine them.
+   Additive only: no existing selector above this line is changed.
+   Rules: CSS variables only (studio, obsidian, sepia, contrast, carbon),
+   no hardcoded colors, no CSS zoom, 44px minimum touch targets,
+   Burmese text line-height 1.85, no emojis, no em dashes.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. BOTTOM SHEET (.nxt-sheet-*)
+   Presentational only. App JS toggles .open on the sheet element and on
+   .nxt-sheet-backdrop to show or hide. No behavior is wired here.
+
+   Expected markup (place the backdrop element before the sheet in the
+   DOM so the sheet paints above it):
+
+     <div class="nxt-sheet-backdrop" id="mySheetBackdrop"></div>
+     <section class="nxt-sheet" id="mySheet" role="dialog" aria-modal="true"
+              aria-labelledby="mySheetTitle">
+       <div class="nxt-sheet-handle" aria-hidden="true"></div>
+       <div class="nxt-sheet-head">
+         <h2 class="nxt-sheet-title" id="mySheetTitle">Sheet title</h2>
+         <button class="nxt-sheet-close" type="button" aria-label="Close">...</button>
+       </div>
+       <div class="nxt-sheet-body">
+         ... sheet content ...
+       </div>
+     </section>
+
+   Open:  backdrop.classList.add("open"); sheet.classList.add("open");
+   Close: backdrop.classList.remove("open"); sheet.classList.remove("open");
+   Tip: wire the .nxt-sheet-close button and a backdrop click to the Close
+   lines above, close on Escape, and keep focus management in app JS.
+
+   LEGACY BRIDGE: Pixel's desktop panel host (.px-panels.nxt-sheet) is a
+   permanently visible side panel above 640px, so the hidden-by-default
+   state is lifted for it there. New code must use the .open contract.
+   ------------------------------------------------------------ */
+.nxt-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 350;
+  background: rgba(8, 10, 18, 0.45);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+}
+.nxt-sheet-backdrop.open {
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transition: opacity 0.22s ease, visibility 0s;
+}
+.nxt-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 351;
+  max-height: 70vh;
+  display: flex; flex-direction: column;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  box-shadow: var(--shadow-lg);
+  padding-bottom: env(safe-area-inset-bottom);
+  transform: translateY(105%); visibility: hidden; pointer-events: none;
+  transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1),
+              visibility 0s linear 0.26s;
+}
+.nxt-sheet.open {
+  transform: translateY(0); visibility: visible; pointer-events: auto;
+  transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1),
+              visibility 0s;
+}
+/* Legacy bridge: Pixel desktop panels reuse .nxt-sheet but stay visible */
+@media (min-width: 641px) {
+  .px-panels.nxt-sheet { transform: none; visibility: visible; pointer-events: auto; }
+}
+.nxt-sheet-handle {
+  width: 40px; height: 4px; border-radius: 999px; flex: 0 0 auto;
+  background: var(--line); margin: 12px auto;
+}
+.nxt-sheet-head {
+  display: flex; align-items: center; gap: 8px; flex: 0 0 auto;
+  padding: 2px 8px 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.nxt-sheet-title {
+  flex: 1; margin: 0; min-width: 0;
+  font-size: 15px; font-weight: 800; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nxt-sheet [lang="my"] { line-height: 1.85; }
+.nxt-sheet-close {
+  flex: 0 0 auto; width: 44px; height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 10px; background: transparent;
+  color: var(--ink); cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.nxt-sheet-close:hover { background: var(--accent-soft); }
+.nxt-sheet-close:active { background: var(--accent-soft); transform: scale(0.94); }
+.nxt-sheet-close svg { width: 20px; height: 20px; }
+.nxt-sheet-body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: 14px 16px 18px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+/* ------------------------------------------------------------
+   2. SKELETON SHIMMER (.nxt-skeleton)
+   Loading placeholder for file grids and panel content. The base block
+   and shimmer match the .nxt-skeleton already shipped in the app
+   stylesheets, so visuals stay identical; this shared copy adds the
+   text and card variants plus the reduced-motion guard. Mark skeleton
+   markup aria-hidden="true" and swap it for real content when data
+   arrives.
+
+   Example:
+     <div class="nxt-skeleton card" aria-hidden="true"></div>
+     <div class="nxt-skeleton text" style="width: 60%" aria-hidden="true"></div>
+   ------------------------------------------------------------ */
+.nxt-skeleton {
+  display: block; position: relative; overflow: hidden;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  min-height: 20px;
+  pointer-events: none;
+}
+.nxt-skeleton::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.45) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: nxt-shimmer 1.4s infinite;
+}
+@keyframes nxt-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+/* one-line text placeholder */
+.nxt-skeleton.text { height: 13px; min-height: 0; }
+/* larger content placeholder for file cards and panel blocks */
+.nxt-skeleton.card { min-height: 120px; }
+@media (prefers-reduced-motion: reduce) {
+  .nxt-skeleton::after { animation: none; }
+}
+
+/* ------------------------------------------------------------
+   3. UNIFIED PER-APP TOPBAR SPEC (DOCUMENTATION ONLY)
+   Audit P1 item 4. No selectors below this line; per-app agents apply
+   this spec in their own app stylesheets.
+
+   - min-height: 56px
+   - horizontal padding: 12px
+   - app badge: 44px by 44px
+   - icon buttons: 44px by 44px minimum touch target
+   - title: 15px, weight 800, truncated with ellipsis
+   - colors from theme variables only (surface, ink, line)
+   - Burmese titles: line-height 1.85
+   ------------------------------------------------------------ */

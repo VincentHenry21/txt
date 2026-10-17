@@ -45,7 +45,15 @@
   letter-spacing: 0.04em;
   flex: 0 0 auto;
 }
-.pdf-topbar-name { font-size: 15px; font-weight: 800; white-space: nowrap; }
+.pdf-topbar-name {
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 1 auto;
+}
 .pdf-topbar-spacer { flex: 1 1 auto; }
 .pdf-sign-btn {
   display: inline-flex;
@@ -336,7 +344,7 @@
 .pdf-drag-ghost.is-redact { border-color: #000; background: rgba(0, 0, 0, 0.35); }
 
 /* annotations */
-.pdf-hl { padding: 0 1px; border-radius: 2px; }
+.pdf-hl { padding: 0 1px; border-radius: 6px; }
 .pdf-note-pin {
   position: absolute;
   width: 26px;
@@ -535,7 +543,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
 }
 .pdf-red-row span, .pdf-sig-row span { margin-right: auto; }
 
@@ -572,7 +580,7 @@
   border-radius: 6px;
   background: var(--surface2);
   color: var(--ink);
-  font-size: 14px;
+  font-size: 15px;
   padding: 8px 12px;
 }
 .pdf-seg { display: flex; gap: 0; margin-bottom: 12px; }
@@ -612,10 +620,9 @@
 }
 .pdf-sig-btnrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 
-/* ---------- skeleton loaders (shared NXT pattern) ---------- */
-.nxt-skeleton { position: relative; overflow: hidden; background: var(--surface-2); border-radius: 10px; min-height: 20px; }
-.nxt-skeleton::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.45) 50%, transparent 80%); animation: nxt-shimmer 1.4s infinite; }
-@keyframes nxt-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+/* ---------- skeleton loaders ----------
+   Uses the shared .nxt-skeleton shimmer from css/mobile.css (defined once
+   there with the reduced-motion guard; do not redefine it here). */
 .pdf-page-skel {
   width: 100%;
   max-width: 800px;
@@ -624,13 +631,19 @@
   flex: 0 0 auto;
 }
 
-/* ---------- bottom sheet (shared NXT pattern, mobile only) ---------- */
-@media (max-width: 640px) {
-  .nxt-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 350; max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--surface); color: var(--ink); border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 32px rgba(0,0,0,.18); }
-  .nxt-sheet-handle { width: 40px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 12px; }
-}
+/* The bottom sheet itself is the shared .nxt-sheet contract in
+   css/mobile.css (used below by the toolbar overflow). It is not
+   redefined here. */
 
-/* ---------- toolbar overflow "More" sheet ---------- */
+/* ---------- toolbar overflow "More" sheet ----------
+   Follows the shared .nxt-sheet contract in css/mobile.css: the wrap is
+   .pdf-more-wrap.nxt-sheet, shown with .open, with a .nxt-sheet-backdrop
+   behind it, a .nxt-sheet-head (title + .nxt-sheet-close), and the tools
+   inside .nxt-sheet-body. On desktop (>=641px) the wrap is display:contents
+   so the overflow tools lay out inline in the toolbar and the sheet chrome
+   stays hidden; on mobile (<=640px) it is a real bottom sheet. The shared
+   base keeps the sheet hidden (visibility) until .open, so the desktop rule
+   explicitly restores visibility for the inline tools. */
 .pdf-more-wrap { display: contents; }
 .pdf-more-btn {
   display: none;
@@ -656,26 +669,20 @@
   border-color: var(--accent);
   color: var(--accent);
 }
-.pdf-more-wrap .nxt-sheet-handle { display: none; }
-.pdf-more-scrim {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  z-index: 340;
-}
 @media (min-width: 641px) {
-  .pdf-more-scrim { display: none !important; }
+  /* inline tools on desktop: lift the shared hidden state, hide sheet chrome */
+  .pdf-more-wrap { visibility: visible; pointer-events: auto; transform: none; }
+  .pdf-more-wrap .nxt-sheet-handle,
+  .pdf-more-wrap .nxt-sheet-head { display: none; }
+  .pdf-more-wrap .nxt-sheet-body { display: contents; }
 }
 @media (max-width: 640px) {
-  .pdf-more-wrap { display: none; }
-  .pdf-more-wrap.open { display: flex; flex-direction: column; gap: 8px; }
+  .pdf-more-wrap { display: flex; flex-direction: column; }
   .pdf-more-btn { display: inline-flex; }
-  .pdf-more-wrap.open .nxt-sheet-handle { display: block; }
-  .pdf-more-wrap.open .pdf-tool { width: 100%; justify-content: flex-start; }
-  .pdf-more-wrap.open .pdf-tool span { display: inline; }
-  .pdf-more-wrap.open .pdf-color-wrap { width: 100%; justify-content: space-between; min-height: 44px; }
-  .pdf-more-wrap.open .pdf-color { width: 44px; height: 44px; }
-  .pdf-more-wrap.open .pdf-select { width: 100%; min-height: 44px; }
+  .pdf-more-wrap .nxt-sheet-body .pdf-tool { width: 100%; justify-content: flex-start; }
+  .pdf-more-wrap .nxt-sheet-body .pdf-tool span { display: inline; }
+  .pdf-more-wrap .nxt-sheet-body .pdf-color-wrap { width: 100%; justify-content: space-between; min-height: 44px; }
+  .pdf-more-wrap .nxt-sheet-body .pdf-select { width: 100%; min-height: 44px; }
 }
 
 /* ---------- floating zoom stepper ---------- */
@@ -737,6 +744,15 @@
   .pdf-topbar { padding: 0 12px; }
   #view-pdf .eco-home-card .pdf-btn { min-height: 44px; }
 }
+
+/* small phones: drop the app title so the Sign button, launcher, and
+   settings stay reachable; the badge still identifies the app */
+@media (max-width: 480px) {
+  .pdf-topbar-name { display: none; }
+}
+
+/* pdf-scoped touch target for the shared homescreen search */
+#view-pdf #pdf-search { min-height: 44px; box-sizing: border-box; }
 
 /* ---------- print: pages only ---------- */
 @media print {
