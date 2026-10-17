@@ -905,9 +905,7 @@
   /* ============================================================
      EXPORT: HTML5 standalone player
      ============================================================ */
-  function exportHtml5() {
-    var deck = D.currentDeck();
-    if (!deck || !deck.slides.length) { toast("Open a deck with slides first.", "error"); return; }
+  function buildHtml5(deck) {
     var slides = deck.slides.map(function (s, i) { return slideHtml(deck, s, i); });
     var notes = deck.slides.map(function (s) { return s.notes || ""; });
     var trOf = deck.slides.map(function (s) { return resolveTransition(s.transition || deck.transition || "none"); });
@@ -981,8 +979,35 @@
       "<div id=\"bar\"><button id=\"prev\">Prev</button><button id=\"next\">Next</button>" +
       "<span id=\"count\"></span><span id=\"stamp\">Developed by H3NZ</span></div>" +
       "<script>" + js + "<\/script></body></html>";
-    downloadBytes(strToBytes(doc), safeName(deck.title) + "-player.html", "text/html");
+    return doc;
+  }
+  function exportHtml5() {
+    var deck = D.currentDeck();
+    if (!deck || !deck.slides.length) { toast("Open a deck with slides first.", "error"); return; }
+    downloadBytes(strToBytes(buildHtml5(deck)), safeName(deck.title) + "-player.html", "text/html");
     toast("HTML5 player downloaded.");
+  }
+  /* Promise-based single-slide PNG raster, for the unified Export/Share dialog. */
+  function renderSlidePngBlob(deck, s, i) {
+    return new Promise(function (resolve, reject) {
+      try {
+        var r = slideSvgForPng(deck, s, i);
+        var url = URL.createObjectURL(new Blob([r.svg], { type: "image/svg+xml;charset=utf-8" }));
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var c = document.createElement("canvas");
+            c.width = r.W; c.height = r.H;
+            c.getContext("2d").drawImage(img, 0, 0, r.W, r.H);
+            URL.revokeObjectURL(url);
+            if (c.toBlob) c.toBlob(function (b) { b ? resolve(b) : reject(new Error("raster failed")); }, "image/png");
+            else reject(new Error("toBlob missing"));
+          } catch (e) { try { URL.revokeObjectURL(url); } catch (_) {} reject(e); }
+        };
+        img.onerror = function () { try { URL.revokeObjectURL(url); } catch (_) {} reject(new Error("svg load failed")); };
+        img.src = url;
+      } catch (e) { reject(e); }
+    });
   }
 
   /* ============================================================
@@ -2711,6 +2736,8 @@
     playSlideExit: playSlideExit,
     playEntrance: playEntrance,
     exportHtml5: exportHtml5,
+    buildHtml5: buildHtml5,
+    renderSlidePngBlob: renderSlidePngBlob,
     exportPrint: exportPrint,
     exportPng: exportPng,
     exportPptx: exportPptx,

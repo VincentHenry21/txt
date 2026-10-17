@@ -984,26 +984,37 @@
     blockBar.id = "dck-blockbar";
     stageWrap.appendChild(blockBar);
     main.appendChild(stageWrap);
-    /* inspector: on mobile this becomes a bottom sheet (nxt-sheet). The
-       handle + close button live outside the body so renderInspector can
-       re-render the body without wiping the sheet chrome. */
+    /* inspector: on mobile this becomes a bottom sheet using the shared
+       .nxt-sheet pattern from css/mobile.css. The backdrop element sits
+       before the sheet in the DOM per the pattern's contract. Handle, head,
+       and close live outside the body so renderInspector can re-render the
+       body without wiping the sheet chrome. */
+    var inspBackdrop = el("div", "nxt-sheet-backdrop");
+    inspBackdrop.id = "dck-insp-backdrop";
+    inspBackdrop.setAttribute("aria-hidden", "true");
+    inspBackdrop.addEventListener("click", function () { toggleInspector(false); });
+    main.appendChild(inspBackdrop);
     var insp = el("div", "dck-inspector nxt-sheet");
     insp.id = "dck-inspector";
-    insp.setAttribute("aria-label", "Slide inspector");
+    insp.setAttribute("role", "dialog");
+    insp.setAttribute("aria-modal", "true");
+    insp.setAttribute("aria-labelledby", "dck-insp-title");
     var inspHandle = el("div", "nxt-sheet-handle");
     inspHandle.setAttribute("aria-hidden", "true");
     insp.appendChild(inspHandle);
-    var sheetbar = el("div", "dck-insp-sheetbar");
-    sheetbar.appendChild(el("span", "dck-insp-h", "Inspector"));
-    var inspClose = el("button", "icon-btn dck-insp-close");
+    var sheetHead = el("div", "nxt-sheet-head");
+    var sheetTitle = el("h2", "nxt-sheet-title", "Inspector");
+    sheetTitle.id = "dck-insp-title";
+    sheetHead.appendChild(sheetTitle);
+    var inspClose = el("button", "nxt-sheet-close");
     inspClose.id = "dck-inspector-close";
     inspClose.type = "button";
     inspClose.setAttribute("aria-label", "Close inspector");
     inspClose.innerHTML = (typeof T.icon === "function") ? T.icon("i-x") : "Close";
     inspClose.addEventListener("click", function () { toggleInspector(false); });
-    sheetbar.appendChild(inspClose);
-    insp.appendChild(sheetbar);
-    var inspBody = el("div", "dck-insp-body");
+    sheetHead.appendChild(inspClose);
+    insp.appendChild(sheetHead);
+    var inspBody = el("div", "nxt-sheet-body");
     inspBody.id = "dck-inspector-body";
     insp.appendChild(inspBody);
     main.appendChild(insp);
@@ -1177,20 +1188,32 @@
     });
   }
 
-  /* inspector sheet open/close. On desktop (>820px) the sheet classes have
-     no visual effect: the inspector is always docked. */
+  /* inspector sheet open/close, following the shared .nxt-sheet contract:
+     toggle .open on the sheet and on its backdrop. Escape closes.
+     On desktop (>820px) the sheet classes have no visual effect: the
+     inspector is always docked. */
+  function onSheetKey(e) {
+    if (e.key === "Escape") toggleInspector(false);
+  }
   function toggleInspector(force) {
     var insp = $("dck-inspector");
     if (!insp) return false;
-    var open = (typeof force === "boolean") ? force : !insp.classList.contains("sheet-open");
-    insp.classList.toggle("sheet-open", open);
+    var open = (typeof force === "boolean") ? force : !insp.classList.contains("open");
+    insp.classList.toggle("open", open);
+    var bd = $("dck-insp-backdrop");
+    if (bd) {
+      bd.classList.toggle("open", open);
+      bd.setAttribute("aria-hidden", open ? "false" : "true");
+    }
+    if (open) document.addEventListener("keydown", onSheetKey, true);
+    else document.removeEventListener("keydown", onSheetKey, true);
     var t = $("dck-insp-toggle");
     if (t) t.setAttribute("aria-expanded", open ? "true" : "false");
     return open;
   }
   function inspectorOpen() {
     var insp = $("dck-inspector");
-    return !!(insp && insp.classList.contains("sheet-open"));
+    return !!(insp && insp.classList.contains("open"));
   }
 
   function renderInspector() {
