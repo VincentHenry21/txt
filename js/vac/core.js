@@ -106,6 +106,12 @@
         '<div id="vOverflow" class="hidden" role="menu" aria-label="VAC actions">' +
           '<button type="button" id="vWordCta" class="v-menu-item" role="menuitem">' + vIcon("send") + "<span>Insert / Update in TXT Document</span></button>" +
         "</div>" +
+        '<div id="vToolsSheet" class="nxt-sheet vac-tools-sheet" role="dialog" aria-label="All tools" aria-hidden="true">' +
+          '<div class="nxt-sheet-handle" id="vToolsSheetHandle" role="button" tabindex="0" aria-label="Close tools panel"></div>' +
+          '<div class="v-sheet-head"><span class="v-sheet-title">All tools</span>' +
+          '<button type="button" id="vToolsSheetClose" class="vbtn v-sheet-close" aria-label="Close tools panel">' + vIcon("x") + "</button></div>" +
+          '<div class="v-tools-list" id="vToolsList"></div>' +
+        "</div>" +
       "</div>" +
       '<div id="vMain">' +
         '<div id="vTools" role="toolbar" aria-label="VAC tools"></div>' +
@@ -217,6 +223,23 @@
       if (!ovMenu || ovMenu.classList.contains("hidden")) { return; }
       if (ovMenu.contains(e.target) || ovBtn.contains(e.target)) { return; }
       toggleOverflow(false);
+    });
+    // mobile tools overflow sheet: close button, drag handle, tap-outside
+    var tsClose = view.querySelector("#vToolsSheetClose");
+    if (tsClose) { tsClose.addEventListener("click", function () { toggleToolsSheet(false); }); }
+    var tsHandle = view.querySelector("#vToolsSheetHandle");
+    if (tsHandle) {
+      tsHandle.addEventListener("click", function () { toggleToolsSheet(false); });
+      tsHandle.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleToolsSheet(false); }
+      });
+    }
+    document.addEventListener("pointerdown", function (e) {
+      var sh = view.querySelector("#vToolsSheet");
+      var mb = view.querySelector("#vToolsMore");
+      if (!sh || !sh.classList.contains("open")) { return; }
+      if (sh.contains(e.target) || (mb && mb.contains(e.target))) { return; }
+      toggleToolsSheet(false);
     });
     function artResize() {
       var w = T.clamp(parseInt(vArtW.value, 10) || artW, 1, 5000);
@@ -598,17 +621,8 @@
     curToolId = id;
     renderDock();
     renderOptions();
-    // collapse the mobile tool overflow so the strip returns to its 6+More shape
-    if (vTools && vTools.classList.contains("show-all")) {
-      vTools.classList.remove("show-all");
-      var mb = view.querySelector("#vToolsMore");
-      if (mb) {
-        mb.classList.remove("active");
-        mb.setAttribute("aria-expanded", "false");
-        mb.title = "More tools";
-        mb.setAttribute("aria-label", "More tools");
-      }
-    }
+    // collapse the mobile tools overflow sheet after a pick
+    toggleToolsSheet(false);
     var t = tools[id];
     if (vCanvas) { vCanvas.style.cursor = t.cursor || "default"; }
     if (t.activate) { try { t.activate(); } catch (e) { /* ignore */ } }
@@ -629,8 +643,8 @@
       b.addEventListener("click", function () { setTool(id); });
       vTools.appendChild(b);
     });
-    // "More" overflow: on mobile (<=900px) only the first 6 tools show and this
-    // button reveals the rest (CSS hides tools 7+ until #vTools.show-all).
+    // "More" overflow: on mobile (<=900px) only the first 6 tools show on the
+    // strip; this button opens the rest in the #vToolsSheet bottom sheet.
     var more = document.createElement("button");
     more.type = "button";
     more.id = "vToolsMore";
@@ -639,12 +653,9 @@
     more.setAttribute("aria-label", "More tools");
     more.setAttribute("aria-expanded", "false");
     more.innerHTML = vIcon("more");
-    more.addEventListener("click", function () {
-      var open = vTools.classList.toggle("show-all");
-      more.classList.toggle("active", open);
-      more.setAttribute("aria-expanded", String(open));
-      more.title = open ? "Fewer tools" : "More tools";
-      more.setAttribute("aria-label", more.title);
+    more.addEventListener("click", function (e) {
+      e.stopPropagation();
+      toggleToolsSheet();
     });
     vTools.appendChild(more);
     // fill/stroke stack at dock bottom
@@ -832,6 +843,7 @@
     }
     if (e.key === "Escape") {
       if (closeOverflowMenu()) { return; }
+      if (closeToolsSheet()) { return; }
       var t = currentTool();
       if (t && t.cancel && t.cancel()) { return; }
       clearSel(); return;
@@ -1070,9 +1082,55 @@
     var p = view.querySelector("#vPanels");
     if (!p) { return; }
     var open = force !== undefined ? !!force : !p.classList.contains("open");
+    if (open) { toggleToolsSheet(false); toggleOverflow(false); }
     p.classList.toggle("open", open);
     var b = view.querySelector("#vPropsBtn");
     if (b) { b.setAttribute("aria-expanded", String(open)); }
+  }
+  /* Mobile tools overflow: bottom sheet with the tools past the first 6 on
+     the strip. One sheet at a time: opening it closes the properties sheet
+     and the topbar overflow menu. */
+  function toggleToolsSheet(force) {
+    if (!view) { return; }
+    var sh = view.querySelector("#vToolsSheet");
+    if (!sh) { return; }
+    var open = force !== undefined ? !!force : !sh.classList.contains("open");
+    if (open) { buildToolsSheetRows(); toggleSheet(false); toggleOverflow(false); }
+    sh.classList.toggle("open", open);
+    sh.setAttribute("aria-hidden", String(!open));
+    var mb = view.querySelector("#vToolsMore");
+    if (mb) {
+      mb.classList.toggle("active", open);
+      mb.setAttribute("aria-expanded", String(open));
+      mb.title = open ? "Fewer tools" : "More tools";
+      mb.setAttribute("aria-label", mb.title);
+    }
+  }
+  function closeToolsSheet() {
+    if (!view) { return false; }
+    var sh = view.querySelector("#vToolsSheet");
+    if (!sh || !sh.classList.contains("open")) { return false; }
+    toggleToolsSheet(false);
+    return true;
+  }
+  function buildToolsSheetRows() {
+    var list = view.querySelector("#vToolsList");
+    if (!list) { return; }
+    list.innerHTML = "";
+    toolOrder.forEach(function (id, idx) {
+      if (idx < 6) { return; } // the first 6 live on the strip
+      var t = tools[id];
+      if (!t) { return; }
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "v-tool-row" + (id === curToolId ? " active" : "");
+      b.setAttribute("aria-label", t.label);
+      b.innerHTML = vIcon(t.icon || "select") +
+        '<span class="v-tool-name">' + T.esc(t.label) + "</span>" +
+        (t.key ? '<span class="v-tool-key">' + T.esc(String(t.key).toUpperCase()) + "</span>" : "");
+      b.addEventListener("click", function () { setTool(id); });
+      list.appendChild(b);
+    });
   }
   function toggleOverflow(force) {
     if (!view) { return; }

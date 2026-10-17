@@ -1405,6 +1405,32 @@
     img.onerror = function () { toast("PNG rasterization failed.", "error"); };
     img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(str);
   }
+  /* Promise-based artboard PNG raster, for the unified Export/Share dialog. */
+  function rasterizeArtboardPNG(scale) {
+    return new Promise(function (resolve, reject) {
+      var ab = activeArtboard();
+      if (!ab) { reject(new Error("no artboard")); return; }
+      try {
+        var box = G().artboardExportBox(ab);
+        var str = artboardSVG(ab);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var c = document.createElement("canvas");
+            c.width = Math.max(1, Math.round(box.w * (scale || 2)));
+            c.height = Math.max(1, Math.round(box.h * (scale || 2)));
+            var ctx = c.getContext("2d");
+            if (!ctx) { reject(new Error("no 2d context")); return; }
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            if (c.toBlob) c.toBlob(function (b) { b ? resolve(b) : reject(new Error("raster failed")); }, "image/png");
+            else reject(new Error("toBlob missing"));
+          } catch (e) { reject(e); }
+        };
+        img.onerror = function () { reject(new Error("svg load failed")); };
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(str);
+      } catch (e) { reject(e); }
+    });
+  }
   function doExportPDF() {
     var ab = activeArtboard(), g = G();
     if (!ab || !g) { toast("No artboard.", "error"); return; }
@@ -1614,6 +1640,7 @@
     undoArtboards: undoArtboards,
     fitAllArtboards: fitAllArtboards,
     exportArtboardSVG: artboardSVG,
+    rasterizeArtboardPNG: rasterizeArtboardPNG,
     shapesForExport: shapesForExport,
     setOutline: setOutline,
     outlineEnabled: outlineEnabled,
