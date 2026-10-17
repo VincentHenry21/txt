@@ -831,19 +831,22 @@
     return b;
   }
 
-  /* ---------------- toolbar overflow ("More" sheet) ---------------- */
+  /* ---------------- toolbar overflow ("More" sheet) ----------------
+     Follows the shared .nxt-sheet contract from css/mobile.css: the wrap
+     carries .nxt-sheet and is shown with .open; the backdrop carries
+     .nxt-sheet-backdrop and is shown with .open. */
   function openMore() {
-    var w = $("pdf-more-wrap"), s = $("pdf-more-scrim"), b = $("pdf-more-btn");
+    var w = $("pdf-more-wrap"), s = $("pdf-more-backdrop"), b = $("pdf-more-btn");
     if (!w) return;
     w.classList.add("open");
-    if (s) s.classList.remove("hidden");
+    if (s) s.classList.add("open");
     if (b) b.setAttribute("aria-expanded", "true");
   }
 
   function closeMore() {
-    var w = $("pdf-more-wrap"), s = $("pdf-more-scrim"), b = $("pdf-more-btn");
+    var w = $("pdf-more-wrap"), s = $("pdf-more-backdrop"), b = $("pdf-more-btn");
     if (w) w.classList.remove("open");
-    if (s) s.classList.add("hidden");
+    if (s) s.classList.remove("open");
     if (b) b.setAttribute("aria-expanded", "false");
   }
 
@@ -897,14 +900,31 @@
 
     /* Overflow "More" sheet: rarely-used tools live in moreWrap. On desktop
        the wrap is display:contents (tools lay out inline, More button hidden);
-       on <=640px it becomes a bottom sheet toggled by the More button. */
-    var moreWrap = el("div", "pdf-more-wrap nxt-sheet");
+       on <=640px it is a bottom sheet per the shared .nxt-sheet contract,
+       toggled by the More button. */
+    var moreWrap = el("section", "pdf-more-wrap nxt-sheet");
     moreWrap.id = "pdf-more-wrap";
+    moreWrap.setAttribute("role", "dialog");
+    moreWrap.setAttribute("aria-modal", "true");
+    moreWrap.setAttribute("aria-labelledby", "pdf-more-title");
     var moreHandle = el("div", "nxt-sheet-handle");
     moreHandle.setAttribute("aria-hidden", "true");
     moreWrap.appendChild(moreHandle);
+    var moreHead = el("div", "nxt-sheet-head");
+    var moreTitle = el("h2", "nxt-sheet-title", "pdf-more-title");
+    moreTitle.textContent = "More tools";
+    var moreClose = el("button", "nxt-sheet-close", "pdf-more-close");
+    moreClose.type = "button";
+    moreClose.setAttribute("aria-label", "Close more tools");
+    moreClose.innerHTML = T.icon ? T.icon("i-x") : "x";
+    moreClose.addEventListener("click", closeMore);
+    moreHead.appendChild(moreTitle);
+    moreHead.appendChild(moreClose);
+    moreWrap.appendChild(moreHead);
+    var moreBody = el("div", "nxt-sheet-body");
+    moreWrap.appendChild(moreBody);
     function tbAdd(node, overflow) {
-      if (overflow) moreWrap.appendChild(node);
+      if (overflow) moreBody.appendChild(node);
       else tb.appendChild(node);
     }
 
@@ -979,8 +999,9 @@
       var b = e.target && e.target.closest ? e.target.closest("button") : null;
       if (b && b.classList.contains("pdf-tool")) closeMore();
     });
-    var moreScrim = el("div", "pdf-more-scrim hidden");
-    moreScrim.id = "pdf-more-scrim";
+    /* shared .nxt-sheet-backdrop (css/mobile.css); shown with .open */
+    var moreScrim = el("div", "nxt-sheet-backdrop");
+    moreScrim.id = "pdf-more-backdrop";
     moreScrim.setAttribute("aria-hidden", "true");
     moreScrim.addEventListener("click", closeMore);
     view.appendChild(moreScrim);
@@ -1024,7 +1045,7 @@
     prev.type = "button"; prev.id = "pdf-pager-prev";
     prev.textContent = "Previous";
     prev.setAttribute("aria-label", "Previous page");
-    prev.addEventListener("click", function () { singlePage--; refreshSinglePage(); });
+    prev.addEventListener("click", function () { turnPage(-1); });
     var plabel = el("span", "pdf-pager-label");
     plabel.id = "pdf-pager-label";
     plabel.textContent = "Page 1 of 1";
@@ -1032,7 +1053,7 @@
     next.type = "button"; next.id = "pdf-pager-next";
     next.textContent = "Next";
     next.setAttribute("aria-label", "Next page");
-    next.addEventListener("click", function () { singlePage++; refreshSinglePage(); });
+    next.addEventListener("click", function () { turnPage(1); });
     pager.appendChild(prev); pager.appendChild(plabel); pager.appendChild(next);
 
     studio.appendChild(tb);
@@ -1050,6 +1071,13 @@
     view.appendChild(studio);
 
     wireStage(stage);
+  }
+
+  /* Single page-turn entry point: pager buttons and swipe both use this. */
+  function turnPage(dir) {
+    if (!doc) return;
+    singlePage += dir;
+    refreshSinglePage();
   }
 
   function refreshSinglePage() {
@@ -1567,8 +1595,7 @@
       if (!t) return;
       var dx = t.clientX - s0.x, dy = t.clientY - s0.y;
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - s0.t < 900) {
-        if (dx < 0) singlePage++; else singlePage--;
-        refreshSinglePage();
+        turnPage(dx < 0 ? 1 : -1);
       }
     }, { passive: true });
   }
@@ -2075,6 +2102,7 @@
     document.addEventListener("keydown", function (e) {
       if (e && e.key === "Escape") {
         closeMore();
+        closeSigModal();
         closeOpenDrawers();
       }
     });
