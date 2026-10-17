@@ -3,40 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NXT OS</title>
-<meta name="description" content="TXT is a flagship word processor: paginated canvas, track changes, AI copilot, and exports everywhere.">
+<title>NXT DCK</title>
+<meta name="description" content="NXT DCK is a presentation studio: slides, transitions, and real PowerPoint export. Developed by H3NZ.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237C3AED'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-weight='bold' font-size='32' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Lexend:wght@400;600;700&family=OpenDyslexic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css">
-<link rel="stylesheet" href="css/shell.css">
-<link rel="stylesheet" href="css/ribbon.css">
-<link rel="stylesheet" href="css/canvas.css">
-<link rel="stylesheet" href="css/mobile.css">
-<link rel="stylesheet" href="css/modules.css">
-<link rel="stylesheet" href="css/ecosystem.css">
-<link rel="stylesheet" href="css/nxt-home.css">
-<link rel="stylesheet" href="css/nxt-palettes.css">
-<link rel="stylesheet" href="css/nxt-boot.css">
-<link rel="stylesheet" href="css/nxt-splash.css">
-<link rel="stylesheet" href="css/nxt-legal.css">
-<link rel="stylesheet" href="css/nxt-tutorials.css">
-<link rel="stylesheet" href="css/nxt-ascend.css">
-<link rel="stylesheet" href="css/nxt-logos.css">
-<link rel="stylesheet" href="css/vac.css">
-<link rel="stylesheet" href="css/vac-panels.css">
-<link rel="stylesheet" href="css/vac-engine.css">
-<link rel="stylesheet" href="css/pixel.css">
-<link rel="stylesheet" href="css/pixel-panels.css">
-<link rel="stylesheet" href="css/pxl-engine.css">
-<link rel="stylesheet" href="css/grd.css">
-<link rel="stylesheet" href="css/dck.css">
-<link rel="stylesheet" href="css/dck-engine.css">
-<link rel="stylesheet" href="css/pdf.css">
-<link rel="stylesheet" href="css/mem.css">
-<link rel="stylesheet" href="css/hub.css">
-<link rel="stylesheet" href="css/homescreen.css">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/shell.css">
+<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/nxt-boot.css">
+<link rel="stylesheet" href="../css/nxt-splash.css">
+<link rel="stylesheet" href="../css/nxt-legal.css">
+<link rel="stylesheet" href="../css/nxt-logos.css">
+<link rel="stylesheet" href="../css/nxt-palettes.css">
+<link rel="stylesheet" href="../css/nxt-tutorials.css">
+<link rel="stylesheet" href="../css/nxt-export-share.css">
+<link rel="stylesheet" href="../css/dck.css">
+<link rel="stylesheet" href="../css/dck-engine.css">
+<style>
+.sa-switcher{position:fixed;z-index:9999;min-width:248px;max-width:92vw;background:var(--surface,#fff);color:var(--ink,#111827);border:1px solid var(--line,#E5E7EB);border-radius:12px;box-shadow:0 8px 30px rgba(10,15,40,.18);padding:6px;font-family:Inter,system-ui,sans-serif}
+.sa-app{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;text-decoration:none;color:inherit;cursor:pointer}
+.sa-app:hover{background:var(--accent-soft,#EFF6FF)}
+.sa-appname{font-weight:700;font-size:13px;min-width:44px}
+.sa-appdesc{font-size:12px;color:var(--muted,#6B7280);flex:1}
+.sa-current{cursor:default;opacity:.7}
+.sa-cur{font-size:11px;color:var(--muted,#6B7280)}
+.sa-suite{border-top:1px solid var(--line,#E5E7EB);margin-top:4px;padding-top:10px}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -139,279 +133,25 @@
 </svg>
 
 <main id="views">
-<section id="view-home" class="view hidden" aria-label="NXT OS home"></section>
 <section id="view-login" class="view hidden" aria-label="NXT OS sign in"></section>
 <section id="view-tutorials" class="view hidden" aria-label="NXT OS tutorials"></section>
-<section id="view-word" class="view">
-<div id="homescreen" class="hs-wrap hidden"></div>
-<div id="app">
-  <!-- ZONE A: top application bar -->
-  <header id="topbar" class="glass">
-    <div class="tb-left">
-      <button type="button" id="logoBadge" class="logo-badge" title="TXT - File menu" aria-label="Open file menu"><span class="logo-t">T</span></button>
-      <button type="button" id="homeBtn" class="icon-btn" title="Start screen" aria-label="Go to start screen"><svg><use href="#i-home"/></svg></button>
-      <input id="docTitle" class="doc-title" value="Q4 Product Architecture &amp; Executive Strategy.txtdoc" spellcheck="false" aria-label="Document title">
-      <span id="savePill" class="save-pill"><span class="dot"></span><span id="savePillText">Saved to LocalStorage - Just now</span></span>
-      <div class="qa-group" role="toolbar" aria-label="Quick access">
-        <button type="button" id="qaUndo" class="icon-btn" title="Undo (Ctrl+Z)"><svg><use href="#i-undo"/></svg></button>
-        <button type="button" id="qaRedo" class="icon-btn" title="Redo (Ctrl+Y)"><svg><use href="#i-redo"/></svg></button>
-        <button type="button" id="qaPrint" class="icon-btn" title="Print (Ctrl+P)"><svg><use href="#i-print"/></svg></button>
-      </div>
-    </div>
-    <div class="tb-center">
-      <button type="button" id="cmdkBtn" class="cmdk-btn" title="Command palette (Ctrl+K)">
-        <svg><use href="#i-search"/></svg><span>Search or command...</span><kbd>Ctrl K</kbd>
-      </button>
-    </div>
-    <div class="tb-right">
-      <button type="button" id="goalRing" class="goal-ring" title="Word goal">
-        <svg viewBox="0 0 40 40"><circle class="ring-bg" cx="20" cy="20" r="16"/><circle class="ring-fg" id="goalArc" cx="20" cy="20" r="16"/><text x="20" y="24" id="goalPct">0%</text></svg>
-      </button>
-      <div id="deviceMode" class="segmented" role="tablist" aria-label="Device preview">
-        <button type="button" data-device="desktop" class="active" title="Desktop preview"><svg><use href="#i-monitor"/></svg></button>
-        <button type="button" data-device="ipad" title="iPad Pro 12.9 preview"><svg><use href="#i-tablet"/></svg></button>
-        <button type="button" data-device="mobile" title="iPhone preview"><svg><use href="#i-phone"/></svg></button>
-      </div>
-      <div id="ribbonMode" class="segmented" role="tablist" aria-label="Ribbon mode">
-        <button type="button" data-mode="full" class="active" title="Full classic ribbon">Full</button>
-        <button type="button" data-mode="compact" title="Compact single-line bar">Compact</button>
-        <button type="button" data-mode="zen" title="Zen distraction-free mode">Zen</button>
-      </div>
-      <select id="themePicker" class="sel slim" title="Theme" aria-label="Theme">
-        <option value="studio">Studio Light</option>
-        <option value="obsidian">Obsidian Pro</option>
-        <option value="sepia">Editorial Sepia</option>
-        <option value="contrast">High Contrast</option>
-      </select>
-      <button type="button" id="paperToggle" class="icon-btn hidden" title="Toggle white paper in dark mode"><svg><use href="#i-pagecolor"/></svg></button>
-      <button type="button" id="btnExportTop" class="btn-primary"><svg><use href="#i-export"/></svg><span>Export</span></button>
-    </div>
-  </header>
-
-  <!-- ZONE B: smart ribbon -->
-  <div id="ribbon" class="glass">
-    <div id="ribbonTabs" role="tablist" aria-label="Ribbon tabs"></div>
-    <div id="ribbonPanels"></div>
-    <button type="button" id="ribbonCollapse" class="collapse-btn" title="Collapse ribbon"><svg><use href="#i-chev-u"/></svg></button>
-  </div>
-  <div id="pillBar" class="pill-bar glass hidden" role="toolbar" aria-label="Minimal toolbar"></div>
-
-  <!-- zones C/D/E -->
-  <div id="workarea">
-    <aside id="sidebar">
-      <div class="side-tabs" role="tablist">
-        <button type="button" data-spane="outline" class="active" title="Outline"><svg><use href="#i-toc"/></svg></button>
-        <button type="button" data-spane="pages" title="Page thumbnails"><svg><use href="#i-page"/></svg></button>
-        <button type="button" data-spane="find" title="Find and replace"><svg><use href="#i-search"/></svg></button>
-      </div>
-      <div class="side-body">
-        <div id="paneOutline" class="side-pane">
-          <input id="outlineSearch" class="side-input" placeholder="Filter headings" aria-label="Filter headings">
-          <div id="outlineTree" class="outline-tree"></div>
-        </div>
-        <div id="panePages" class="side-pane hidden"><div id="thumbList" class="thumb-list"></div></div>
-        <div id="paneFind" class="side-pane hidden">
-          <input id="findText" class="side-input" placeholder="Find" aria-label="Find">
-          <input id="replaceText" class="side-input" placeholder="Replace with" aria-label="Replace with">
-          <div class="find-meta"><span id="findCount">No matches</span>
-            <button type="button" id="findPrev" class="mini-btn" title="Previous match"><svg><use href="#i-chev-u"/></svg></button>
-            <button type="button" id="findNext" class="mini-btn" title="Next match"><svg><use href="#i-chev-d"/></svg></button>
-          </div>
-          <label class="check"><input type="checkbox" id="matchCase"> Match case</label>
-          <label class="check"><input type="checkbox" id="wholeWord"> Whole word</label>
-          <div class="find-actions">
-            <button type="button" id="replaceOne" class="btn">Replace</button>
-            <button type="button" id="replaceAll" class="btn">Replace all</button>
-          </div>
-        </div>
-      </div>
-      <button type="button" id="sideCollapse" class="collapse-btn side" title="Collapse sidebar"><svg><use href="#i-chev-r"/></svg></button>
-    </aside>
-
-    <main id="stage">
-      <div id="rulerH" class="ruler-h"><div id="rulerHTicks" class="ticks"></div>
-        <div id="mLeft" class="marker ml" title="Left margin"></div>
-        <div id="mFirst" class="marker mf" title="First line indent"></div>
-        <div id="mRight" class="marker mr" title="Right margin"></div>
-      </div>
-      <div class="stage-row">
-        <div id="rulerV" class="ruler-v"><div id="rulerVTicks" class="ticks"></div></div>
-        <div id="pageScroll">
-          <div id="zoomWrap"><div id="pages"></div></div>
-        </div>
-      </div>
-      <div id="floatBar" class="float-bar glass hidden" role="toolbar"></div>
-      <div id="slashMenu" class="slash-menu hidden" role="menu"></div>
-      <div id="keytips" class="keytips hidden"></div>
-      <div id="lineMask" class="line-mask hidden"><div class="slit"></div></div>
-      <canvas id="inkLayer" class="ink-layer hidden"></canvas>
-      <div id="inkDock" class="ink-dock glass hidden" role="toolbar" aria-label="Ink tools"></div>
-    </main>
-
-    <aside id="inspector" class="hidden">
-      <div id="inspHead"><span id="inspTitle">Inspector</span>
-        <button type="button" id="inspClose" class="icon-btn" title="Close panel"><svg><use href="#i-x"/></svg></button>
-      </div>
-      <div id="inspBody"></div>
-    </aside>
-  </div>
-
-  <!-- ZONE F: status bar -->
-  <footer id="statusbar">
-    <div class="sb-left">
-      <button type="button" id="pgInfo" class="sb-btn" title="Page indicator">Page 1 of 1</button>
-      <button type="button" id="wcBtn" class="sb-btn" title="Word count details"><span id="wcWords">0 words</span><span class="sep">·</span><span id="wcChars">0 characters</span></button>
-      <span id="cursorPos" class="sb-text" title="Cursor position">Ln 1, Col 1</span>
-      <button type="button" id="tcBadge" class="sb-badge" title="Toggle track changes">Track Changes: OFF</button>
-      <span id="a11yBadge" class="sb-badge ok" title="Accessibility status">Accessibility: Good</span>
-    </div>
-    <div class="sb-right">
-      <div class="seg" role="toolbar" aria-label="View mode">
-        <button type="button" id="vwPrint" class="active" title="Print layout"><svg><use href="#i-page"/></svg></button>
-        <button type="button" id="vwWeb" title="Web continuous layout"><svg><use href="#i-globe"/></svg></button>
-        <button type="button" id="vwImmersive" title="Immersive reader"><svg><use href="#i-eye"/></svg></button>
-      </div>
-      <button type="button" id="focusBtn" class="sb-btn" title="Focus mode"><svg><use href="#i-focus"/></svg></button>
-      <div class="zoom-ctl">
-        <button type="button" id="zoomOut" class="icon-btn sm" title="Zoom out"><svg><use href="#i-minus"/></svg></button>
-        <input type="range" id="zoomSlider" min="50" max="200" value="100" aria-label="Zoom">
-        <button type="button" id="zoomPct" class="sb-btn" title="Reset zoom to 100%">100%</button>
-        <button type="button" id="zoomIn" class="icon-btn sm" title="Zoom in"><svg><use href="#i-plus"/></svg></button>
-      </div>
-      <span class="sb-brand" title="NXT OS">NXT TXT • Developed by H3NZ</span>
-    </div>
-  </footer>
-</div>
-
-<!-- mobile chrome -->
-<div id="mTopbar" class="m-topbar glass hidden">
-  <button type="button" id="mBack" class="icon-btn" title="Start screen" aria-label="Go to start screen"><svg><use href="#i-home"/></svg></button>
-  <span id="mTitle" class="m-title">Document</span>
-  <button type="button" id="mReflow" class="icon-btn" title="Toggle reflow / print view"><svg><use href="#i-reading"/></svg></button>
-  <button type="button" id="mUndo" class="icon-btn" title="Undo"><svg><use href="#i-undo"/></svg></button>
-  <button type="button" id="mRedo" class="icon-btn" title="Redo"><svg><use href="#i-redo"/></svg></button>
-  <button type="button" id="mMore" class="icon-btn" title="More"><svg><use href="#i-more"/></svg></button>
-</div>
-<div id="accBar" class="acc-bar glass hidden" role="toolbar" aria-label="Formatting"></div>
-<button type="button" id="editFab" class="edit-fab hidden"><svg><use href="#i-pen"/></svg><span>Reading</span></button>
-<div id="sheetModal" class="sheet-modal hidden">
-  <div class="sheet-scrim" id="sheetScrim"></div>
-  <div class="sheet-card glass" role="dialog">
-    <div class="sheet-grip"></div>
-    <div class="sheet-head"><span id="sheetTitle">Format</span>
-      <button type="button" id="sheetClose" class="icon-btn" title="Close"><svg><use href="#i-x"/></svg></button>
-    </div>
-    <div id="sheetBody" class="sheet-body"></div>
-  </div>
-</div>
-
-<!-- overlays -->
-<div id="backstage" class="backstage hidden" role="dialog" aria-label="File menu">
-  <div class="bs-side">
-    <div class="bs-logo"><span class="logo-t">T</span><span>TXT</span></div>
-    <nav id="bsNav" class="bs-nav"></nav>
-    <button type="button" id="bsClose" class="btn ghost">Close</button>
-  </div>
-  <div id="bsMain" class="bs-main"></div>
-</div>
-
-<div id="cmdPalette" class="palette-wrap hidden" role="dialog" aria-label="Command palette">
-  <div class="palette glass">
-    <div class="pal-input-row"><svg><use href="#i-search"/></svg><input id="cmdInput" placeholder="Type a command or search text..." aria-label="Command input"></div>
-    <div id="cmdList" class="pal-list" role="listbox"></div>
-  </div>
-</div>
-
-<div id="speechDock" class="speech-dock glass hidden"></div>
-<div id="toasts" class="toasts" aria-live="polite"></div>
-<div id="modalRoot"></div>
-</section>
-<section id="view-vac" class="view hidden" aria-label="VAC Studio"></section>
-<section id="view-pixel" class="view hidden" aria-label="Pixel Studio"></section>
-<section id="view-grd" class="view hidden" aria-label="GRD spreadsheet"></section>
 <section id="view-dck" class="view hidden" aria-label="DCK slides"></section>
-<section id="view-mem" class="view hidden" aria-label="MEM notes"></section>
-<section id="view-pdf" class="view hidden" aria-label="PDF toolkit"></section>
-<section id="view-hub" class="view hidden" aria-label="Ecosystem hub"></section>
-<section id="view-ascend" class="view hidden" aria-label="Ascend study app"></section>
 </main>
-
-<div id="splitWrap" class="hidden">
-  <div id="splitA"></div>
-  <button type="button" class="split-div" title="Split 50/50 - click to toggle ratio" aria-label="Toggle split ratio"></button>
-  <div id="splitB"></div>
-</div>
-
-<div id="appLauncher" class="popover hidden" role="dialog" aria-label="App launcher"></div>
-
-<script src="vendor/docx.iife.js"></script>
-<script src="js/core.js"></script>
-<script src="js/store.js"></script>
-<script src="js/nxt-app-logos.js"></script>
-<script src="js/ecosystem.js"></script>
-<script src="js/grd/grd.js"></script>
-<script src="js/dck/dck.js"></script>
-<script src="js/dck/dck-engine.js"></script>
-<script src="js/pdf/pdf.js"></script>
-<script src="js/mem/mem.js"></script>
-<script src="js/hub/hub.js"></script>
-<script src="js/vac/core.js"></script>
-<script src="js/vac/tools.js"></script>
-<script src="js/vac/geom.js"></script>
-<script src="js/vac/ops.js"></script>
-<script src="js/vac/panels.js"></script>
-<script src="js/vac/engine.js"></script>
-<script src="js/pixel/core.js"></script>
-<script src="js/pixel/tools.js"></script>
-<script src="js/pixel/layers.js"></script>
-<script src="js/pixel/adjust.js"></script>
-<script src="js/pixel/develop-core.js"></script>
-<script src="js/pixel/develop-ui.js"></script>
-<script src="js/fonts.js"></script>
-<script src="js/templates.js"></script>
-<script src="js/editor.js"></script>
-<script src="js/themes.js"></script>
-<script src="js/convert.js"></script>
-<script src="js/docx-export.js"></script>
-<script src="js/export.js"></script>
-<script src="js/topbar.js"></script>
-<script src="js/ribbon.js"></script>
-<script src="js/tabs/home.js"></script>
-<script src="js/tabs/insert.js"></script>
-<script src="js/tabs/draw.js"></script>
-<script src="js/tabs/design.js"></script>
-<script src="js/tabs/layout.js"></script>
-<script src="js/tabs/refs.js"></script>
-<script src="js/tabs/review.js"></script>
-<script src="js/tabs/view.js"></script>
-<script src="js/tabs/access.js"></script>
-<script src="js/sidebar.js"></script>
-<script src="js/inspector.js"></script>
-<script src="js/statusbar.js"></script>
-<script src="js/backstage.js"></script>
-<script src="js/palette.js"></script>
-<script src="js/floating.js"></script>
-<script src="js/rulers.js"></script>
-<script src="js/changes.js"></script>
-<script src="js/comments.js"></script>
-<script src="js/ai.js"></script>
-<script src="js/speech.js"></script>
-<script src="js/a11y.js"></script>
-<script src="js/stats.js"></script>
-<script src="js/ink.js"></script>
-<script src="js/mobile.js"></script>
-<script src="js/ecosystem-word.js"></script>
-<script src="js/homescreen.js"></script>
-<script src="js/nxt-home.js"></script>
-<script src="js/nxt-logos.js"></script>
-<script src="js/nxt-theme.js"></script>
-<script src="js/nxt-boot.js"></script>
-<script src="js/nxt-splash.js"></script>
-<script src="js/nxt-legal.js"></script>
-<script src="js/nxt-login.js"></script>
-<script src="js/nxt-tutorials-data.js"></script>
-<script src="js/nxt-tutorials.js"></script>
-<script src="js/nxt-ascend.js"></script>
-<script src="js/app.js"></script>
+<script>window.NXT_APP="dck";</script>
+<script src="../js/core.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/nxt-boot.js"></script>
+<script src="../js/nxt-splash.js"></script>
+<script src="../js/nxt-login.js"></script>
+<script src="../js/nxt-legal.js"></script>
+<script src="../js/nxt-theme.js"></script>
+<script src="../js/nxt-logos.js"></script>
+<script src="../js/nxt-app-logos.js"></script>
+<script src="../js/dck/dck.js"></script>
+<script src="../js/dck/dck-engine.js"></script>
+<script src="../js/nxt-export-share.js"></script>
+<script src="../js/nxt-tutorials-data.js"></script>
+<script src="../js/nxt-tutorials.js"></script>
+<script src="../js/nxt-standalone.js"></script>
 </body>
 </html>
