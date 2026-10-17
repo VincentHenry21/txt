@@ -38,6 +38,7 @@
 
   /* shared chrome icons for the per-app topbar (NXT phase 1) */
   var GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+  var CHEV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>';
   var DOTS9 = "<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>";
   function fileIco() {
     return (T.icon && typeof T.icon === "function") ? T.icon("i-file") : "";
@@ -132,10 +133,24 @@
     var handle = el("div", "nxt-sheet-handle");
     handle.setAttribute("aria-hidden", "true");
     panels.appendChild(handle);
+    panels.appendChild(buildPxSheetHead());
     var sheetOpts = el("div", "px-sheet-opts");
     sheetOpts.id = "pSheetToolOpts";
     panels.appendChild(sheetOpts);
     main.appendChild(panels);
+
+    /* collapsed panels handle above the bottom tool strip on phones */
+    var sheetBar = el("button", "px-sheetbar");
+    sheetBar.type = "button";
+    sheetBar.id = "pSheetBar";
+    sheetBar.setAttribute("aria-expanded", "false");
+    sheetBar.setAttribute("aria-controls", "pPanels");
+    sheetBar.innerHTML =
+      '<span class="nxt-sheet-handle px-sheetbar-grip" aria-hidden="true"></span>' +
+      '<span class="px-sheetbar-label">Panels</span>' +
+      '<span class="px-sheetbar-chev" aria-hidden="true">' + CHEV_SVG + "</span>";
+    sheetBar.addEventListener("click", function () { togglePxPanels(); });
+    main.insertBefore(sheetBar, panels);
 
     root.appendChild(main);
 
@@ -177,9 +192,58 @@
 
   /* ---------------- mobile panels bottom sheet ----------------
      On <=640px the panels become a bottom sheet (nxt-sheet) toggled by the
-     "Panels" button in the mobile toolbar. Escape closes it; crossing the
-     breakpoint back to desktop closes it and rebuilds the tool options bar
-     into the correct host (see tools.js rebuildOptions). */
+     collapsed "Panels" handle above the bottom tool strip or the "Panels"
+     button in the mobile toolbar. The sheet header holds section tabs
+     (Adjust | Layers | Histogram) that scroll the sheet to the matching
+     panel, plus a close button. Escape closes it; crossing the breakpoint
+     back to desktop closes it and rebuilds the tool options bar into the
+     correct host (see tools.js rebuildOptions). */
+
+  /* sheet header: title + section jump tabs + close (visible on phones only) */
+  function buildPxSheetHead() {
+    var h = el("div", "px-sheet-head");
+    h.innerHTML =
+      '<span class="px-sheet-title">Studio panels</span>' +
+      '<div class="px-sheet-tabs" role="group" aria-label="Panel sections">' +
+      '<button type="button" class="px-sheet-tab" data-goto="adjustments">Adjust</button>' +
+      '<button type="button" class="px-sheet-tab" data-goto="layers">Layers</button>' +
+      '<button type="button" class="px-sheet-tab" data-goto="histogram">Histogram</button>' +
+      "</div>" +
+      '<button type="button" class="px-sheet-close" title="Close panels" aria-label="Close panels">' + xIco() + "</button>";
+    var tabs = h.querySelectorAll(".px-sheet-tab");
+    for (var i = 0; i < tabs.length; i++) {
+      (function (b) {
+        b.addEventListener("click", function () { pxSheetGoto(b.getAttribute("data-goto")); });
+      })(tabs[i]);
+    }
+    h.querySelector(".px-sheet-close").addEventListener("click", function () { togglePxPanels(false); });
+    return h;
+  }
+
+  /* scroll the sheet to the named panel section ("Develop histogram" must not
+     shadow "Histogram": exact head-text match wins, contains is the fallback) */
+  function pxSheetGoto(want) {
+    var p = document.getElementById("pPanels");
+    if (!p) return;
+    var wantLc = String(want || "").toLowerCase().replace(/s$/, "");
+    var cards = p.querySelectorAll(".px-panel");
+    var match = null, fallback = null;
+    for (var i = 0; i < cards.length; i++) {
+      var s = cards[i].querySelector(".px-phead span");
+      var t = s ? String(s.textContent || "").toLowerCase().trim() : "";
+      if (!t) continue;
+      if (t === wantLc || t === wantLc + "s") { match = cards[i]; break; }
+      if (!fallback && t.indexOf(wantLc) >= 0) fallback = cards[i];
+    }
+    match = match || fallback;
+    if (!match) { T.toast("That panel is not available"); return; }
+    try {
+      if (typeof match.scrollIntoView === "function") match.scrollIntoView({ block: "start" });
+      else p.scrollTop = match.offsetTop;
+    } catch (e) {
+      try { p.scrollTop = match.offsetTop; } catch (e2) { /* ignore */ }
+    }
+  }
   function isMobileView() {
     try {
       if (typeof window.matchMedia === "function") {
@@ -201,6 +265,8 @@
       b.setAttribute("aria-expanded", open ? "true" : "false");
       b.title = open ? "Hide panels" : "Show panels";
     }
+    var sb = document.getElementById("pSheetBar");
+    if (sb) sb.setAttribute("aria-expanded", open ? "true" : "false");
     return open;
   }
 

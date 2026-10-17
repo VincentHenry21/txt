@@ -1640,7 +1640,12 @@
       buildMasksPanel(frag);
       buildHistoryPanel(frag);
       buildFilmstripPanel(frag);
-      panels.insertBefore(frag, panels.firstChild);
+      /* keep the mobile sheet chrome (handle, section tabs, tool options)
+         on top: insert after #pSheetToolOpts when it exists. */
+      var anchor = panels.querySelector("#pSheetToolOpts");
+      if (anchor && anchor.nextSibling) panels.insertBefore(frag, anchor.nextSibling);
+      else if (anchor) panels.appendChild(frag);
+      else panels.insertBefore(frag, panels.firstChild);
     }
     buildMaskOverlay();
     buildFilmstrip();
