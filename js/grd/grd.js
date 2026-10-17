@@ -1345,7 +1345,7 @@
     fxi.addEventListener("blur", function () { /* commit on blur only if changed via Enter already */ });
     /* Mobile (<=640px) opens the formatbar as a bottom sheet; the toggle
        button is only visible there (see css/grd.css). */
-    var fmtT = btn("Format", "grd-fmt-toggle", "grd-btn", "Open format controls");
+    var fmtT = btn("Format", "grd-fmt-toggle", "grd-btn grd-fmt-toggle", "Open format controls");
     fmtT.setAttribute("aria-expanded", "false");
     fmtT.setAttribute("aria-controls", "grd-formatbar");
     fmtT.addEventListener("click", function () { toggleFmtSheet(); });
@@ -1354,18 +1354,48 @@
     E.namebox = name; E.fx = fxi;
 
     /* format toolbar: inline on desktop, a shared .nxt-sheet bottom sheet
-       on <=640px (the .nxt-sheet chrome only applies inside that media
-       query, so desktop is unaffected). */
-    var ft = mk("div", "grd-formatbar nxt-sheet", "grd-formatbar");
+       on <=640px. The backdrop sits before the sheet in the DOM per the
+       .nxt-sheet usage contract in css/mobile.css. */
+    var fmtScrim = mk("div", "nxt-sheet-backdrop", "grd-fmt-backdrop");
+    fmtScrim.setAttribute("aria-hidden", "true");
+    fmtScrim.addEventListener("click", function () { toggleFmtSheet(false); });
+    v.appendChild(fmtScrim);
+    E.fmtBackdrop = fmtScrim;
+
+    var ft = mk("section", "grd-formatbar nxt-sheet", "grd-formatbar");
+    ft.setAttribute("role", "dialog");
+    ft.setAttribute("aria-modal", "true");
+    ft.setAttribute("aria-labelledby", "grd-fmt-title");
     var fthandle = mk("div", "nxt-sheet-handle");
     fthandle.setAttribute("aria-hidden", "true");
     ft.appendChild(fthandle);
-    var fthead = mk("div", "grd-fmt-head");
-    var fttitle = mk("span", "grd-fmt-title"); fttitle.textContent = "Format";
-    var fmtClose = btn("Close", "grd-fmt-close", "grd-btn", "Close format panel");
+    var fthead = mk("div", "nxt-sheet-head");
+    var fttitle = mk("h2", "nxt-sheet-title", "grd-fmt-title");
+    fttitle.textContent = "Format";
+    var fmtClose = mk("button", "nxt-sheet-close", "grd-fmt-close");
+    fmtClose.type = "button";
+    fmtClose.setAttribute("aria-label", "Close format panel");
+    var closeGlyph = icon("i-x");
+    fmtClose.innerHTML = closeGlyph || "&#215;";
     fmtClose.addEventListener("click", function () { toggleFmtSheet(false); });
     fthead.appendChild(fttitle); fthead.appendChild(fmtClose);
     ft.appendChild(fthead);
+    var ftbody = mk("div", "nxt-sheet-body");
+    ft.appendChild(ftbody);
+    function fmtRow(caption, items) {
+      var row = mk("div", "grd-fmt-row");
+      var cap = mk("span", "grd-fmt-cap"); cap.textContent = caption;
+      var ctl = mk("div", "grd-fmt-controls");
+      items.forEach(function (x) { ctl.appendChild(x); });
+      row.appendChild(cap); row.appendChild(ctl);
+      return row;
+    }
+    function fmtSwatch(label, input) {
+      var w = mk("span", "grd-fmt-swatch");
+      var lab = mk("span"); lab.textContent = label;
+      w.appendChild(lab); w.appendChild(input);
+      return w;
+    }
     var bold = btn("B", "grd-f-bold", "grd-tbtn grd-tbtn-bold", "Bold");
     bold.addEventListener("click", function () { toggleBold(); });
     var fg = mk("input", "", "grd-f-fg"); fg.type = "color"; fg.value = "#111111"; fg.title = "Text color";
@@ -1390,17 +1420,15 @@
     sDesc.addEventListener("click", function () { sortByColumn(ui.sel.c, -1); });
     var clr = btn("Clear", "grd-clear", "grd-tbtn", "Clear contents and formatting of selection");
     clr.addEventListener("click", clearSelection);
-    [bold, fg, bg, nf, ct, sAsc, sDesc, clr].forEach(function (x) { ft.appendChild(x); });
+    ftbody.appendChild(fmtRow("Text style", [bold, fmtSwatch("Text", fg), fmtSwatch("Fill", bg)]));
+    ftbody.appendChild(fmtRow("Number format", [nf]));
+    ftbody.appendChild(fmtRow("Cell type", [ct]));
+    ftbody.appendChild(fmtRow("Sort and clear", [sAsc, sDesc, clr]));
     v.appendChild(ft);
     E.numfmtSel = nf; E.ctypeSel = ct; E.boldBtn = bold;
     E.fmtBar = ft;
 
-    /* mobile sheet: tap outside or Escape closes */
-    var fmtScrim = mk("div", "grd-fmt-scrim", "grd-fmt-scrim");
-    fmtScrim.setAttribute("aria-hidden", "true");
-    fmtScrim.addEventListener("click", function () { toggleFmtSheet(false); });
-    v.appendChild(fmtScrim);
-    E.fmtScrim = fmtScrim;
+    /* sheet: Escape closes */
     ft.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { toggleFmtSheet(false); e.stopPropagation(); }
     });
@@ -1448,15 +1476,16 @@
     document.addEventListener("keydown", onDocKey);
   }
 
-  /* Opens/closes the mobile Format bottom sheet (no-op on desktop: the
-     sheet chrome only exists inside the <=640px media query). */
+  /* Opens/closes the mobile Format bottom sheet through the shared
+     .nxt-sheet contract (toggle .open on the sheet and its backdrop).
+     No visible effect on desktop: the formatbar is an inline toolbar there. */
   function toggleFmtSheet(force) {
     var ft = E.fmtBar || document.getElementById("grd-formatbar");
     if (!ft) return;
-    var open = typeof force === "boolean" ? force : !ft.classList.contains("grd-open");
-    ft.classList.toggle("grd-open", open);
-    var sc = E.fmtScrim || document.getElementById("grd-fmt-scrim");
-    if (sc) sc.classList.toggle("grd-open", open);
+    var open = typeof force === "boolean" ? force : !ft.classList.contains("open");
+    ft.classList.toggle("open", open);
+    var sc = E.fmtBackdrop || document.getElementById("grd-fmt-backdrop");
+    if (sc) sc.classList.toggle("open", open);
     var t = document.getElementById("grd-fmt-toggle");
     if (t) t.setAttribute("aria-expanded", open ? "true" : "false");
   }
@@ -2138,7 +2167,7 @@
     var data = chartData(doc, chart);
     var W = 560, H = 320, L = 48, Rr = 16, Tp = 30, B = 52;
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(chart.title) + '">';
-    svg += '<text x="' + (W / 2) + '" y="18" text-anchor="middle" font-size="14" font-weight="bold" fill="currentColor">' + esc(chart.title) + "</text>";
+    svg += '<text x="' + (W / 2) + '" y="18" text-anchor="middle" font-size="15" font-weight="bold" fill="currentColor">' + esc(chart.title) + "</text>";
     var has = data.series.length && data.labels.length && data.series.some(function (s) { return s.data.some(function (x) { return x !== 0; }); });
     if (!has) {
       svg += '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" font-size="13" fill="currentColor">No numeric data in ' + esc(chart.range) + "</text></svg>";
@@ -2164,7 +2193,7 @@
       for (var j = 0; j < data.labels.length; j++) {
         var pct = Math.round((vals[j] / total) * 100);
         svg += '<rect x="' + lx + '" y="' + ly + '" width="12" height="12" fill="' + CHART_COLORS[j % CHART_COLORS.length] + '"/>' +
-          '<text x="' + (lx + 18) + '" y="' + (ly + 11) + '" font-size="12" fill="currentColor">' + esc(data.labels[j] || ("Item " + (j + 1))) + " " + pct + "%</text>";
+          '<text x="' + (lx + 18) + '" y="' + (ly + 11) + '" font-size="13" fill="currentColor">' + esc(data.labels[j] || ("Item " + (j + 1))) + " " + pct + "%</text>";
         ly += 22;
       }
       svg += "</svg>";
@@ -2183,7 +2212,7 @@
     for (var g2 = 0; g2 <= 4; g2++) {
       var gv = min + ((max - min) * g2) / 4;
       var gy = Y(gv);
-      svg += '<text x="' + (L - 6) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10" fill="currentColor">' + esc(groupNum(Math.round(gv * 100) / 100)) + "</text>";
+      svg += '<text x="' + (L - 6) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + esc(groupNum(Math.round(gv * 100) / 100)) + "</text>";
     }
     if (chart.type === "bar") {
       var ns = data.series.length;
@@ -2198,7 +2227,7 @@
         });
         var t = String(lab || "");
         if (t.length > 12) t = t.slice(0, 11) + ".";
-        svg += '<text x="' + X(i).toFixed(1) + '" y="' + (Tp + ph + 16) + '" text-anchor="middle" font-size="10" fill="currentColor">' + esc(t) + "</text>";
+        svg += '<text x="' + X(i).toFixed(1) + '" y="' + (Tp + ph + 16) + '" text-anchor="middle" font-size="11" fill="currentColor">' + esc(t) + "</text>";
       });
     } else { // line
       data.series.forEach(function (s, si) {
@@ -2211,7 +2240,7 @@
       data.labels.forEach(function (lab, i) {
         var t = String(lab || "");
         if (t.length > 12) t = t.slice(0, 11) + ".";
-        svg += '<text x="' + X(i).toFixed(1) + '" y="' + (Tp + ph + 16) + '" text-anchor="middle" font-size="10" fill="currentColor">' + esc(t) + "</text>";
+        svg += '<text x="' + X(i).toFixed(1) + '" y="' + (Tp + ph + 16) + '" text-anchor="middle" font-size="11" fill="currentColor">' + esc(t) + "</text>";
       });
     }
     var lgx = L + 8, lgy = 26;
